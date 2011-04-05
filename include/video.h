@@ -24,7 +24,7 @@
 
 
 #include "stdarg.h"
-#include "common.h"
+#include "klib.h"
 
 
 #define VGA_TEXT_BUFFER 0xb8000

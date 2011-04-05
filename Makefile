@@ -21,7 +21,7 @@ DIROUT=bin/
 BIN_BOOT=$(DIRBOOT)floppyboot.bin
 
 # Kernel
-OBJS_KERN=kernel/kinit.o kernel/kernel.o kernel/gdt.o kernel/video.o
+OBJS_KERN=kernel/kinit.o kernel/kernel.o kernel/klib.o kernel/gdt.o kernel/video.o
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf
 SYM_KERN=$(DIROUT)kernel.sym

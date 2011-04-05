@@ -2,17 +2,12 @@
 
 void kernel_start(void) {
     clear();
-    uint32_t cr0 = rcr0();
-    printf("%x", cr0);
-}
 
-void test_colors(void) {
-    int i, j;
-    for (i = 0; i < 16; i++) {
-        for (j = 0; j < 16; j++) {
-            set_backcolor(i);
-            set_forecolor(j);
-            printf("COLOR");
-        }
-    }
+    printf("CR0: %x\n", rcr0());
+    printf("CR2: %x\n", rcr2());
+    printf("CR3: %x\n", rcr3());
+    printf("CR4: %x\n", rcr4());
+
+    putchar('\n');
+    test_colors();
 }
