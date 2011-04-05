@@ -2,7 +2,8 @@
 
 void kernel_start(void) {
     clear();
-    test_colors();
+    uint32_t cr0 = rcr0();
+    printf("%x", cr0);
 }
 
 void test_colors(void) {

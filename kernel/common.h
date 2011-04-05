@@ -15,6 +15,8 @@ typedef int       int32_t;
 typedef short     int16_t;
 typedef char      int8_t;
 
+#define LS_INLINE static __inline __attribute__((always_inline))
+
 static inline void halt(void) {
     __asm __volatile("hlt");
 }
@@ -34,6 +36,16 @@ static inline uint8_t inb(uint16_t port) {
 // Write a byte out to the specified port
 static inline void outb(uint16_t port, uint8_t value) {
     __asm __volatile("outb %1, %0" : : "dN" (port), "a" (value));
+}
+
+LS_INLINE void lcr0(uint32_t value) {
+  __asm __volatile("movl %0 %%cr0" : : "r" (value));
+}
+
+LS_INLINE uint32_t rcr0(void) {
+  uint32_t value;
+  __asm __volatile("movl %%cr0, %0" : "=r" (value));
+  return value;
 }
 
 
