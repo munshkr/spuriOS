@@ -65,5 +65,9 @@ void set_forecolor(const char color);
 void set_backcolor(const char color);
 void clear_colors(void);
 
+// TODO: Encontrar un mejor nombre para esta función
+// lo que hace: recibe una representación en char de un número hexadecimal
+// y devuelve el valor de ese hexadecimal casteado a char.
+const char char_to_hex(const char val);
 
 #endif /* __VIDEO_H__ */

@@ -38,7 +38,7 @@ static int print_uhex(const unsigned int number);
 int g_x = 0;
 int g_y = 0;
 char g_backcolor = C_BLACK;
-char g_forecolor = C_BRIGHT_BLACK;
+char g_forecolor = C_WHITE;
 
 void set_forecolor(const char color) {
     g_forecolor = color;
@@ -50,7 +50,7 @@ void set_backcolor(const char color) {
 
 void clear_colors(void) {
     g_backcolor = C_BLACK;
-    g_forecolor = C_BRIGHT_BLACK;
+    g_forecolor = C_WHITE;
 }
 
 void clear(void) {
@@ -128,13 +128,24 @@ int printf(const char* format, ...)
                 putchar('%');
                 size++;
             }
-        } else {
+        } else if (*ptr == '\\') {
+			ptr++;
+			switch (*ptr) {
+				case 'c':
+					ptr++;
+					set_backcolor(char_to_hex(*ptr));
+					ptr++;
+					set_forecolor(char_to_hex(*ptr));
+				break;
+			}
+		} else {
             putchar(*ptr);
             size++;
         }
         ptr++;
     }
     va_end(ap);
+	clear_colors();
 
     return size;
 }
@@ -266,3 +277,16 @@ static int print_uhex(const unsigned int number) {
     }
     return ln + 2;
 }
+
+const char char_to_hex(const char val) {
+	int tmp = (unsigned int)val;
+	if (tmp >= 48 && tmp <= 57) {
+		tmp -= 48;
+	} else if (tmp >= 97 && tmp <= 102) {
+		tmp -= 87;
+	} else if (tmp >= 65 && tmp <= 70) {
+		tmp -= 55;
+	}
+	return (char)tmp;
+}
+
