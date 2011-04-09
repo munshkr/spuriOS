@@ -1,0 +1,4 @@
+bin/*
+**/*.o
+bochsout.txt
+parport.out
