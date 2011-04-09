@@ -1,4 +1,3 @@
-bin/*
-**/*.o
 bochsout.txt
+**/*.o
 parport.out
