@@ -14,5 +14,12 @@ extern void* _end;
  * segmento y armar un stack */
 void kernel_init(void) {
 	breakpoint();
+
+	gdt_init();	
+
+	clear();
+	printf("Hello World!\n");
+	printf("Fruta \\c0A %d %s", 123, "hola");
+
 	return;
 }

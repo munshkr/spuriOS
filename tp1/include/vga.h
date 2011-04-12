@@ -12,6 +12,17 @@ void vga_init(void);
 void vga_write(uint_16 f, uint_16 c, const char* msg, uint_8 attr);
 void vga_printf(uint_16 f, uint_16 c, const char* format, uint_8 attr, ...) __attribute__ ((format (printf, 3, 5)));
 
+
+void clear(void);
+
+int putchar(const char c);
+int printf(const char* format, ...);
+
+void set_forecolor(const char color);
+void set_backcolor(const char color);
+void clear_colors(void);
+
+
 /* Paleta de 16 colores */
 #define VGA_FC_BLACK   0x00
 #define VGA_FC_BLUE    0x01
@@ -33,6 +44,12 @@ void vga_printf(uint_16 f, uint_16 c, const char* format, uint_8 attr, ...) __at
 #define VGA_BC_MAGENTA 0x50
 #define VGA_BC_BROWN   0x60
 #define VGA_BC_WHITE   0x70
+
+#define ASCII_0 0x30
+#define ASCII_a 0x61
+
+#define TAB_WIDTH 4
+
 
 #endif
 

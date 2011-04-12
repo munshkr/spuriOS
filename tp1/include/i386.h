@@ -48,6 +48,8 @@ LS_INLINE void hlt(void);
 
 LS_INLINE void breakpoint(void);
 
+LS_INLINE void lgdt(void *p);
+
 /*** Implementaciones Inline ***/
 
 /* out** */
@@ -128,6 +130,11 @@ LS_INLINE void insl(int port, void *addr, int cnt) {
 /* IDT */
 LS_INLINE void lidt(void *p) {
 	__asm __volatile("lidt (%0)" : : "r" (p));
+}
+
+/* GDT */
+LS_INLINE void lgdt(void *p) {
+	__asm __volatile("lgdt (%0)" : : "r" (p));
 }
 
 LS_INLINE void sti() {

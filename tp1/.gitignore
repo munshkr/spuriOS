@@ -4,3 +4,4 @@ deps
 parport.out
 tasks/*.elf
 tasks/*.pso
+bin/*
