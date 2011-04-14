@@ -4,7 +4,7 @@
 #include <isr.h>
 #include <idt.h>
 #include <pic.h>
-#include <commons.h>
+#include <common.h>
 
 static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR_DPL2, IDT_ATTR_DPL3 };
 

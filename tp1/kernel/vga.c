@@ -1,7 +1,7 @@
 #include <i386.h>
 #include <tipos.h>
 #include <stdarg.h>
-#include <commons.h>
+#include <common.h>
 #include "vga.h"
 
 uint_16 vga_port = 0x3D0;
