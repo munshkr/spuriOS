@@ -40,14 +40,11 @@ void vga_init(void) {
 
 void vga_clear(void) {
 	memset(vga_addr, 0, (vga_cols * vga_rows) / 2);
-	vga_x = 0;
-	vga_y = 0;
-	update_cursor();
+	vga_reset_pos();
 }
 
 int vga_putchar(const char c) {
 	putchar(c);
-	update_cursor();
 	return c;
 }
 
@@ -137,6 +134,7 @@ void vga_set_pos(uint_16 x, uint_16 y) {
 void vga_reset_pos(void) {
 	vga_x = 0;
 	vga_y = 0;
+	update_cursor();
 }
 
 
@@ -180,14 +178,21 @@ static void putln(void) {
 	update_cursor();
 }
 
-// FIXME no parece funcionar?
+// It Works, but cursor will only be visible if it's position has a character printed in.
+// temp workaround: add a blank space before updating cursor.
+// FIXME: we should find the right position in the code for the putchar(' ') sentence,
+// because this way it's leaving a blank space each time we use putln() and if a backcolor
+// is set, that blank space is visible. (check kernel.c)
 static void update_cursor(void) {
+	vga_putchar(' ');
+	vga_x--;
+
 	uint_16 location = vga_y * vga_cols + vga_x;
 
-	outb(0x3d4, 14);			// Send the high cursor byte
-	outb(0x3d5, location >> 8);
-	outb(0x3d4, 15);			// Send the low cursor byte
-	outb(0x3d5, location);
+	outb(0x3D4, 0x0E);			// Send the high cursor byte
+	outb(0x3D5, (unsigned char)((location >> 8) & 0xFF));
+	outb(0x3D4, 0x0F);			// Send the low cursor byte
+	outb(0x3D5, (unsigned char)(location & 0xFF));
 }
 
 // Get number of digits of a number (signed)

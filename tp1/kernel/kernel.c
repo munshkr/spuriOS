@@ -27,6 +27,10 @@ void kernel_init(void) {
 		if (i % 2 == 0) vga_attr.fld.backcolor = i;
 		vga_printf("shake it\n");
 	}
+	vga_reset_colors();
+
+	vga_printf("\nEl cursor se actualiza\n");
+
 
 	// 80 is an invalid column, so it raises an assertion
 	vga_set_pos(80, 12);

@@ -11,7 +11,7 @@ extern enable_A20
 
 global start
 ; start MUST be at the very begining of this file
-start: 
+start:
 	call enable_A20
 
 	lgdt [GDT_DESC]
@@ -32,7 +32,7 @@ modo_protegido:
 	mov 	esp, 0xA0000
 	mov 	ebp, 0xA0000
 
-	xchg 	bx, bx
+	;xchg 	bx, bx
 	call 	kernel_init
 	jmp $
 
