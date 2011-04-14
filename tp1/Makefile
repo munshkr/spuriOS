@@ -23,7 +23,7 @@ DIRTMP=/tmp/
 BIN_BOOT=$(DIRBOOT)floppyboot.bin
 
 # Kernel
-OBJS_KERN=kernel/commons.o kernel/kinit.o kernel/a20.o kernel/kernel.o \
+OBJS_KERN=kernel/kinit.o kernel/commons.o kernel/a20.o kernel/kernel.o \
   kernel/gdt.o kernel/idt.o \
   kernel/isr.o kernel/pic.o kernel/vga.o kernel/sched.o \
   kernel/mm.o kernel/debug.o kernel/loader.o kernel/tasks.o \
