@@ -2,102 +2,64 @@
 #include <tipos.h>
 #include <stdarg.h>
 #include <common.h>
+#include <debug.h>
 #include "vga.h"
 
 uint_16 vga_port = 0x3D0;
 
-uint_8* vga_addr = (uint_8*)0xB8000;
+uint_8* vga_addr = (uint_8*) 0xB8000;
 const uint_16 vga_cols = 80;
 const uint_16 vga_rows = 25;
 
+
+/* Current cursor location and color attributes */
 int vga_x = 0;
 int vga_y = 0;
-char vga_backcolor = VGA_BC_BLACK;
-char vga_forecolor = VGA_FC_WHITE;
+vga_attr_t vga_attr;
 
 
+/* Auxiliary functions */
+static void putchar(const char c);
 static void scroll(void);
 static void putln(void);
 static void update_cursor(void);
-
 static unsigned int len(const int number, const char base);
 static unsigned int ulen(const unsigned int number, const char base);
 static int pow(const int base, const unsigned int exponent);
 static int print_dec(const int number);
 static int print_udec(const unsigned int number);
 static int print_uhex(const unsigned int number);
-static const char char_to_hex(const char val);
+static unsigned int scan_uhex(const char value);
 
 
 void vga_init(void) {
-
+	vga_attr.fld.forecolor = VGA_FC_WHITE;
+	vga_attr.fld.backcolor = VGA_BC_BLACK;
+	vga_clear();
 }
 
-void vga_write(uint_16 f, uint_16 c, const char* msg, uint_8 attr) {
-}
-
-void vga_printf(uint_16 f, uint_16 c, const char* format, uint_8 attr, ...) {
-}
-
-
-void set_forecolor(const char color) {
-	vga_forecolor = color;
-}
-
-void set_backcolor(const char color) {
-	vga_backcolor = color;
-}
-
-void clear_colors(void) {
-	vga_backcolor = VGA_BC_BLACK;
-	vga_forecolor = VGA_FC_WHITE;
-}
-
-void clear(void) {
-	// FIXME Use string's memset here
-	short *pos = (short *) vga_addr;
-	int i;
-	for (i=0; i < vga_cols * vga_rows; ++i) {
-		*pos++ = 0;
-	}
+void vga_clear(void) {
+	memset(vga_addr, 0, (vga_cols * vga_rows) / 2);
 	vga_x = 0;
 	vga_y = 0;
 	update_cursor();
 }
 
-int putchar(const char c) {
-	if (c == '\n') {
-		putln();
-	} else if (c == '\t') {
-		vga_x += TAB_WIDTH;
-	} else {
-		char attrib = vga_backcolor | vga_forecolor;
-		volatile short *pos;
-		pos = (short *) vga_addr + (vga_y * vga_cols + vga_x);
-		*pos = c | (attrib << 8);
-		vga_x++;
-	}
-	if (vga_x >= vga_cols) {
-		putln();
-	}
+int vga_putchar(const char c) {
+	putchar(c);
+	update_cursor();
 	return c;
 }
 
-
-/* Stripped down version of C standard `printf` with only these specifiers:
- *   %c (character)
- *   %s (string)
- *   %d (decimal integer)
- *   %u (unsigned decimal integer)
- *   %x (hexadecimal integer
- *   %% (write '%' character)
- */
-int printf(const char* format, ...)
+int vga_printf(const char* format, ...)
 {
 	int size = 0;
 	va_list ap;
 	const char* ptr = format;
 	char* str;
+
+	// Save current attributes
+	vga_attr_t old_attr = vga_attr;
 
 	va_start(ap, format);
 	while (*ptr) {
@@ -131,12 +93,12 @@ int printf(const char* format, ...)
 		} else if (*ptr == '\\') {
 			ptr++;
 			switch (*ptr) {
-				case 'c':
-					ptr++;
-					set_backcolor(char_to_hex(*ptr));
-					ptr++;
-					set_forecolor(char_to_hex(*ptr));
-				break;
+			  case 'c':
+				ptr++;
+				const char back = scan_uhex(*ptr);
+				ptr++;
+				const char fore = scan_uhex(*ptr);
+				vga_attr.vl.vl = (back << 8) | fore;
 			}
 		} else {
 			putchar(*ptr);
@@ -145,11 +107,54 @@ int printf(const char* format, ...)
 		ptr++;
 	}
 	va_end(ap);
-	clear_colors();
+
+	// Restore attributes
+	vga_attr = old_attr;
+	update_cursor();
 
 	return size;
 }
 
+void vga_reset_colors(void) {
+	vga_attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
+}
+
+void vga_set_x(uint_16 x) {
+	kassert(x < vga_rows);
+	vga_x = x;
+}
+
+void vga_set_y(uint_16 y) {
+	kassert(y < vga_cols);
+	vga_y = y;
+}
+
+void vga_set_pos(uint_16 x, uint_16 y) {
+	vga_set_x(x);
+	vga_set_y(y);
+}
+
+void vga_reset_pos(void) {
+	vga_x = 0;
+	vga_y = 0;
+}
+
+
+static void putchar(const char c) {
+	if (c == '\n') {
+		putln();
+	} else if (c == '\t') {
+		vga_x += TAB_WIDTH;
+	} else {
+		volatile short *pos;
+		pos = (short *) vga_addr + (vga_y * vga_cols + vga_x);
+		*pos = c | (vga_attr.vl.vl << 8);
+		vga_x++;
+	}
+	if (vga_x >= vga_cols) {
+		putln();
+	}
+}
 
 static void scroll(void) {
 	short *pos = (short *) vga_addr;
@@ -175,11 +180,9 @@ static void putln(void) {
 	update_cursor();
 }
 
+// FIXME no parece funcionar?
 static void update_cursor(void) {
 	uint_16 location = vga_y * vga_cols + vga_x;
-
-	// FIXME The base port (here assumed to be 0x3d4 and 0x3d5)
-	// should be read from the BIOS data area.
 
 	outb(0x3d4, 14);			// Send the high cursor byte
 	outb(0x3d5, location >> 8);
@@ -278,9 +281,8 @@ static int print_uhex(const unsigned int number) {
 	return ln + 2;
 }
 
-// FIXME devolver int
-static const char char_to_hex(const char val) {
-	int tmp = (unsigned int)val;
+static unsigned int scan_uhex(const char value) {
+	unsigned int tmp = (unsigned int) value;
 	if (tmp >= 48 && tmp <= 57) {
 		tmp -= 48;
 	} else if (tmp >= 97 && tmp <= 102) {
@@ -288,6 +290,5 @@ static const char char_to_hex(const char val) {
 	} else if (tmp >= 65 && tmp <= 70) {
 		tmp -= 55;
 	}
-	return (char)tmp;
+	return tmp;
 }
-

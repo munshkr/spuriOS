@@ -13,13 +13,14 @@ extern void* _end;
 /* Entry-point del modo protegido luego de cargar los registros de
  * segmento y armar un stack */
 void kernel_init(void) {
-	breakpoint();
+	cli();
 
-	gdt_init();	
+	//gdt_init();	
 
-	clear();
-	printf("Hello World!\n");
-	printf("Fruta \\c0A %d %s", 123, "hola");
+	vga_putchar('a');
+	//vga_clear();
+	//vga_printf("Hello World!\n");
+	//printf("Fruta \\c0A %d %s", 123, "hola");
 
 	return;
 }

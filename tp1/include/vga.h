@@ -3,27 +3,65 @@
 
 #include <tipos.h>
 
+typedef union str_vga_attr_t {
+	struct str_vga_attr_fld {
+		unsigned forecolor:3;
+		signed light:1;
+		unsigned backcolor:3;
+		signed blink:1;
+	} fld;
+	struct str_vga_attr_vl {
+		unsigned char vl;
+	} vl;
+} __attribute__((__packed__)) vga_attr_t;
+
+
 extern uint_8* vga_addr;
 extern const uint_16 vga_cols;
 extern const uint_16 vga_rows;
+extern vga_attr_t vga_attr;
+
 
 void vga_init(void);
 
+/* Original prototypes (deprecated) */
+/*
 void vga_write(uint_16 f, uint_16 c, const char* msg, uint_8 attr);
-void vga_printf(uint_16 f, uint_16 c, const char* format, uint_8 attr, ...) __attribute__ ((format (printf, 3, 5)));
+void vga_printf(uint_16 f, uint_16 c, const char* format, uint_8 attr, ...)
+	__attribute__ ((format (printf, 1, 2)));
+*/
 
 
-void clear(void);
+/* Clear screen */
+void vga_clear(void);
 
-int putchar(const char c);
-int printf(const char* format, ...);
+/* Put a char at current location */
+int vga_putchar(const char c);
 
-void set_forecolor(const char color);
-void set_backcolor(const char color);
-void clear_colors(void);
+/* Print a string at current location
+ *
+ * Supported specifiers:
+ *   %c   (character)
+ *   %s   (string)
+ *   %d   (decimal integer)
+ *   %u   (unsigned decimal integer)
+ *   %x   (hexadecimal integer
+ *   %%   (write '%' character)
+ *   \\cNN (set color attribute, where NN is attribute byte)
+ */
+int vga_printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
+
+/* Set foreground and background colors */
+void vga_reset_colors(void);
+
+/* Set cursor location */
+void vga_set_x(uint_16 x);
+void vga_set_y(uint_16 y);
+void vga_set_pos(uint_16 x, uint_16 y);
+void vga_reset_pos(void);
 
 
-/* Paleta de 16 colores */
+/* Color attributes */
 #define VGA_FC_BLACK   0x00
 #define VGA_FC_BLUE    0x01
 #define VGA_FC_GREEN   0x02
@@ -45,11 +83,12 @@ void clear_colors(void);
 #define VGA_BC_BROWN   0x60
 #define VGA_BC_WHITE   0x70
 
+/* ASCII hex number for '0' and 'a' letters (for printing hex numbers) */
 #define ASCII_0 0x30
 #define ASCII_a 0x61
 
+/* How many spaces a TAB char represents */
 #define TAB_WIDTH 4
 
 
 #endif
-
