@@ -12,6 +12,7 @@ typedef signed int       sint_32;
 typedef signed long long sint_64;
 
 typedef int bool;
+typedef uint_32 size_t;
 
 typedef sint_32 pid;
 
