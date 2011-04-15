@@ -56,6 +56,7 @@ void vga_clear(void) {
 
 int vga_putchar(const char c) {
 	putchar(c);
+	update_cursor();
 	return c;
 }
 
