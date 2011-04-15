@@ -83,12 +83,5 @@ void vga_reset_pos(void);
 #define VGA_BC_BROWN   0x60
 #define VGA_BC_WHITE   0x70
 
-/* ASCII hex number for '0' and 'a' letters (for printing hex numbers) */
-#define ASCII_0 0x30
-#define ASCII_a 0x61
-
-/* How many spaces a TAB char represents */
-#define TAB_WIDTH 4
-
 
 #endif
