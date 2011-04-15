@@ -5,6 +5,10 @@
 #include <debug.h>
 #include "vga.h"
 
+/* Space char for cursor display */
+#define WHITE_SPACE 0x0720
+
+
 uint_16 vga_port = 0x3D0;
 
 uint_8* vga_addr = (uint_8*) 0xB8000;
@@ -184,10 +188,9 @@ static void putln(void) {
 // because this way it's leaving a blank space each time we use putln() and if a backcolor
 // is set, that blank space is visible. (check kernel.c)
 static void update_cursor(void) {
-	vga_putchar(' ');
-	vga_x--;
-
-	uint_16 location = vga_y * vga_cols + vga_x;
+	short location = vga_y * vga_cols + vga_x;
+	volatile short *pos = (short *) vga_addr + location;
+	*pos = WHITE_SPACE;
 
 	outb(0x3D4, 0x0E);			// Send the high cursor byte
 	outb(0x3D5, (unsigned char)((location >> 8) & 0xFF));
