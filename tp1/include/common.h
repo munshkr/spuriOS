@@ -3,6 +3,6 @@
 
 #define ABS(n)  (n > 0 ? n : -n)
 
-void memset(void* addr, const uint_32 value, const uint_32 size);
+void memset(void* addr, int value, size_t size);
 
 #endif // __COMMON_H__

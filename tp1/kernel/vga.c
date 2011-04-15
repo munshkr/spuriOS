@@ -50,7 +50,7 @@ void vga_init(void) {
 }
 
 void vga_clear(void) {
-	memset(vga_addr, 0, (vga_cols * vga_rows) / 2);
+	memset(vga_addr, 0, vga_cols * vga_rows * 2);
 	vga_reset_pos();
 }
 
