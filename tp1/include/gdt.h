@@ -32,7 +32,7 @@ typedef union str_gdt_entry {
 
 /** Tabla GDT **/
 extern gdt_entry gdt[];
-#define GDT_COUNT 256
+#define GDT_COUNT 6
 
 void gdt_init(void);
 
