@@ -1,6 +1,7 @@
 #include <tipos.h>
 #include <gdt.h>
 #include <i386.h>
+#include <debug.h>
 
 /* Macro para crear una entrada de la GDT dando base(32), limit(20) y attr(12). */
 #define make_gdt_entry(base, limit, attr) \
@@ -30,5 +31,4 @@ gdt_entry gdt[GDT_COUNT] = {
 gdt_descriptor GDT_DESC = {sizeof(gdt)-1, (uint_32)&gdt};
 
 void gdt_init(void) {
-	lgdt(&GDT_DESC);
 }

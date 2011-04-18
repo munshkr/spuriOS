@@ -4,6 +4,8 @@
 #include <mm.h>
 #include <sched.h>
 #include <i386.h>
+#include <idt.h>
+#include <common.h>
 
 const char* exp_name[] = {
 	"Divide Error",
@@ -33,10 +35,16 @@ void debug_kernelpanic(const uint_32* stack, const exp_state* expst) {
 	in_panic = TRUE;
 
 	// Completar
+	debug_log("panic attack!");
 }
 
 
 void debug_init(void) {
-	/* Registra todas las excepciones para sí */
+	idt_register(0, isr_panic, PL_KERNEL);
 }
 
+void debug_log(const char* message) {
+	/* Perhaps this function should log to a file in the future */
+	uint_64 tsc = read_tsc();
+	vga_printf("[%d.%d] %s\n", (uint_32)(tsc >> 32), (uint_32)(tsc & 0xFFFFFFFF), message);
+}

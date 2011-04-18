@@ -5,6 +5,7 @@
 #include <idt.h>
 #include <pic.h>
 #include <common.h>
+#include <debug.h>
 
 static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR_DPL2, IDT_ATTR_DPL3 };
 
@@ -18,28 +19,34 @@ static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR
 #define IDT_INT IDT_ATTR_P | IDT_ATTR_S_ON | IDT_ATTR_D_32 | IDT_ATTR_TYPE_INT
 #define IDT_EXP IDT_ATTR_P | IDT_ATTR_S_ON | IDT_ATTR_D_32 | IDT_ATTR_TYPE_EXP
 
-#define IDT_ENTRIES 128
+#define IDT_ENTRIES 1
 
 #define PIC1_START_IRQ 0x20
 #define PIC2_START_IRQ 0x28
 
 #define SS_K_CODE 0x8
+#define SS_U_CODE 0x18
 
 idt_entry idt[IDT_ENTRIES] = {};
 
 idt_descriptor IDT_DESC = {sizeof(idt)-1, (uint_32)&idt};
 
 void idt_init(void) {
-	pic_enable();
+	debug_log("initializing interrupt handling");
+
 	pic_reset(PIC1_START_IRQ, PIC2_START_IRQ);
 	memset(&idt, 0, sizeof(idt_entry) * IDT_ENTRIES);
 	
-	//
-
 	lidt(&IDT_DESC);
 	return;
 }
 
-void idt_register(int intr, void (*isr)(void), int pl ) {
-	idt[intr] = make_idt_entry(isr, SS_K_CODE, pl);
+void idt_register(int intr, void (isr)(void), int pl ) {
+	kassert(pl == PL_KERNEL || pl == PL_USER);
+
+	if (pl == PL_KERNEL) {
+		idt[intr] = make_idt_entry(isr, SS_K_CODE, IDT_INT);
+	} else if (pl == PL_USER) {
+		idt[intr] = make_idt_entry(isr, SS_U_CODE, IDT_INT);
+	}
 }
