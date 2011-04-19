@@ -27,5 +27,5 @@ typedef struct str_exp_state {
 	uint_32 org_ss;
 } __attribute__((__packed__)) exp_state;
 
-extern void (isr_panic)(void);
+extern void (isr_de)(void);
 #endif

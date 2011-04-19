@@ -5,9 +5,13 @@
 
 void debug_init(void);
 
-void debug_kernelpanic(const uint_32* stack, const exp_state* expst);
+void debug_kernelpanic(uint_32 exp_number, const uint_32* expst);
 
 void debug_log(const char* message);
+
+void show_eflags(uint_32 eflags);
+void show_cs_eip(uint_32 cs, uint_32 eip);
+void show_stack(uint_32* esp);
 
 #include <vga.h>
 #include <i386.h>

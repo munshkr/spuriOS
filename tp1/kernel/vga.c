@@ -93,6 +93,7 @@ int vga_printf(const char* format, ...)
 				size += print_udec(va_arg(ap, unsigned int));
 				break;
 			  case 'x':
+			  case 'p':
 				size += print_uhex(va_arg(ap, int));
 				break;
 			  case '%':
@@ -283,6 +284,11 @@ static int print_uhex(const unsigned int number) {
 
 	putchar('0');
 	putchar('x');
+
+	for (i = 0; i < 8 - ln; i++) {
+		putchar('0');
+	}
+
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 16;
 		if (digit < 10) {

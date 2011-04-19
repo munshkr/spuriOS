@@ -2,15 +2,26 @@
 ;;
 
 extern debug_kernelpanic
-global isr_panic
+global isr_de
 
-isr_panic:
+%define WITH_ERR_CODE(x) (x + 0x80000000)
+
+; Takes de interrupt number
+%macro PANIC_ISR 1
 	pusha
 
-	push dword 0
-	push dword 0
+	; Pointer to the beginning of the pushed state
+	push dword esp
+
+	; Interrupt number
+	push dword %1
+
 	call debug_kernelpanic
 	add esp, 8
 
 	popad
 	iret
+%endmacro
+
+isr_de:
+	PANIC_ISR 0
