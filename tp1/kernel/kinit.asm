@@ -8,12 +8,23 @@ section .text
 extern kernel_init
 extern GDT_DESC
 extern enable_A20
+extern make_mmap
 
 global start
 ; start MUST be at the very begining of this file
 start:
 	call enable_A20
 
+memory_map:
+	call make_mmap
+	or eax, eax
+	jnz .mmap_ok
+
+.halt:
+	hlt
+	jmp .halt
+
+.mmap_ok:
 	lgdt [GDT_DESC]
 
 	mov eax, cr0
