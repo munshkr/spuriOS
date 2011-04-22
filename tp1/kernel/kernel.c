@@ -10,6 +10,7 @@
 #include <i386.h>
 
 extern void* _end;
+
 /* Entry-point del modo protegido luego de cargar los registros de
  * segmento y armar un stack */
 void kernel_init(void) {
@@ -20,8 +21,9 @@ void kernel_init(void) {
 	debug_init();
 
 	breakpoint();
-	int a = 5;
-	int b = 0;
-	vga_printf("%d", a / b);
+
+	// Raises #GP(40)
+	__asm __volatile("jmp $40,$0");
+
 	return;
 }

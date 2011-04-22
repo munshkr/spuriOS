@@ -12,6 +12,7 @@ void debug_log(const char* message);
 void show_eflags(uint_32 eflags);
 void show_cs_eip(uint_32 cs, uint_32 eip);
 void show_stack(uint_32* esp);
+void show_backtrace(uint_32* ebp);
 
 #include <vga.h>
 #include <i386.h>

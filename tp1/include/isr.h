@@ -28,4 +28,22 @@ typedef struct str_exp_state {
 } __attribute__((__packed__)) exp_state;
 
 extern void (isr_de)(void);
+extern void (isr_db)(void);
+extern void (isr_nmi)(void);
+extern void (isr_bp)(void);
+extern void (isr_of)(void);
+extern void (isr_br)(void);
+extern void (isr_ud)(void);
+extern void (isr_nm)(void);
+extern void (isr_df)(void);
+extern void (isr_cso)(void);
+extern void (isr_ts)(void);
+extern void (isr_np)(void);
+extern void (isr_ss)(void);
+extern void (isr_gp)(void);
+extern void (isr_pf)(void);
+extern void (isr_mf)(void);
+extern void (isr_ac)(void);
+extern void (isr_mc)(void);
+extern void (isr_xm)(void);
 #endif

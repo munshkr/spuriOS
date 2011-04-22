@@ -30,7 +30,7 @@ vga_attr_t vga_attr;
 
 
 /* Auxiliary functions */
-static void putchar(const char c);
+static void putchar(const char c, const char raw);
 static void scroll(void);
 static void putln(void);
 static void update_cursor(void);
@@ -55,7 +55,7 @@ void vga_clear(void) {
 }
 
 int vga_putchar(const char c) {
-	putchar(c);
+	putchar(c, TRUE);
 	update_cursor();
 	return c;
 }
@@ -76,13 +76,13 @@ int vga_printf(const char* format, ...)
 			ptr++;
 			switch (*ptr) {
 			  case 'c':
-				putchar((char) va_arg(ap, int));
+				putchar((char) va_arg(ap, int), FALSE);
 				size++;
 				break;
 			  case 's':
 				str = va_arg(ap, char*);
 				while (*str) {
-					putchar(*str++);
+					putchar(*str++, TRUE);
 					size++;
 				}
 				break;
@@ -97,7 +97,7 @@ int vga_printf(const char* format, ...)
 				size += print_uhex(va_arg(ap, int));
 				break;
 			  case '%':
-				putchar('%');
+				putchar('%', FALSE);
 				size++;
 			}
 		} else if (*ptr == '\\') {
@@ -111,7 +111,7 @@ int vga_printf(const char* format, ...)
 				vga_attr.vl.vl = (back << 8) | fore;
 			}
 		} else {
-			putchar(*ptr);
+			putchar(*ptr, FALSE);
 			size++;
 		}
 		ptr++;
@@ -151,10 +151,10 @@ void vga_reset_pos(void) {
 }
 
 
-static void putchar(const char c) {
-	if (c == '\n') {
+static void putchar(const char c, const char raw) {
+	if (c == '\n' && !raw) {
 		putln();
-	} else if (c == '\t') {
+	} else if (c == '\t' && !raw) {
 		vga_x += TAB_WIDTH;
 	} else {
 		volatile short *pos;
@@ -251,13 +251,13 @@ static int print_dec(int number) {
 	int mult = pow(10, ln - 1);
 
 	if (number < 0) {
-		putchar('-');
+		putchar('-', FALSE);
 		number = -number;
 		size++;
 	}
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 10;
-		putchar((char) digit + ASCII_0);
+		putchar((char) digit + ASCII_0, FALSE);
 		mult /= 10;
 		size++;
 	}
@@ -271,7 +271,7 @@ static int print_udec(const unsigned int number) {
 
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 10;
-		putchar((char) digit + ASCII_0);
+		putchar((char) digit + ASCII_0, FALSE);
 		mult /= 10;
 	}
 	return ln;
@@ -282,21 +282,21 @@ static int print_uhex(const unsigned int number) {
 	const unsigned int ln = ulen(number, 16);
 	unsigned int mult = pow(16, ln - 1);
 
-	putchar('0');
-	putchar('x');
+	putchar('0', FALSE);
+	putchar('x', FALSE);
 
 	for (i = 0; i < 8 - ln; i++) {
-		putchar('0');
+		putchar('0', FALSE);
 	}
 
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 16;
 		if (digit < 10) {
-			putchar((char) digit + ASCII_0);
+			putchar((char) digit + ASCII_0, FALSE);
 		} else if (digit < 16) {
-			putchar((char) (digit - 10) + ASCII_a);
+			putchar((char) (digit - 10) + ASCII_a, FALSE);
 		} else {
-			putchar('?');
+			putchar('?', FALSE);
 		}
 		mult /= 16;
 	}
