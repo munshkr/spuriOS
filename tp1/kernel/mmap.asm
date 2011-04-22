@@ -20,16 +20,17 @@
 ;.fin:
 ;
 ;; ----------------------------------------
-BITS 16
+bits 16
 
-; FIXME We need an unused address to store our map
-MMAP_ADDRESS equ 0x9000
-%define mmap_entries bp-2
+extern _end
+%define MMAP_ADDRESS _end
+
+mmap_entries dd  0x0000
 
 global make_mmap
+global mmap_entries
 
 make_mmap:
-	enter 2, 0
 	pushad
 
 	mov di, MMAP_ADDRESS	; Init
@@ -69,8 +70,6 @@ make_mmap:
 .failed:
 	popad
 	xor eax, eax
-
-	leave
 	ret
 
 .sucess:
@@ -80,15 +79,13 @@ make_mmap:
 
 	add di, 24
 
-	mov dx, [mmap_entries]  ;
-	inc dx					; Otherwise, increment and keep on maping
-	mov [mmap_entries], dx  ;
+	mov edx, [mmap_entries]	;
+	inc edx					; Otherwise, increment and keep on maping
+	mov [mmap_entries], edx	;
 
 	jmp .loop
 
 .end:
 	popad
 	mov eax, [mmap_entries]
-
-	leave
 	ret
