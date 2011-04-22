@@ -5,15 +5,36 @@ section .text
 %define seg_code_0 8
 %define seg_data_0 16
 %define GDT_COUNT 32 ; WARNING, must match value defined in gdt.h
+
 extern kernel_init
 extern GDT_DESC
 extern enable_A20
 
+; both defined in mmap.asm
+extern make_mmap
+extern mmap_entries
+
+extern _end
+%define MMAP_ADDRESS _end
+
 global start
+
 ; start MUST be at the very begining of this file
 start:
 	call enable_A20
+	xor ax, ax			; Clean ES selector as it is used
+	mov es, ax			; by E820 for memory map.
 
+memory_map:
+	call make_mmap
+	or eax, eax
+	jnz .mmap_ok
+
+.halt:
+	hlt
+	jmp .halt
+
+.mmap_ok:
 	lgdt [GDT_DESC]
 
 	mov eax, cr0
@@ -32,7 +53,8 @@ modo_protegido:
 	mov 	esp, 0xA0000
 	mov 	ebp, 0xA0000
 
-	;xchg 	bx, bx
+	mov		eax, [mmap_entries]
+	push	eax
+	push	MMAP_ADDRESS
 	call 	kernel_init
 	jmp $
-
