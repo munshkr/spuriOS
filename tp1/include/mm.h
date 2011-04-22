@@ -64,4 +64,9 @@ void mm_dir_free(mm_page* d);
 /* Syscalls */
 // void* palloc(void);
 
+/* Auxiliares */
+void set_bit(int offset);
+void clear_bit(int position);
+bool get_bit(int position);
+
 #endif
