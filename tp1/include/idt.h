@@ -1,11 +1,13 @@
 #ifndef __IDT_H__
 #define __IDT_H__
 
+#include <isr.h>
+
 /* Para inicializar la IDT del sistema. */
 void idt_init(void);
 
 /* Para registrar una ISR */
-void idt_register(int intr, void (*isr)(void), int pl);
+void idt_register(int intr, isr_t handler, int pl);
 
 /* Números de interrupciones de la IDT */
 #define ISR_DIVIDE     0		// divide error

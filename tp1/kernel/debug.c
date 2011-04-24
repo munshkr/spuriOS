@@ -44,26 +44,16 @@ const char* exp_name[] = {
 	"Alignment check"
 };
 
+void kernel_panic(registers_t regs) {
+	vga_printf("Kernel Panic\n");
+	hlt();
+}
+
 void debug_init(void) {
-	idt_register(0, isr_de, PL_KERNEL);
-	idt_register(1, isr_db, PL_KERNEL);
-	idt_register(2, isr_nmi, PL_KERNEL);
-	idt_register(3, isr_bp, PL_KERNEL);
-	idt_register(4, isr_of, PL_KERNEL);
-	idt_register(5, isr_br, PL_KERNEL);
-	idt_register(6, isr_ud, PL_KERNEL);
-	idt_register(7, isr_nm, PL_KERNEL);
-	idt_register(8, isr_df, PL_KERNEL);
-	idt_register(9, isr_cso, PL_KERNEL);
-	idt_register(10, isr_ts, PL_KERNEL);
-	idt_register(11, isr_np, PL_KERNEL);
-	idt_register(12, isr_ss, PL_KERNEL);
-	idt_register(13, isr_gp, PL_KERNEL);
-	idt_register(14, isr_pf, PL_KERNEL);
-	idt_register(16, isr_mf, PL_KERNEL);
-	idt_register(17, isr_ac, PL_KERNEL);
-	idt_register(18, isr_mc, PL_KERNEL);
-	idt_register(19, isr_xm, PL_KERNEL);
+	int i;
+	for (i = 0; i < 20; i++) {
+		idt_register(i, kernel_panic, PL_KERNEL);
+	}
 }
 
 bool in_panic = FALSE;
