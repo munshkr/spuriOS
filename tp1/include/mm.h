@@ -54,6 +54,7 @@ typedef struct str_mm_page {
 #define make_mm_entry_addr(addr, attr) (mm_page){(uint_32)(attr), (uint_32)(addr) >> 12}
 
 void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries);
+void* mm_mem_seek(char request_type);
 void* mm_mem_alloc();
 void* mm_mem_kalloc();
 void mm_mem_free(void* page);
@@ -69,5 +70,6 @@ void mm_dir_free(mm_page* d);
 void set_bit(int offset);
 void clear_bit(int position);
 bool get_bit(int position);
+void mm_print_map();
 
 #endif
