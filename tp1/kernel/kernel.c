@@ -14,17 +14,13 @@ extern void* _end;
 
 /* Entry-point del modo protegido luego de cargar los registros de
  * segmento y armar un stack */
-void kernel_init(void* mmap_addr, size_t mmap_entries) {
+void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	vga_init();
-	gdt_init();
-	
+	gdt_init();	
 	idt_init();
 	debug_init();
 
-	breakpoint();
-
-	// Raises #GP(40)
-	__asm __volatile("jmp $40,$0");
+	mm_init(mmap_addr, mmap_entries);
 
 	return;
 }

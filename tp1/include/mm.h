@@ -2,6 +2,7 @@
 #define __MM_H__
 
 #include <tipos.h>
+#include <mmap.h>
 
 #define MM_ATTR_P     0x001 // Present
 #define MM_ATTR_RW    0x002 // Read/Write
@@ -52,7 +53,7 @@ typedef struct str_mm_page {
 #define make_mm_entry(base, attr) (mm_page){(uint_32)(attr), (uint_32)(base)}
 #define make_mm_entry_addr(addr, attr) (mm_page){(uint_32)(attr), (uint_32)(addr) >> 12}
 
-void mm_init(void);
+void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries);
 void* mm_mem_alloc();
 void* mm_mem_kalloc();
 void mm_mem_free(void* page);

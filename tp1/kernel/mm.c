@@ -2,10 +2,15 @@
 #include <common.h>
 #include <i386.h>
 #include <debug.h>
+#include <vga.h>
 
 #define PAGE_SIZE 4096
 #define KERNEL_MEM_BASE 0x100000
+#define KERNEL_MEM_END 0x400000
 #define MM_KERN_MAP_LEN 96
+
+mmap_entry_t* mmap;
+size_t mmap_entries;
 
 // Mapa de bits de memoria del kernel
 char mm_kmap[MM_KERN_MAP_LEN];
@@ -77,6 +82,18 @@ void clear_bit(int position) {
 	mm_kmap[offset] = (mm_kmap[offset] & tmp_bit);
 }
 
-void mm_init(void) {
+void iterate_mmap(void (f)(mmap_entry_t* entry, void* result), void* args) {
+	size_t mmap_entry = 0;
+	for (mmap_entry = 0; mmap_entry < mmap_entries; mmap_entry++) {
+		f(&mmap[mmap_entry], args);
+	}
+}
+
+void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
+	debug_log("initializing memory management");
 	memset(&mm_kmap, 0, MM_KERN_MAP_LEN);
+
+	mmap = mmap_addr;
+	mmap_entries = mmap_entries_local;
+		
 }
