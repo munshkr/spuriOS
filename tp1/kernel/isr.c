@@ -3,13 +3,12 @@
 #include <vga.h>
 #include <debug.h>
 
-/* TODO Rewrite everything in ASM and integrate with interrup.asm */
+// TODO? Rewrite everything in ASM and integrate with interrup.asm
 
 isr_t interrupt_handlers[256] = {};
 
 static inline void send_EOI(uint_8 irq);
 
-// This gets called from our ASM interrupt handler stub
 void isr_handler(registers_t regs) {
 	kassert(interrupt_handlers[regs.int_no] != NULL);
 
@@ -17,7 +16,6 @@ void isr_handler(registers_t regs) {
 	handler(regs);
 }
 
-// This gets called from our ASM interrupt handler stub
 void irq_handler(registers_t regs)
 {
 	// Send an EOI (end of interrupt) signal to the PICs

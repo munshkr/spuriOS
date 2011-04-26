@@ -29,14 +29,14 @@ global idt_xm
 
 %macro ISR_NOERRCODE 1
 	cli
-	push 0		; Dummy error code
-	push %1
+	push byte 0		; Dummy error code
+	push byte %1
 	jmp isr_common
 %endmacro
 
 %macro ISR_ERRCODE 1
 	cli
-	push WITH_ERR_CODE(%1)
+	push byte %1
 	jmp isr_common
 %endmacro
 

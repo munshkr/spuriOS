@@ -7,21 +7,16 @@
 #include <idt.h>
 #include <common.h>
 
-#define ST_EAX(x) *(x + 7)
-#define ST_EBX(x) *(x + 4)
-#define ST_ECX(x) *(x + 6)
-#define ST_EDX(x) *(x + 5)
-#define ST_ESI(x) *(x + 1)
-#define ST_EDI(x) *(x + 0)
-#define ST_EBP(x) *(x + 2)
-#define ST_ESP(x) *(x + 3)
-
-#define ST_ERR_CODE(x) *(x + 8)
-
 #define SS_PL(x) (x & 3)
-
-#define EXP_NUMBER(x) (x & ~0x80000000)
-#define HAS_ERROR_CODE(x) (x & 0x80000000)
+#define HAS_CF(x) (x & 1)
+#define HAS_PF(x) (x & 4)
+#define HAS_AF(x) (x & 16)
+#define HAS_ZF(x) (x & 64)
+#define HAS_SF(x) (x & 128)
+#define HAS_TF(x) (x & 256)
+#define HAS_IF(x) (x & 512)
+#define HAS_DF(x) (x & 1024)
+#define HAS_OF(x) (x & 2048)
 
 const char* exp_name[] = {
 	"Divide Error",
@@ -44,62 +39,44 @@ const char* exp_name[] = {
 	"Alignment check"
 };
 
-void kernel_panic(registers_t regs) {
-	vga_printf("Kernel Panic\n");
-	hlt();
-}
-
 void debug_init(void) {
 	int i;
 	for (i = 0; i < 20; i++) {
-		idt_register(i, kernel_panic, PL_KERNEL);
+		idt_register(i, debug_kernelpanic, PL_KERNEL);
 	}
 }
 
 bool in_panic = FALSE;
-void debug_kernelpanic(uint_32 exp_number, const uint_32* expst) {
+void debug_kernelpanic(registers_t regs) {
 	/* No permite panics anidados */
 	if (in_panic) while(1) hlt();
 	in_panic = TRUE;
 
 	vga_clear();
-	vga_printf("\\c0CPanic caused by [%s] ", exp_name[EXP_NUMBER(exp_number)]);
+	vga_printf("\\c0CPanic caused by [%s] ", exp_name[regs.int_no]);
 
-	uint_32 cs;
-	uint_32* esp;
-	if (HAS_ERROR_CODE(exp_number)) {
-		cs = *(expst + 10);
-		vga_printf("\\c0Cwith error code %x (%d)\n", ST_ERR_CODE(expst), ST_ERR_CODE(expst));
-		show_cs_eip(cs, *(expst + 9));
-		show_eflags(*(expst + 11));
-
-		if (SS_PL(cs) != PL_KERNEL) {
-			esp = (uint_32*) *(expst + 12);
-		} else {
-			esp = (uint_32*) ST_ESP(expst);
-		}
-		show_stack(esp);
-		show_backtrace((uint_32*) ST_EBP(expst));
-
+	if (regs.u.err_code != 0) {
+		vga_printf("\\c0Cwith error code %x (%d)\n", regs.u.err_code, regs.u.err_code);
 	} else {
-		cs = *(expst + 9);
 		vga_printf("\\c0Cwith no error code\n");
-		show_cs_eip(cs, *(expst + 8));
-		show_eflags(*(expst + 10));
-		
-		if (SS_PL(cs) != PL_KERNEL) {
-			esp = (uint_32*) *(expst + 11);
-		} else {
-			esp = (uint_32*) ST_ESP(expst);
-		}
-		show_stack(esp);
-		show_backtrace((uint_32*) ST_EBP(expst));
 	}
+
+	show_cs_eip(regs.cs, regs.eip);
+	show_eflags(regs.eflags);
+
+	uint_32* esp;
+	if (SS_PL(regs.cs) != PL_KERNEL) {
+		esp = (uint_32*) regs.user_esp;
+	} else {
+		esp = (uint_32*) regs.esp;
+	}
+	show_stack(esp);
+	show_backtrace((uint_32*) regs.ebp);
 
 	vga_printf("\nRegisters\n\tEAX = %x (%d), EBX = %x (%d), ECX = %x (%d)"\
 		"\n\tEDX = %x (%d), ESI = %x (%d), EDI = %x (%d)\n",
-		ST_EAX(expst), ST_EAX(expst), ST_EBX(expst), ST_EBX(expst), ST_ECX(expst), ST_ECX(expst),
-		ST_EDX(expst), ST_EDX(expst), ST_ESI(expst), ST_ESI(expst), ST_EDI(expst), ST_EDI(expst));
+		regs.eax, regs.eax, regs.ebx, regs.ebx, regs.ecx, regs.ecx,
+		regs.edx, regs.edx, regs.esi, regs.esi, regs.edi, regs.edi);
 }
 
 #define BT_MAX_PARAMS 2
@@ -176,16 +153,16 @@ void show_cs_eip(uint_32 cs, uint_32 eip) {
 
 void show_eflags(uint_32 eflags) {
 	vga_printf("Flags are %s%s%s%s%s%s%s%s%s(%x)\n",
-		(eflags & 1    ? "CF " : "" ),
-		(eflags & 4    ? "PF " : "" ),
-		(eflags & 16   ? "AF " : "" ),
-		(eflags & 64   ? "ZF " : "" ),
-		(eflags & 128  ? "SF " : "" ),
-		(eflags & 256  ? "TF " : "" ),
-		(eflags & 512  ? "IF " : "" ),
-		(eflags & 1024 ? "DF " : "" ),
-		(eflags & 2048 ? "OF " : "" ),
-		eflags );
+		(HAS_CF(eflags) ? "CF " : "" ),
+		(HAS_PF(eflags) ? "PF " : "" ),
+		(HAS_AF(eflags) ? "AF " : "" ),
+		(HAS_ZF(eflags) ? "ZF " : "" ),
+		(HAS_SF(eflags) ? "SF " : "" ),
+		(HAS_TF(eflags) ? "TF " : "" ),
+		(HAS_IF(eflags) ? "IF " : "" ),
+		(HAS_DF(eflags) ? "DF " : "" ),
+		(HAS_OF(eflags) ? "OF " : "" ),
+		eflags);
 }
 
 void debug_log(const char* message) {
