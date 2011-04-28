@@ -1,9 +1,6 @@
 #include <pic.h>
 #include <i386.h>
 
-#define PIC1_PORT 0x20
-#define PIC2_PORT 0xA0
-
 void pic_reset(uint_8 addr_pic1, uint_8 addr_pic2) {
 	outb(PIC1_PORT+0, 0x11); /* IRQs activas x flanco, cascada, y ICW4 */
 	outb(PIC1_PORT+1, addr_pic1); /* Addr */

@@ -4,6 +4,11 @@
 #include <tipos.h>
 #include <i386.h>
 
+#define PIC1_PORT 0x20
+#define PIC2_PORT 0xA0
+
+#define PIC_EOI 0x20
+
 void pic_reset(uint_8 addr_pic1, uint_8 addr_pic2);
 void pic_enable();
 void pic_disable();

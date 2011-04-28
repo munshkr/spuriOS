@@ -1,6 +1,7 @@
 #include <isr.h>
 #include <i386.h>
 #include <vga.h>
+#include <pic.h>
 #include <debug.h>
 
 // TODO? Rewrite everything in ASM and integrate with interrup.asm
@@ -31,9 +32,9 @@ static inline void send_EOI(uint_8 irq)
 {
 	// If this interrupt involved the slave, send reset signal
 	if (irq >= 8) {
-		outb(0xA0, 0x20);
+		outb(PIC2_PORT, PIC_EOI);
 	}
 
 	// Send reset signal to master
-	outb(0x20, 0x20);
+	outb(PIC1_PORT, PIC_EOI);
 }
