@@ -40,4 +40,4 @@ tienen que agregarlo en su PATH:
 
 Chequeen que tengan en su PATH el comando `markdown2pdf` (es un wrapper de `pandoc` y `pdflatex`).
 
-**Más facil, corran `doc/install-pandoc.sh` para hacer todo esto...**
+**Más facil, corran `install-pandoc.sh` para hacer todo esto...**
