@@ -4,29 +4,6 @@
 
 section .text
 
-global idt_de
-global idt_db
-global idt_nmi
-global idt_bp
-global idt_of
-global idt_br
-global idt_ud
-global idt_nm
-global idt_df
-global idt_cso
-global idt_ts
-global idt_np
-global idt_ss
-global idt_gp
-global idt_pf
-global idt_mf
-global idt_ac
-global idt_mc
-global idt_xm
-
-
-%define WITH_ERR_CODE(x) (x + 0x80000000)
-
 %macro ISR_NOERRCODE 1
 	cli
 	push byte 0		; Dummy error code
@@ -50,6 +27,26 @@ irq%1:
 %endmacro
 
 
+global idt_de
+global idt_db
+global idt_nmi
+global idt_bp
+global idt_of
+global idt_br
+global idt_ud
+global idt_nm
+global idt_df
+global idt_cso
+global idt_ts
+global idt_np
+global idt_ss
+global idt_gp
+global idt_pf
+global idt_mf
+global idt_ac
+global idt_mc
+global idt_xm
+
 idt_de:  ISR_NOERRCODE  0
 idt_db:  ISR_NOERRCODE  1
 idt_nmi: ISR_NOERRCODE  2
@@ -70,8 +67,29 @@ idt_ac:  ISR_NOERRCODE 17
 idt_mc:  ISR_ERRCODE   18
 idt_xm:  ISR_NOERRCODE 19
 
-; TODO define IRQ handlers
-; ...
+
+; Duplicated in kernel/idt.c
+%define PIC1_START_IRQ 0x20
+%define PIC2_START_IRQ 0x28
+
+IRQ 0, (PIC1_START_IRQ + 0)
+IRQ 1, (PIC1_START_IRQ + 1)
+IRQ 2, (PIC1_START_IRQ + 2)
+IRQ 3, (PIC1_START_IRQ + 3)
+IRQ 4, (PIC1_START_IRQ + 4)
+IRQ 5, (PIC1_START_IRQ + 5)
+IRQ 6, (PIC1_START_IRQ + 6)
+IRQ 7, (PIC1_START_IRQ + 7)
+
+IRQ 8,  (PIC2_START_IRQ + 0)
+IRQ 9,  (PIC2_START_IRQ + 1)
+IRQ 10, (PIC2_START_IRQ + 2)
+IRQ 11, (PIC2_START_IRQ + 3)
+IRQ 12, (PIC2_START_IRQ + 4)
+IRQ 13, (PIC2_START_IRQ + 5)
+IRQ 14, (PIC2_START_IRQ + 6)
+IRQ 15, (PIC2_START_IRQ + 7)
+
 
 extern isr_handler, irq_handler
 

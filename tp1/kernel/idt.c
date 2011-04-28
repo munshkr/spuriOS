@@ -31,6 +31,23 @@ extern void (*idt_ac)(void);
 extern void (*idt_mc)(void);
 extern void (*idt_xm)(void);
 
+extern void (*irq0)(void);
+extern void (*irq1)(void);
+extern void (*irq2)(void);
+extern void (*irq3)(void);
+extern void (*irq4)(void);
+extern void (*irq5)(void);
+extern void (*irq6)(void);
+extern void (*irq7)(void);
+extern void (*irq8)(void);
+extern void (*irq9)(void);
+extern void (*irq10)(void);
+extern void (*irq11)(void);
+extern void (*irq12)(void);
+extern void (*irq13)(void);
+extern void (*irq14)(void);
+extern void (*irq15)(void);
+
 static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR_DPL2, IDT_ATTR_DPL3 };
 
 // Macro para crear una entrada de la IDT dando offset(32), selector(16) y attr(16).
@@ -82,6 +99,23 @@ void idt_init(void) {
 	idt_handlers[ISR_ALIGN]   = (void *) &idt_ac;
 	idt_handlers[ISR_MCHK]    = (void *) &idt_mc;
 	idt_handlers[ISR_SIMDERR] = (void *) &idt_xm;
+
+	idt_handlers[ISR_IRQ0]  = (void *) &irq0;
+	idt_handlers[ISR_IRQ1]  = (void *) &irq1;
+	idt_handlers[ISR_IRQ2]  = (void *) &irq2;
+	idt_handlers[ISR_IRQ3]  = (void *) &irq3;
+	idt_handlers[ISR_IRQ4]  = (void *) &irq4;
+	idt_handlers[ISR_IRQ5]  = (void *) &irq5;
+	idt_handlers[ISR_IRQ6]  = (void *) &irq6;
+	idt_handlers[ISR_IRQ7]  = (void *) &irq7;
+	idt_handlers[ISR_IRQ8]  = (void *) &irq8;
+	idt_handlers[ISR_IRQ9]  = (void *) &irq9;
+	idt_handlers[ISR_IRQ10]  = (void *) &irq10;
+	idt_handlers[ISR_IRQ11]  = (void *) &irq11;
+	idt_handlers[ISR_IRQ12]  = (void *) &irq12;
+	idt_handlers[ISR_IRQ13]  = (void *) &irq13;
+	idt_handlers[ISR_IRQ14]  = (void *) &irq14;
+	idt_handlers[ISR_IRQ15]  = (void *) &irq15;
 
 	// Initialize and remap IRQs in both PICs
 	pic_reset(PIC1_START_IRQ, PIC2_START_IRQ);
