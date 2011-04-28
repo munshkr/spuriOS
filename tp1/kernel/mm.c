@@ -182,9 +182,11 @@ inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) 
 	// Variable q almacena el total de memoria del sistema (desde HI-MEM)
 	int mem_length = 0;
 
-	uint_32 last_valid_entry = last_valid_entry(mmap_addr, mmap_entries_local);
+	uint_32 i;
+	uint_32 last_valid_entry = mm_mmap_last_valid_entry(mmap_addr, mmap_entries_local);
 
 	// Recorro el mmap para calcular el total de memoria (desde HI-MEM)
+	mmap_entry_t* entry;
 	for (entry = mmap_addr, i = 0; i <= last_valid_entry; ++i, ++entry) {
 		if (entry->addr >= HIMEM_BEGIN) {
 			mem_length += entry->len;
