@@ -18,6 +18,7 @@ DIRBOOT=boot/
 DIRKERN=kernel/
 DIROUT=bin/
 DIRTMP=/tmp/
+DIRDOC=doc/
 
 # Boot loader
 BIN_BOOT=$(DIRBOOT)floppyboot.bin
@@ -43,6 +44,10 @@ OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
 DISK_LABEL="KERNEL  PSO"
 IMG_BASE=$(DIROUT)base.img
 IMG_FLOPPY=$(DIROUT)floppy.img
+
+# Documents
+DOC_FILES=$(DIRDOC)informe.pdf
+
 
 .PHONY: all clean
 
@@ -102,6 +107,12 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	dd if=$< of=$@ bs=1 count=450 seek=62 skip=62 conv=notrunc 2>/dev/null
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
 	for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
+
+# Documentation
+doc: $(DOC_FILES)
+
+doc/%.pdf: doc/%.md
+	@markdown2pdf -o $@ $<
 
 # Otros
 clean:

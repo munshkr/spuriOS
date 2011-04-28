@@ -22,6 +22,8 @@ void show_backtrace(uint_32* ebp);
 #define __mac_str(s) __mac_xstr(s)
 #define kassert(EXP) { if (!(EXP)) { cli(); vga_printf("\n\\c4cAssertion failed at " \
   __mac_str(__FILE__)":"__mac_str(__LINE__)": "#EXP); hlt(); while(1); } }
+#define kassert_verbose(EXP, msg) { if (!(EXP)) { cli(); vga_printf("\n\\c4cAssertion failed at " \
+  __mac_str(__FILE__)":"__mac_str(__LINE__)": "#EXP"\n%s\n", msg); hlt(); while(1); } }
 #else
 #define kassert(EXP) {}
 #endif

@@ -4,7 +4,6 @@
 #include "tipos.h"
 
 #define MMAP_MEMORY_AVAILABLE 1
-#define MMAP_MEMORY_RESERVED  2
 
 typedef struct mmap_entry {
     uint_64 addr;
