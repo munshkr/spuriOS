@@ -9,8 +9,12 @@
 #define KERNEL_MEM_END 0x400000
 #define MM_KERN_MAP_LEN 96
 
+#define WITHOUT_ATTRS(x) ((uint_32)x & ~0xFFF)
+
 mmap_entry_t* mmap;
 size_t mmap_entries;
+
+mm_page* kernel_pagetable;
 
 // Mapa de bits de memoria del kernel
 char mm_kmap[MM_KERN_MAP_LEN];
@@ -41,14 +45,33 @@ void mm_mem_free(void* page) {
 	clear_bit(posicion);
 }
 
+// FIXME Ask about the prototype return type (should not be a pointer?)
 mm_page* mm_dir_new(void) {
-	return NULL;
+	mm_page* cr3 = (mm_page*) mm_mem_kalloc();
+//	cr3.attr = 0;
+
+	cr3[0].base = (uint_32) kernel_pagetable >> 12;
+	cr3[0].attr = MM_ATTR_US_S | MM_ATTR_RW | MM_ATTR_P; 
+
+	return cr3;
 }
 
-void mm_dir_free(mm_page* d) {
+void mm_dir_free(mm_page* directory) {
+	directory = (mm_page*) WITHOUT_ATTRS(directory);
+	uint_32 pde, pte;
+	for (pde = 1; pde < 1024; pde++) {
+		if (directory[pde].attr & MM_ATTR_P) {
+			mm_page* table = (mm_page*)(directory[pde].base << 12);
+			for (pte = 0; pte < 1024; pte++) {
+				if (table[pte].attr & MM_ATTR_P) {
+					mm_mem_free((void*)(table[pte].base << 12));
+				}
+			}
+			mm_mem_free((void*) table);
+		}
+	}
+	mm_mem_free((void*) directory);	
 }
-
-// --
 
 bool get_bit(int position) {
 	int offset = position / 8;
@@ -89,11 +112,24 @@ void iterate_mmap(void (f)(mmap_entry_t* entry, void* result), void* args) {
 	}
 }
 
+inline void mm_init_kernel_pagetable() {
+	kernel_pagetable = (mm_page*) mm_mem_kalloc();
+	kassert(kernel_pagetable->attr == 0);
+
+	uint_32 pte;
+	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing 
+	for (pte = 1; pte < 1024; pte++) {
+		kernel_pagetable[pte].base = pte;
+		kernel_pagetable[pte].attr = MM_ATTR_P | MM_ATTR_RW | MM_ATTR_US_S;
+	}
+}
+
 void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	debug_log("initializing memory management");
 	memset(&mm_kmap, 0, MM_KERN_MAP_LEN);
 
 	mmap = mmap_addr;
 	mmap_entries = mmap_entries_local;
-		
+
+	mm_init_kernel_pagetable();	
 }

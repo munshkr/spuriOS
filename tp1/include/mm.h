@@ -11,7 +11,7 @@
 #define MM_ATTR_US    0x004 // User/Supervisor
 #define MM_ATTR_US_U  0x004 //
 #define MM_ATTR_US_S  0x000 //
-#define MM_ATTR_WT    0x008 // Wrtie-Through
+#define MM_ATTR_WT    0x008 // Write-Through
 #define MM_ATTR_CD    0x010 // Cache Disabled
 #define MM_ATTR_A     0x020 // Accessed
 #define MM_ATTR_D     0x040 // Dirty (for Pages)
