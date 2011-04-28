@@ -114,7 +114,6 @@ bool get_bit(int position) {
 
 void set_bit(int position) {
 	int offset = position / 8;
-	vga_printf("Off: %d - Len: %d\n", offset, mm_bitmap_byte_len);
 	kassert(offset <= mm_bitmap_byte_len);
 
 	char bit = position - offset * 8;
@@ -178,44 +177,35 @@ inline uint_32 mm_mmap_last_valid_entry(mmap_entry_t* mmap_addr,
 	return last_valid_entry;
 }
 
-inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
-	// Variable q almacena el total de memoria del sistema (desde HI-MEM)
-	int mem_length = 0;
-
-	uint_32 i;
-	uint_32 last_valid_entry = mm_mmap_last_valid_entry(mmap_addr, mmap_entries_local);
-
-	// Recorro el mmap para calcular el total de memoria (desde HI-MEM)
+inline uint_32 mm_mem_length(mmap_entry_t* mmap_addr, uint_32 last_valid_entry) {
+	uint_32 i, mem_length = 0;
 	mmap_entry_t* entry;
 	for (entry = mmap_addr, i = 0; i <= last_valid_entry; ++i, ++entry) {
 		if (entry->addr >= HIMEM_BEGIN) {
 			mem_length += entry->len;
 		}
 	}
+	return mem_length;
+}
 
-	// Seteo todo el mapa en 0
-	int bitmap_byte_len = mem_length / PAGE_SIZE / 8;
-	memset(mm_bitmap, 0, bitmap_byte_len);
-
-	// Reservo las páginas de memoria de kernel que usé para el propio mapa
+inline void mm_reserve_bitmap_pages(uint_32 bitmap_byte_len) {
+	uint_32 i;
 	for (i = 0 ; i < (bitmap_byte_len / PAGE_SIZE) ; i++) {
 		set_bit(i);
 	}
+
 	if (bitmap_byte_len - i * PAGE_SIZE > 0) {
 		set_bit(i);
 	}
+}
 
-	// Guardo en la variable global, la cantidad de bytes que ocupa el mapa
-	mm_bitmap_byte_len = bitmap_byte_len;
+inline void mm_mark_used(mmap_entry_t* mmap_addr, uint_32 last_valid_entry) {
+	uint_32 i, j, position, length;
+	mmap_entry_t* entry;
 
-	// Recorro nuevamente el mapa y si encuentro memoria no disponible la marco en el bitmap
-	int j;
-	int position;
-	int length;
 	for (entry = mmap_addr, i = 0; i <= last_valid_entry; ++i, ++entry) {
 		if (entry->addr >= HIMEM_BEGIN) {
 			if (entry->type != MMAP_MEMORY_AVAILABLE) {
-				vga_printf("Entry addr: %x\n", (unsigned int)entry->addr);
 				position = (entry->addr - HIMEM_BEGIN) / PAGE_SIZE;
 				length = entry->len / PAGE_SIZE;
 				if (entry->len - length * PAGE_SIZE > 0) {
@@ -229,14 +219,25 @@ inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) 
 	}
 }
 
+inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
+	uint_32 last_valid_entry = mm_mmap_last_valid_entry(mmap_addr, mmap_entries_local);
+	uint_32 mem_length = mm_mem_length(mmap_addr, last_valid_entry);
+
+	mm_bitmap_byte_len = mem_length / PAGE_SIZE / 8;
+	memset(mm_bitmap, 0, mm_bitmap_byte_len);
+
+	mm_reserve_bitmap_pages(mm_bitmap_byte_len);
+	mm_mark_used(mmap_addr, last_valid_entry);
+}
+
 void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	debug_log("initializing memory management");
 
 	mmap = mmap_addr;
 	mmap_entries = mmap_entries_local;
 
-	mm_init_kernel_pagetable();	
-
 	mm_bitmap = (char*)HIMEM_BEGIN;
+	mm_setup_bitmap(mmap_addr, mmap_entries_local);
 
+	mm_init_kernel_pagetable();	
 }

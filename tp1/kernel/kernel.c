@@ -12,6 +12,20 @@
 
 extern void* _end;
 
+inline void enable_paging() {
+	mm_page* kernel_page_dir = mm_dir_new();
+	lcr3((uint_32) kernel_page_dir);	
+
+	uint_32 cr0 = rcr0();
+	cr0 |= CR0_PG;
+	lcr0(cr0);
+}
+
+inline void go_idle() {
+	debug_log("the kernel is going idle");
+	while (1) hlt();
+}
+
 /* Entry-point del modo protegido luego de cargar los registros de
  * segmento y armar un stack */
 void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
@@ -20,35 +34,10 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	idt_init();
 	debug_init();
 
-	mmap_entry_t* entry = (mmap_entry_t *) mmap_addr;
-	int i;
-	for (i = 0; i < mmap_entries; ++i, ++entry) {
-		vga_printf("Entry %u\n", i);
-		vga_printf("\t.addr: %x\n", (uint_32) entry->addr);
-		vga_printf("\t.len: %u\n", (uint_32) entry->len);
-		vga_printf("\t.type: %d", entry->type);
-		if (entry->type == MMAP_MEMORY_AVAILABLE) {
-			vga_printf("available\n");
-		} else {
-			vga_printf("reserved\n");
-		}
-	}
-
-	breakpoint();
-
 	mm_init(mmap_addr, mmap_entries);
+	enable_paging();
 
-	void* page = mm_mem_kalloc();
-	vga_printf("Pagina recibida: \\c0F%x\n", (unsigned int)page);
-	mm_mem_kalloc();
-	mm_mem_free(page);
-	page = mm_mem_kalloc();
-	vga_printf("Pagina recibida: \\c0F%x\n", (unsigned int)page);
-	page = mm_mem_alloc();
-	vga_printf("Pagina recibida: \\c0F%x\n", (unsigned int)page);
-
-	vga_clear();
-	mm_print_map();
+	go_idle();
 
 	return;
 }
