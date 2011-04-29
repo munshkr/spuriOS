@@ -4,6 +4,9 @@
 #include <tss.h>
 #include <tipos.h>
 #include <syscalls.h>
+#include <vga.h>
+#include <debug.h>
+#include <common.h>
 
 #ifdef __KERNEL__
 
