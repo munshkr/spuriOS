@@ -96,27 +96,7 @@ extern isr_handler, irq_handler
 isr_common:
 	pushad				; Push edi, esi, ebp, esp, ebx, edx, ecx, eax
 
-	mov ax, ds
-	push eax
-
-	mov ax, 0x10		; Load kernel data segment descriptor in all selectors
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
 	call isr_handler
-	;
-	; TODO look for handler in array and call function
-	; ...
-	;mov esi, [
-	;mov eax, [handlers + esi
-
-	pop eax				; Reload the original data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
 
 	popad
 	add esp, 8			; Cleans up the pushed error code and pushed ISR number
@@ -127,25 +107,7 @@ isr_common:
 irq_common:
 	pushad
 
-	mov ax, ds
-	push eax
-
-	mov ax, 0x10
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
 	call irq_handler
-	;
-	; TODO send EOI, and call function from handler's array
-	; ...
-
-	pop eax
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
 
 	popad
 	add esp, 8

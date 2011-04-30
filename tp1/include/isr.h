@@ -5,7 +5,6 @@
 
 typedef struct registers
 {
-	uint_32 ds;					// Data segment selector
 	uint_32 edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pushad
 	uint_32 int_no;				// Interrupt number
 	union {
