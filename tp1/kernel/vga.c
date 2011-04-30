@@ -149,6 +149,14 @@ void vga_reset_pos(void) {
 	update_cursor();
 }
 
+int vga_get_x() {
+	return vga_x;
+}
+
+int vga_get_y() {
+	return vga_y;
+}
+
 
 static void putchar(const char c, const char raw) {
 	if (c == '\n' && !raw) {

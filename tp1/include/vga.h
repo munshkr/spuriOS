@@ -56,7 +56,9 @@ void vga_reset_colors(void);
 
 /* Set cursor location */
 void vga_set_x(uint_16 x);
+int vga_get_x(void);
 void vga_set_y(uint_16 y);
+int vga_get_y(void);
 void vga_set_pos(uint_16 x, uint_16 y);
 void vga_reset_pos(void);
 
