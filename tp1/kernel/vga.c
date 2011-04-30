@@ -129,12 +129,12 @@ void vga_reset_colors(void) {
 }
 
 void vga_set_x(uint_16 x) {
-	kassert(x < vga_rows);
+	kassert(x < vga_cols);
 	vga_x = x;
 }
 
 void vga_set_y(uint_16 y) {
-	kassert(y < vga_cols);
+	kassert(y < vga_rows);
 	vga_y = y;
 }
 
