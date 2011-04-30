@@ -4,15 +4,14 @@
 #include <idt.h>
 #include <pic.h>
 #include <vga.h>
-
+#include <debug.h>
 
 uint_32 tick = 0;
-
-static void int_timer(registers_t regs);
-static inline void draw_clock();
+const char clock_anim[4] = {'-', '\\', '|', '/'};
 
 void timer_init(uint_32 frequency) {
-	idt_register(ISR_IRQ0, int_timer, PL_KERNEL);
+	// Handler *must* be registered
+	kassert(interrupt_handlers[0x20] != NULL);
 
 	// The value we send to the PIT is the value to divide it's input clock
 	// (1193180 Hz) by, to get our required frequency. Important to note is
@@ -30,15 +29,7 @@ void timer_init(uint_32 frequency) {
 	pic_clear_irq_mask(0);
 }
 
-static void int_timer(registers_t regs) {
-	tick++;
-	draw_clock();
-}
-
-
-const char clock_anim[4] = {'-', '\\', '|', '/'};
-
-static inline void draw_clock() {
+void timer_draw_clock() {
 	int old_x = vga_get_x();
 	int old_y = vga_get_y();
 

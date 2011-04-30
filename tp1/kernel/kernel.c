@@ -37,6 +37,9 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	mm_init(mmap_addr, mmap_entries);
 	enable_paging();
 
+	loader_init();
+	sti();
+
 	go_idle();
 
 	return;
