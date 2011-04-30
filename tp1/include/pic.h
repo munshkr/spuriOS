@@ -12,6 +12,8 @@
 void pic_reset(uint_8 addr_pic1, uint_8 addr_pic2);
 void pic_enable();
 void pic_disable();
+void pic_set_irq_mask(uint_8 irq);
+void pic_clear_irq_mask(uint_8 irq);
 
 /* Prototipos Inline */
 

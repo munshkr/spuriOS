@@ -27,7 +27,7 @@ BIN_BOOT=$(DIRBOOT)floppyboot.bin
 OBJS_KERN=kernel/kinit.o kernel/common.o kernel/a20.o kernel/mmap.o \
   kernel/kernel.o \
   kernel/gdt.o kernel/idt.o \
-  kernel/interrup.o kernel/isr.o kernel/pic.o \
+  kernel/interrup.o kernel/isr.o kernel/pic.o kernel/timer.o \
   kernel/vga.o kernel/sched.o \
   kernel/mm.o kernel/debug.o kernel/loader.o kernel/tasks.o \
   kernel/syscalls.o kernel/sem.o
