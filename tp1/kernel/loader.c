@@ -14,6 +14,7 @@ const char PSO_SIGNATURE[4] = "PSO";
 static void timer_handler(registers_t* regs);
 
 #define FREE_PCB_PID 0xFFFFFFFF
+#define DEFAULT_EFLAGS 0x2
 
 pcb_t processes[MAX_PID];
 pid cur_pid;
@@ -69,22 +70,54 @@ pid loader_load(pso_file* f, int pl) {
 			f->signature[2] == PSO_SIGNATURE[2] &&
 			f->signature[3] == PSO_SIGNATURE[3]);
 
-	//print_pso_file(f);
+	print_pso_file(f);
 
 	int pid = get_new_pid();
+
 	processes[pid].id = pid;
-	processes[pid].arch_state.eip = (uint_32) f->_main;
 
-	mm_page* new_pdt = mm_dir_new();
+	arch_state_t* state = &processes[pid].arch_state;
+	state->eax = state->ebx = state->ecx = state->edx = state->esi = state->edi = 0;
+	state->eflags = DEFAULT_EFLAGS;
 
-	// Buscar frames para el código de la nueva tarea y la pila.
-	// ...
-	// Copiar código de la tarea a los frames encontrados.
-	// ...
+	if (pl == PL_USER) {
+		state->code_segment = SS_U_CODE;
+		state->data_segment = SS_U_DATA;
+	} else if (pl == PL_KERNEL) {
+		state->code_segment = SS_K_CODE;
+		state->data_segment = SS_K_DATA;
+	}
 
-	processes[pid].arch_state.cr3 = (uint_32) new_pdt;
+	state->eip = (uint_32) f->_main;
 
-	sched_load(pid);
+	// FIXME mm_dir_new() causes a GP fault!!
+	//mm_page* new_pdt = mm_dir_new();
+	//state->cr3 = (uint_32) new_pdt;
+
+	// Request new frames for code/data
+	uint_32 total_pages = (f->mem_end - f->mem_start) / 4;
+	if ((f->mem_end - f->mem_start) % 4) total_pages++;
+
+	int i;
+	for (i = 0; i < total_pages; ++i) {
+		//mm_page* page = mm_mem_alloc();
+		// Asignar `page` a la tabla de paginas y directorio
+		// correspondientes en new_pdt;
+		// ...
+
+		// Si corresponde, copiar el codigo de pso_file
+		// hasta donde marca mem_end_disk
+		// ...
+
+		// Si nos pasamos de mem_end_disk, inicializar
+		// la memoria con 0.
+		// ...
+	}
+
+	// TODO New stack
+	//state->esp = state->ebp = ...
+
+	//sched_load(pid);
 
 	return pid;
 }
@@ -160,7 +193,7 @@ void loader_switchto(pid to_id, registers_t* regs) {
 			pcb_cur->privilege_level != pcb_dest->privilege_level;
 
 		restore_arch_state_from(pcb_dest, regs, needs_segment_change);
-	
+
 		cur_pid = to_id;
 	}
 }
