@@ -13,7 +13,20 @@
 typedef struct str_task {
 	int next, prev;
 	// Informaci'on
+	int pid;
+	uint_32 eax;
+	uint_32 ebx;
+	uint_32 ecx;
+	uint_32 edx;
+	uint_32 esi;
+	uint_32 edi;
+	uint_32 esp;
+	uint_32 ebp;
+	uint_32 eflags;
+	uint_32 eip;
+	uint_32 cr3;
 } task;
+
 
 extern task task_table[];
 extern uint_32 cur_pid;
