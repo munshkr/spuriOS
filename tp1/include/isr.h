@@ -15,7 +15,7 @@ typedef struct registers
 	uint_32 user_esp, user_ss; 	// *only available on privilege level change*
 } __attribute__((__packed__)) registers_t;
 
-typedef void (*isr_t)(registers_t);
+typedef void (*isr_t)(registers_t*);
 
 extern isr_t interrupt_handlers[];
 

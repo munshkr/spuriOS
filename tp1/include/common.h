@@ -6,6 +6,16 @@
 #define PL_KERNEL 0
 #define PL_USER 3
 
+#define SS_PL(x) (x & 3)
+
+#define SS_K_CODE 0x8
+#define SS_K_DATA 0x10
+#define SS_U_CODE 0x18
+#define SS_U_DATA 0x20
+#define SS_TSS 0x28
+
+#define IDLE_PID 0
+
 void memcpy(void* src, void* dst, size_t size);
 void memset(void* addr, int value, size_t size);
 

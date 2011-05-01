@@ -14,7 +14,7 @@ void isr_handler(registers_t regs) {
 	kassert(interrupt_handlers[regs.int_no] != NULL);
 
 	isr_t handler = interrupt_handlers[regs.int_no];
-	handler(regs);
+	handler(&regs);
 }
 
 void irq_handler(registers_t regs)
@@ -25,7 +25,7 @@ void irq_handler(registers_t regs)
 	kassert(interrupt_handlers[regs.int_no] != NULL);
 
 	isr_t handler = interrupt_handlers[regs.int_no];
-	handler(regs);
+	handler(&regs);
 }
 
 static inline void send_EOI(uint_8 irq)

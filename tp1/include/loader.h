@@ -4,32 +4,27 @@
 #include <pso_file.h>
 #include <tss.h>
 #include <syscalls.h>
+#include <isr.h>
 
 #define PID_IDLE_TASK 0
 #define MAX_PID 32
 
 #ifdef __KERNEL__
 
-typedef struct str_task {
-	int next, prev;
-	// Informaci'on
-	int pid;
-	uint_32 eax;
-	uint_32 ebx;
-	uint_32 ecx;
-	uint_32 edx;
-	uint_32 esi;
-	uint_32 edi;
-	uint_32 esp;
-	uint_32 ebp;
-	uint_32 eflags;
-	uint_32 eip;
+typedef struct str_arch_state {
+	uint_32 eax, ebx, ecx, edx, esi, edi, ebp, esp, eflags, eip;
 	uint_32 cr3;
-} task;
+	uint_16 code_segment, data_segment;
+} arch_state_t;
 
+typedef struct str_pcb {
+	pid id;
+	uint_32 privilege_level;	
+	arch_state_t arch_state;
+} pcb_t;
 
-extern task task_table[];
-extern uint_32 cur_pid;
+extern pcb_t processes[];
+extern pid cur_pid;
 
 void loader_init(void);
 pid loader_load(pso_file* f, int pl);
@@ -39,7 +34,7 @@ void loader_unqueue(int* cola);
 
 void loader_exit(void);
 
-void loader_switchto(pid pd);
+void loader_switchto(pid pd, registers_t* regs);
 
 #endif
 

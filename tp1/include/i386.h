@@ -50,7 +50,19 @@ LS_INLINE void breakpoint(void);
 
 LS_INLINE void lgdt(void *p);
 
+LS_INLINE uint_32 esp(void);
+
+LS_INLINE void lds(uint_16 sel);
+LS_INLINE void les(uint_16 sel);
+LS_INLINE void lss(uint_16 sel);
+
 /*** Implementaciones Inline ***/
+
+LS_INLINE uint_32 esp(void) {
+	uint_32 val;
+	__asm __volatile("movl %%esp,%0" : "=r" (val));
+	return val;
+}
 
 /* out** */
 LS_INLINE void outb(int port, uint_8 data) {
@@ -240,6 +252,18 @@ LS_INLINE void hlt(void) {
 
 LS_INLINE void breakpoint(void) {
 	__asm __volatile("xchg %%bx, %%bx" : :);
+}
+
+LS_INLINE void lds(uint_16 sel) {
+	__asm __volatile("mov %0, %%ds" : : "r" (sel));
+}
+
+LS_INLINE void les(uint_16 sel) {
+	__asm __volatile("mov %0, %%es" : : "r" (sel));
+}
+
+LS_INLINE void lss(uint_16 sel) {
+	__asm __volatile("mov %0, %%ss" : : "r" (sel));
 }
 
 #endif

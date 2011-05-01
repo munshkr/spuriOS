@@ -7,7 +7,6 @@
 #include <idt.h>
 #include <common.h>
 
-#define SS_PL(x) (x & 3)
 #define HAS_CF(x) (x & 1)
 #define HAS_PF(x) (x & 4)
 #define HAS_AF(x) (x & 16)
@@ -47,36 +46,36 @@ void debug_init(void) {
 }
 
 bool in_panic = FALSE;
-void debug_kernelpanic(registers_t regs) {
+void debug_kernelpanic(registers_t* regs) {
 	/* No permite panics anidados */
 	if (in_panic) while(1) hlt();
 	in_panic = TRUE;
 
 	vga_clear();
-	vga_printf("\\c0CPanic caused by [%s] ", exp_name[regs.int_no]);
+	vga_printf("\\c0CPanic caused by [%s] ", exp_name[regs->int_no]);
 
-	if (regs.u.err_code != 0) {
-		vga_printf("\\c0Cwith error code %x (%d)\n", regs.u.err_code, regs.u.err_code);
+	if (regs->u.err_code != 0) {
+		vga_printf("\\c0Cwith error code %x (%d)\n", regs->u.err_code, regs->u.err_code);
 	} else {
 		vga_printf("\\c0Cwith no error code\n");
 	}
 
-	show_cs_eip(regs.cs, regs.eip);
-	show_eflags(regs.eflags);
+	show_cs_eip(regs->cs, regs->eip);
+	show_eflags(regs->eflags);
 
 	uint_32* esp;
-	if (SS_PL(regs.cs) != PL_KERNEL) {
-		esp = (uint_32*) regs.user_esp;
+	if (SS_PL(regs->cs) != PL_KERNEL) {
+		esp = (uint_32*) regs->user_esp;
 	} else {
-		esp = (uint_32*) regs.esp;
+		esp = (uint_32*) regs->esp;
 	}
 	show_stack(esp);
-	show_backtrace((uint_32*) regs.ebp);
+	show_backtrace((uint_32*) regs->ebp);
 
 	vga_printf("\nRegisters\n\tEAX = %x (%d), EBX = %x (%d), ECX = %x (%d)"\
 		"\n\tEDX = %x (%d), ESI = %x (%d), EDI = %x (%d)\n",
-		regs.eax, regs.eax, regs.ebx, regs.ebx, regs.ecx, regs.ecx,
-		regs.edx, regs.edx, regs.esi, regs.esi, regs.edi, regs.edi);
+		regs->eax, regs->eax, regs->ebx, regs->ebx, regs->ecx, regs->ecx,
+		regs->edx, regs->edx, regs->esi, regs->esi, regs->edi, regs->edi);
 }
 
 #define BT_MAX_PARAMS 2

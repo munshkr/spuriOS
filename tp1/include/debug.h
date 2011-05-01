@@ -5,7 +5,7 @@
 
 void debug_init(void);
 
-void debug_kernelpanic(registers_t regs);
+void debug_kernelpanic(registers_t* regs);
 
 void debug_log(const char* message);
 
