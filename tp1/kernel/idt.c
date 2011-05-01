@@ -65,9 +65,6 @@ static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR
 #define PIC1_START_IRQ 0x20
 #define PIC2_START_IRQ 0x28
 
-#define SS_K_CODE 0x8
-#define SS_U_CODE 0x18
-
 idt_entry idt[IDT_ENTRIES] = {};
 
 idt_descriptor IDT_DESC = {sizeof(idt)-1, (uint_32)&idt};

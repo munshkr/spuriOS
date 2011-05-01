@@ -9,6 +9,7 @@
 #include <loader.h>
 #include <syscalls.h>
 #include <i386.h>
+#include <common.h>
 
 extern void* _end;
 
@@ -23,6 +24,14 @@ inline void enable_paging() {
 
 inline void go_idle() {
 	debug_log("the kernel is going idle");
+
+	/* This is all the information in the TSS, needed
+	 * if an interrupt or exception occurs and a stack
+	 * change needs to be performed */
+	the_tss.ss0 = SS_K_DATA;
+	the_tss.esp0 = esp(); 
+
+	sti();	
 	while (1) hlt();
 }
 
@@ -38,7 +47,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	enable_paging();
 
 	loader_init();
-	sti();
+	sched_init();
 
 	go_idle();
 

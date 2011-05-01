@@ -5,14 +5,12 @@
 section .text
 
 %macro ISR_NOERRCODE 1
-	cli
 	push byte 0		; Dummy error code
 	push byte %1
 	jmp isr_common
 %endmacro
 
 %macro ISR_ERRCODE 1
-	cli
 	push byte %1
 	jmp isr_common
 %endmacro
@@ -20,7 +18,6 @@ section .text
 %macro IRQ 2
 global irq%1
 irq%1:
-	cli
 	push byte %1
 	push byte %2
 	jmp irq_common
@@ -100,7 +97,6 @@ isr_common:
 
 	popad
 	add esp, 8			; Cleans up the pushed error code and pushed ISR number
-	sti
 	iret
 
 
@@ -111,7 +107,6 @@ irq_common:
 
 	popad
 	add esp, 8
-	sti
 	iret
 
 

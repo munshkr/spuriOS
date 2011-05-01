@@ -2,6 +2,7 @@
 #define __GDT_H__
 
 #include <tipos.h>
+#include <tss.h>
 
 typedef struct str_gdt_descriptor {
 	unsigned short gdt_length;
@@ -29,6 +30,8 @@ typedef union str_gdt_entry {
 		unsigned int vl0, vl1;
 	} vl;
 } __attribute__((__packed__, aligned (8))) gdt_entry;
+
+extern tss the_tss;
 
 /** Tabla GDT **/
 extern gdt_entry gdt[];
