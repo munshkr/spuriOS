@@ -50,7 +50,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_init();
 	sched_init();
 
-	go_idle();
+	//loader_load(&task_task1_pso, PL_KERNEL);
 
+	go_idle();
 	return;
 }

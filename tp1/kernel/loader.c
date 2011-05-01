@@ -7,11 +7,9 @@
 #include <gdt.h>
 #include <sched.h>
 #include <vga.h>
+#include <mm.h>
 
-#define PSO_SIGNATURE_0 0x50
-#define PSO_SIGNATURE_1 0x53
-#define PSO_SIGNATURE_2 0x4F
-#define PSO_SIGNATURE_3 0x00
+const char PSO_SIGNATURE[4] = "PSO";
 
 static void timer_handler(registers_t* regs);
 
@@ -45,14 +43,50 @@ void loader_init(void) {
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
 }
 
-pid loader_load(pso_file* f, int pl) {
-	if (f->signature[0] != PSO_SIGNATURE_0 || f->signature[1] != PSO_SIGNATURE_1 || f->signature[2] != PSO_SIGNATURE_2 || f->signature[3] != PSO_SIGNATURE_3) {
-		vga_printf("\\c0CWrong file signature.\n");
-	} else {
-		vga_printf("Task:\n\tmem_start: %x\n\tmem_end_disk: %x\n\tmem_end: %x\n\t_main: %x\n\tdata: %x\n", (unsigned int)f->mem_start, (unsigned int)f->mem_end_disk, (unsigned int)f->mem_end, (unsigned int)f->_main, (unsigned int)f->data);
-	}
-	return 0;
+static inline void print_pso_file(pso_file* f) {
+	vga_printf("Task:\n");
+	vga_printf("\tmem_start: %x\n", f->mem_start);
+	vga_printf("\tmem_end_disk: %x\n", f->mem_end_disk);
+	vga_printf("\tmem_end: %x\n", f->mem_end);
+	vga_printf("\t_main: %x\n", (unsigned int) f->_main);
+	vga_printf("\tdata: %x\n", (unsigned int) f->data);
+}
 
+static inline int get_new_pid() {
+	int pid;
+	for (pid = 0; pid < MAX_PID; pid++) {
+		if (processes[pid].id == FREE_PCB_PID) break;
+	}
+	// No more free PIDs! (consider reducing load or enlarging MAX_PID...)
+	kassert(pid < MAX_PID);
+	return pid;
+}
+
+pid loader_load(pso_file* f, int pl) {
+	// Verify file signature
+	kassert(f->signature[0] == PSO_SIGNATURE[0] &&
+			f->signature[1] == PSO_SIGNATURE[1] &&
+			f->signature[2] == PSO_SIGNATURE[2] &&
+			f->signature[3] == PSO_SIGNATURE[3]);
+
+	//print_pso_file(f);
+
+	int pid = get_new_pid();
+	processes[pid].id = pid;
+	processes[pid].arch_state.eip = (uint_32) f->_main;
+
+	mm_page* new_pdt = mm_dir_new();
+
+	// Buscar frames para el código de la nueva tarea y la pila.
+	// ...
+	// Copiar código de la tarea a los frames encontrados.
+	// ...
+
+	processes[pid].arch_state.cr3 = (uint_32) new_pdt;
+
+	sched_load(pid);
+
+	return pid;
 }
 
 void loader_enqueue(int* cola) {
@@ -141,3 +175,4 @@ static void timer_handler(registers_t* regs) {
 		loader_switchto(next_process, regs);
 	}
 }
+
