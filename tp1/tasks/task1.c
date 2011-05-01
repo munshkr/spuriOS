@@ -1,3 +1,5 @@
+int data[10];
+
 int main(void) {
 	while (1);
 	// void* p = palloc();
