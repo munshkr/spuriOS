@@ -11,6 +11,7 @@
 #include <i386.h>
 
 extern void* _end;
+extern pso_file task_task1_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
