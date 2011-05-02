@@ -2,6 +2,7 @@
 #define __COMMON_H__
 
 #define ABS(n)  (n > 0 ? n : -n)
+#define MIN(x, y)  (x > y ? y : x)
 
 #define PL_KERNEL 0
 #define PL_USER 3
@@ -15,6 +16,10 @@
 #define SS_TSS 0x28
 
 #define IDLE_PID 0
+
+#define TASK_DEFAULT_EFLAGS 0x202	// IF flag set
+#define TASK_STACK_ADDRESS 0xffbff000
+#define TASK_STACK_TOP_ADDRESS (TASK_STACK_ADDRESS + 0xfff)
 
 void memcpy(void* src, void* dst, size_t size);
 void memset(void* addr, int value, size_t size);

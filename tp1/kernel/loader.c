@@ -14,7 +14,7 @@ const char PSO_SIGNATURE[4] = "PSO";
 static void timer_handler(registers_t* regs);
 
 #define FREE_PCB_PID 0xFFFFFFFF
-#define DEFAULT_EFLAGS 0x2
+#define USER_MEMORY_START 0x400000
 
 pcb_t processes[MAX_PID];
 pid cur_pid;
@@ -42,6 +42,16 @@ void loader_init(void) {
 	cur_pid = IDLE_PID;
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
+
+/*
+	// Create page table for temporal loader init page
+	void* table = mm_mem_kalloc();
+	memset(table, 0, PAGE_SIZE);
+	mm_page* cr3 = rcr3();
+	cr3[1].base = (uint_32) table >> 12;
+	cr3[1].attr = MM_ATTR_US_S | MM_ATTR_RW | MM_ATTR_P;
+	lcr3((uint_32) kernel_page_dir);
+*/
 }
 
 static inline void print_pso_file(pso_file* f) {
@@ -63,6 +73,31 @@ static inline int get_new_pid() {
 	return pid;
 }
 
+static inline void* find_first_used_page() {
+	// TODO
+	// Busca en el directorio que apunta la CR3 actual la primer
+	// pagina de usuario usada (> 0x400000)
+	return NULL;
+}
+
+static inline void* get_frame_from_page(void* virt_addr) {
+	// TODO
+	// Devuelve la dirección física que tiene mapeada
+	// la página dada por parámetro (en el PDT actual).
+	return NULL;
+}
+
+static inline void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt) {
+	// TODO
+	// Mapea un frame en phys_addr a la pagina pedida (virt_addr) en la pdt.
+	// Define tabla de pagina y la inicializa, si es necesario.
+}
+
+static inline void unmap_page(void* virt_addr, mm_page* pdt) {
+	// TODO
+	// Setear en 0 la pagina pedida en la pdt.
+}
+
 pid loader_load(pso_file* f, int pl) {
 	// Verify file signature
 	kassert(f->signature[0] == PSO_SIGNATURE[0] &&
@@ -77,9 +112,10 @@ pid loader_load(pso_file* f, int pl) {
 	processes[pid].id = pid;
 
 	arch_state_t* state = &processes[pid].arch_state;
-	state->eax = state->ebx = state->ecx = state->edx = state->esi = state->edi = 0;
-	state->eflags = DEFAULT_EFLAGS;
+	state->eflags = TASK_DEFAULT_EFLAGS;
+	state->eax = state->ebx = state->ecx = state->edx = state->esi = state->edi = 0;	// optional
 
+	// Set code and data segments depending on the parameter `pl`
 	if (pl == PL_USER) {
 		state->code_segment = SS_U_CODE;
 		state->data_segment = SS_U_DATA;
@@ -90,32 +126,69 @@ pid loader_load(pso_file* f, int pl) {
 
 	state->eip = (uint_32) f->_main;
 
-	// FIXME mm_dir_new() causes a GP fault!!
-	//mm_page* new_pdt = mm_dir_new();
-	//state->cr3 = (uint_32) new_pdt;
+	// Create new Page Directory Table
+	mm_page* new_pdt = mm_dir_new();
+	state->cr3 = (uint_32) new_pdt;
 
-	// Request new frames for code/data
+	// Calculate number of pages required for the new task
 	uint_32 total_pages = (f->mem_end - f->mem_start) / 4;
 	if ((f->mem_end - f->mem_start) % 4) total_pages++;
 
-	int i;
-	for (i = 0; i < total_pages; ++i) {
-		//mm_page* page = mm_mem_alloc();
-		// Asignar `page` a la tabla de paginas y directorio
-		// correspondientes en new_pdt;
-		// ...
-
-		// Si corresponde, copiar el codigo de pso_file
-		// hasta donde marca mem_end_disk
-		// ...
-
-		// Si nos pasamos de mem_end_disk, inicializar
-		// la memoria con 0.
-		// ...
+	// Temporal page to map new frames and initialize them
+	void* temp_page;
+	void* old_frame = NULL;
+	if (cur_pid == PID_IDLE_TASK) {
+		// Use first page for users (it's empty always)
+		temp_page = (void*) USER_MEMORY_START;
+	} else {
+		// Stash the frame used in the first page of
+		// the currently running task, because we'll use it
+		// for initializing the new task's frames.
+		temp_page = find_first_used_page();
+		old_frame = get_frame_from_page(temp_page);
 	}
 
-	// TODO New stack
-	//state->esp = state->ebp = ...
+	mm_page* current_pdt = (mm_page*) rcr3();
+	void* task_mem_p = (sint_8*) f->mem_start;
+	void* task_data_p = (sint_8*) f->data;
+
+	int i;
+	for (i = 0; i < total_pages; ++i) {
+		void* frame = mm_mem_alloc();
+
+		// Mapear `frame` en la tabla de paginas y directorio
+		// correspondientes en `new_pdt`
+		map_frame(frame, task_mem_p, new_pdt);
+
+		// Buscar una página vacía y mapearla temporalmente a `frame`
+		map_frame(frame, temp_page, current_pdt);
+
+		// Si corresponde, copiar el codigo de pso_file hasta donde marca
+		// mem_end_disk.  Si nos pasamos de mem_end_disk, inicializar
+		// la memoria con 0.
+		if (task_mem_p >= (void*) f->mem_end_disk) {
+			memset(temp_page, 0, PAGE_SIZE);
+		} else {
+			size_t bytes = MIN(PAGE_SIZE, (void*) f->mem_end_disk - task_mem_p);
+			memcpy(task_data_p, temp_page, bytes);
+			memset(temp_page, 0, PAGE_SIZE - bytes);
+		}
+
+		task_mem_p  += PAGE_SIZE;
+		task_data_p += PAGE_SIZE;
+	}
+
+	unmap_page(temp_page, current_pdt);
+
+	// Restore original frame used by current task
+	if (cur_pid != PID_IDLE_TASK) {
+		map_frame(old_frame, temp_page, current_pdt);
+	}
+
+	// Create new stack frame
+	void* stack_frame = mm_mem_alloc();
+	map_frame(stack_frame, (void*) TASK_STACK_ADDRESS, new_pdt);
+	state->esp = state->ebp = TASK_STACK_TOP_ADDRESS;
 
 	//sched_load(pid);
 
