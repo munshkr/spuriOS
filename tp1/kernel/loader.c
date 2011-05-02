@@ -42,16 +42,6 @@ void loader_init(void) {
 	cur_pid = IDLE_PID;
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
-
-/*
-	// Create page table for temporal loader init page
-	void* table = mm_mem_kalloc();
-	memset(table, 0, PAGE_SIZE);
-	mm_page* cr3 = rcr3();
-	cr3[1].base = (uint_32) table >> 12;
-	cr3[1].attr = MM_ATTR_US_S | MM_ATTR_RW | MM_ATTR_P;
-	lcr3((uint_32) kernel_page_dir);
-*/
 }
 
 static inline void print_pso_file(pso_file* f) {
@@ -71,13 +61,6 @@ static inline int get_new_pid() {
 	// No more free PIDs! (consider reducing load or enlarging MAX_PID...)
 	kassert(pid < MAX_PID);
 	return pid;
-}
-
-static inline void* find_first_used_page() {
-	// TODO
-	// Busca en el directorio que apunta la CR3 actual la primer
-	// pagina de usuario usada (> 0x400000)
-	return NULL;
 }
 
 static inline void* get_frame_from_page(void* virt_addr) {
@@ -144,7 +127,12 @@ pid loader_load(pso_file* f, int pl) {
 		// Stash the frame used in the first page of
 		// the currently running task, because we'll use it
 		// for initializing the new task's frames.
-		temp_page = find_first_used_page();
+
+		// FIXME We know f->mem_start == USER_MEMORY_START for now,
+		// so no page table may be created when we map that page.
+		// We should store f->mem_start in the PCB to know where
+		// the first page is, to avoid a possible page table alloc.
+		temp_page = (void*) USER_MEMORY_START;
 		old_frame = get_frame_from_page(temp_page);
 	}
 
@@ -156,16 +144,13 @@ pid loader_load(pso_file* f, int pl) {
 	for (i = 0; i < total_pages; ++i) {
 		void* frame = mm_mem_alloc();
 
-		// Mapear `frame` en la tabla de paginas y directorio
-		// correspondientes en `new_pdt`
+		// Map `frame` in the new Page Directory Table
 		map_frame(frame, task_mem_p, new_pdt);
 
-		// Buscar una página vacía y mapearla temporalmente a `frame`
+		// Temporally map `frame` to initialize it
 		map_frame(frame, temp_page, current_pdt);
 
-		// Si corresponde, copiar el codigo de pso_file hasta donde marca
-		// mem_end_disk.  Si nos pasamos de mem_end_disk, inicializar
-		// la memoria con 0.
+		// Copy task code from memory or initialize with zeros the new frames
 		if (task_mem_p >= (void*) f->mem_end_disk) {
 			memset(temp_page, 0, PAGE_SIZE);
 		} else {
