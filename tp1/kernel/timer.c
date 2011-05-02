@@ -10,9 +10,6 @@ uint_32 tick = 0;
 const char clock_anim[4] = {'-', '\\', '|', '/'};
 
 void timer_init(uint_32 frequency) {
-	// Handler *must* be registered
-	kassert(interrupt_handlers[0x20] != NULL);
-
 	// The value we send to the PIT is the value to divide it's input clock
 	// (1193180 Hz) by, to get our required frequency. Important to note is
 	// that the divisor must be small enough to fit into 16-bits.

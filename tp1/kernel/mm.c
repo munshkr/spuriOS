@@ -13,21 +13,67 @@
 
 #define WITHOUT_ATTRS(x) ((uint_32)x & ~0xFFF)
 
+#define PD_ENTRY_FOR(x) ((uint_32)x >> 22)
+#define PT_ENTRY_FOR(x) (((uint_32)x & 0x3FF000) >> 12)
+
 mmap_entry_t* mmap;
 size_t mmap_entries;
 
 mm_page* kernel_pagetable;
 
 // Mapa de bits de memoria
-char* mm_bitmap;
+uint_8* mm_bitmap;
 int mm_bitmap_byte_len;
 // --
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
+void* get_frame_from_page(void* virt_addr, mm_page* pdt) {
+	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
+	kassert(pd_entry->attr & MM_ATTR_P);
+
+	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
+	return ((void*)(page_table[PT_ENTRY_FOR(virt_addr)].base << 12));
+}
+
+// TODO Reuse this function when creating new directories
+void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
+	kassert((((uint_32) phys_addr) & 0xFFF) == 0);
+	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
+
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
+
+	if (!(pd_entry->attr & MM_ATTR_P)) {
+		// TODO Review if kalloc is really neccesary
+		*((uint_32*) pd_entry) = (uint_32) mm_mem_kalloc();
+		pd_entry->attr = MM_ATTR_P | MM_ATTR_RW |
+			(pl == PL_KERNEL ? MM_ATTR_US_S : MM_ATTR_US_U);
+	}
+
+	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
+	page_table[PT_ENTRY_FOR(virt_addr)].base = (uint_32)phys_addr >> 12;
+	page_table[PT_ENTRY_FOR(virt_addr)].attr = MM_ATTR_P | MM_ATTR_RW |
+		(pl == PL_KERNEL ? MM_ATTR_US_S : MM_ATTR_US_U);
+
+	invlpg(virt_addr);
+}
+
+void unmap_page(void* virt_addr, mm_page* pdt) {
+	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
+	
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
+	kassert(pd_entry->attr & MM_ATTR_P);
+
+	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
+	((uint_32*)page_table)[PT_ENTRY_FOR(virt_addr)] = 0;
+
+	invlpg(virt_addr);
+}
+
 void* mm_mem_seek(char request_type) {
-	char* cursor = 0;	//
-	char* limit = 0;	// Variables definidas para recorrer de a byte el mapa (optimización)
+	uint_8* cursor = 0;	//
+	uint_8* limit = 0;	// Variables definidas para recorrer de a byte el mapa (optimización)
 	switch(request_type) {
 		case MM_REQUEST_KERNEL:
 			cursor = mm_bitmap; // Dirección donde arranca el bitmap
@@ -40,7 +86,7 @@ void* mm_mem_seek(char request_type) {
 	}
 
 	for (; cursor < limit ; cursor++) {
-		if (*cursor != 0xF) {
+		if (*cursor != 0xFF) {
 			break;
 		}
 	}
@@ -58,6 +104,8 @@ void* mm_mem_seek(char request_type) {
 			break;
 		}
 	}
+
+	vga_printf("seek = %x\n", dir);
 	return (void*)dir;
 }
 
@@ -155,7 +203,7 @@ inline void mm_init_kernel_pagetable() {
 
 void mm_print_map() {
 	int i = 0;
-	char* cursor = mm_bitmap;
+	uint_8* cursor = mm_bitmap;
 	vga_attr.fld.forecolor = 0x3;
 	vga_attr.fld.backcolor = 0x3;
 	for (i=0 ; i<mm_bitmap_byte_len ; i++, cursor++) {
@@ -236,7 +284,7 @@ void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	mmap = mmap_addr;
 	mmap_entries = mmap_entries_local;
 
-	mm_bitmap = (char*)HIMEM_BEGIN;
+	mm_bitmap = (uint_8*)HIMEM_BEGIN;
 	mm_setup_bitmap(mmap_addr, mmap_entries_local);
 
 	mm_init_kernel_pagetable();	

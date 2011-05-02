@@ -8,9 +8,15 @@ MKFS=/sbin/mkfs.vfat
 
 # Parámetros de programas
 NASMFLAGS=-I include/ -g -ggdb -D__KERNEL__
+
+#CFLAGS=-m32 -g -ggdb -Wall -Werror -Wdisabled-optimization -I include/ \
+#  -fno-zero-initialized-in-bss -fno-stack-protector -fno-strict-aliasing -ffreestanding -D__KERNEL__
+
 CFLAGS=-m32 -g -ggdb -Wall -Werror -O2 -I include/ \
   -fno-zero-initialized-in-bss -fno-stack-protector -fno-strict-aliasing -ffreestanding -D__KERNEL__
 CXXFLAGS=-O2
+#CXXFLAGS=-Wdisabled-optimization
+
 LDFLAGS=-static -m elf_i386 -nostdlib
 
 # Directorios
@@ -30,7 +36,7 @@ OBJS_KERN=kernel/kinit.o kernel/common.o kernel/a20.o kernel/mmap.o \
   kernel/interrup.o kernel/isr.o kernel/pic.o kernel/timer.o \
   kernel/vga.o kernel/sched.o \
   kernel/mm.o kernel/debug.o kernel/loader.o kernel/tasks.o \
-  kernel/syscalls.o kernel/sem.o
+  kernel/syscalls.o kernel/sem.o kernel/taskswitch.o
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.dbg
 SYM_KERN=$(DIROUT)kernel.sym

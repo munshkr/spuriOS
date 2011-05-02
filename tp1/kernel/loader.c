@@ -11,13 +11,14 @@
 
 const char PSO_SIGNATURE[4] = "PSO";
 
-static void timer_handler(registers_t* regs);
+extern void (timer_handler)();
 
 #define FREE_PCB_PID 0xFFFFFFFF
 #define USER_MEMORY_START 0x400000
 
 pcb_t processes[MAX_PID];
 pid cur_pid;
+pid tmp_pid;
 
 inline void be_task() {
 	ltr(SS_TSS);
@@ -33,7 +34,7 @@ inline void initialize_process_list() {
 void loader_init(void) {
 	debug_log("initializing loader");
 
-	idt_register(ISR_IRQ0, timer_handler, PL_KERNEL);
+	idt_register_asm(ISR_IRQ0, timer_handler, PL_KERNEL);
 	timer_init(1500);
 
 	initialize_process_list();
@@ -42,6 +43,7 @@ void loader_init(void) {
 	cur_pid = IDLE_PID;
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
+	processes[IDLE_PID].cr3 = rcr3();
 }
 
 static inline void print_pso_file(pso_file* f) {
@@ -63,24 +65,6 @@ static inline int get_new_pid() {
 	return pid;
 }
 
-static inline void* get_frame_from_page(void* virt_addr) {
-	// TODO
-	// Devuelve la dirección física que tiene mapeada
-	// la página dada por parámetro (en el PDT actual).
-	return NULL;
-}
-
-static inline void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt) {
-	// TODO
-	// Mapea un frame en phys_addr a la pagina pedida (virt_addr) en la pdt.
-	// Define tabla de pagina y la inicializa, si es necesario.
-}
-
-static inline void unmap_page(void* virt_addr, mm_page* pdt) {
-	// TODO
-	// Setear en 0 la pagina pedida en la pdt.
-}
-
 pid loader_load(pso_file* f, int pl) {
 	// Verify file signature
 	kassert(f->signature[0] == PSO_SIGNATURE[0] &&
@@ -93,34 +77,14 @@ pid loader_load(pso_file* f, int pl) {
 	int pid = get_new_pid();
 
 	processes[pid].id = pid;
-
-	arch_state_t* state = &processes[pid].arch_state;
-	state->eflags = TASK_DEFAULT_EFLAGS;
-	state->eax = state->ebx = state->ecx = state->edx = state->esi = state->edi = 0;	// optional
-
-	// Set code and data segments depending on the parameter `pl`
-	if (pl == PL_USER) {
-		state->code_segment = SS_U_CODE;
-		state->data_segment = SS_U_DATA;
-	} else if (pl == PL_KERNEL) {
-		state->code_segment = SS_K_CODE;
-		state->data_segment = SS_K_DATA;
-	}
-
-	state->eip = (uint_32) f->_main;
-
-	// Create new Page Directory Table
-	mm_page* new_pdt = mm_dir_new();
-	state->cr3 = (uint_32) new_pdt;
-
-	// Calculate number of pages required for the new task
-	uint_32 total_pages = (f->mem_end - f->mem_start) / 4;
-	if ((f->mem_end - f->mem_start) % 4) total_pages++;
+	processes[pid].privilege_level = pl;
 
 	// Temporal page to map new frames and initialize them
+	mm_page* current_pdt = (mm_page*) processes[cur_pid].cr3;
+
 	void* temp_page;
 	void* old_frame = NULL;
-	if (cur_pid == PID_IDLE_TASK) {
+	if (cur_pid == IDLE_PID) {
 		// Use first page for users (it's empty always)
 		temp_page = (void*) USER_MEMORY_START;
 	} else {
@@ -133,22 +97,49 @@ pid loader_load(pso_file* f, int pl) {
 		// We should store f->mem_start in the PCB to know where
 		// the first page is, to avoid a possible page table alloc.
 		temp_page = (void*) USER_MEMORY_START;
-		old_frame = get_frame_from_page(temp_page);
+		old_frame = get_frame_from_page(temp_page, current_pdt);
 	}
 
-	mm_page* current_pdt = (mm_page*) rcr3();
+	// Create new Page Directory Table
+	mm_page* new_pdt = mm_dir_new();
+	processes[pid].cr3 = (uint_32) new_pdt;
+
+	// Kernel stack frame
+	void* k_stack_frame = mm_mem_alloc();
+	map_frame(k_stack_frame, (void*) TASK_K_STACK_ADDRESS, new_pdt, PL_KERNEL);
+
+	map_frame(k_stack_frame, temp_page, current_pdt, PL_KERNEL);
+	memset(temp_page, 0, PAGE_SIZE);
+
+	if (pl == PL_KERNEL) {
+		((uint_32*) temp_page)[1023] = TASK_DEFAULT_EFLAGS; // EFLAGS
+		((uint_32*) temp_page)[1022] = SS_K_CODE; // CS
+		((uint_32*) temp_page)[1021] = (uint_32) f->_main; // EIP
+
+		((uint_32*) temp_page)[1016] = (uint_32)(TASK_K_STACK_ADDRESS + 1020 * 4); // ESP
+		((uint_32*) temp_page)[1015] = (uint_32)(TASK_K_STACK_ADDRESS + 1023 * 4); // EBP
+
+		processes[pid].esp = (uint_32)(TASK_K_STACK_ADDRESS + 1013 * 4); // "In switch" ESP
+	} else {
+		// User stack frame
+		//void* u_stack_frame = mm_mem_alloc();
+		//map_frame(u_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
+		//state->esp = state->ebp = TASK_U_STACK_ADDRESS;
+	}
+
+	// Calculate number of pages required for the new task
+	uint_32 total_pages = (f->mem_end - f->mem_start) / PAGE_SIZE;
+	if ((f->mem_end - f->mem_start) % PAGE_SIZE) total_pages++;
+
 	void* task_mem_p = (sint_8*) f->mem_start;
 	void* task_data_p = (sint_8*) f->data;
 
 	int i;
 	for (i = 0; i < total_pages; ++i) {
 		void* frame = mm_mem_alloc();
+		map_frame(frame, task_mem_p, new_pdt, pl);
 
-		// Map `frame` in the new Page Directory Table
-		map_frame(frame, task_mem_p, new_pdt);
-
-		// Temporally map `frame` to initialize it
-		map_frame(frame, temp_page, current_pdt);
+		map_frame(frame, temp_page, current_pdt, PL_KERNEL);
 
 		// Copy task code from memory or initialize with zeros the new frames
 		if (task_mem_p >= (void*) f->mem_end_disk) {
@@ -156,7 +147,7 @@ pid loader_load(pso_file* f, int pl) {
 		} else {
 			size_t bytes = MIN(PAGE_SIZE, (void*) f->mem_end_disk - task_mem_p);
 			memcpy(task_data_p, temp_page, bytes);
-			memset(temp_page, 0, PAGE_SIZE - bytes);
+			memset(temp_page + bytes, 0, PAGE_SIZE - bytes);
 		}
 
 		task_mem_p  += PAGE_SIZE;
@@ -166,16 +157,11 @@ pid loader_load(pso_file* f, int pl) {
 	unmap_page(temp_page, current_pdt);
 
 	// Restore original frame used by current task
-	if (cur_pid != PID_IDLE_TASK) {
-		map_frame(old_frame, temp_page, current_pdt);
+	if (cur_pid != IDLE_PID) {
+		map_frame(old_frame, temp_page, current_pdt, processes[cur_pid].privilege_level);
 	}
 
-	// Create new stack frame
-	void* stack_frame = mm_mem_alloc();
-	map_frame(stack_frame, (void*) TASK_STACK_ADDRESS, new_pdt);
-	state->esp = state->ebp = TASK_STACK_TOP_ADDRESS;
-
-	//sched_load(pid);
+	sched_load(pid);
 
 	return pid;
 }
@@ -187,83 +173,5 @@ void loader_unqueue(int* cola) {
 }
 
 void loader_exit(void) {
-}
-
-inline void save_arch_state_to(pcb_t* pcb, registers_t* regs) {
-	arch_state_t* dest = &(pcb->arch_state);
-
-	dest->eax = regs->eax;
-	dest->ebx = regs->ebx;
-	dest->ecx = regs->ecx;
-	dest->edx = regs->edx;
-	dest->esi = regs->esi;
-	dest->edi = regs->edi;
-
-	dest->ebp = regs->ebp;
-	dest->esp = regs->esp;
-
-	dest->eip = regs->eip;
-	dest->eflags = regs->eflags;
-
-	dest->cr3 = rcr3();
-}
-
-inline void restore_arch_state_from(pcb_t* pcb, registers_t* regs, bool needs_segment_change) {
-	arch_state_t* source = &(pcb->arch_state);
-
-	regs->eax = source->eax;
-	regs->ebx = source->ebx;
-	regs->ecx = source->ecx;
-	regs->edx = source->edx;
-	regs->esi = source->esi;
-	regs->edi = source->edi;
-
-	regs->ebp = source->ebp;
-	regs->esp = source->esp;
-
-	regs->eip = source->eip;
-	regs->eflags = source->eflags;
-
-	if (needs_segment_change) {
-		// If stack change happened
-		if (SS_PL(regs->cs) != PL_KERNEL) {
-			regs->user_ss = source->data_segment;
-			regs->user_esp = source->esp;
-		} else {
-			lss(source->data_segment);
-		}
-		lds(source->data_segment);
-		les(source->data_segment);
-	}
-
-	lcr3(source->cr3);
-}
-
-void loader_switchto(pid to_id, registers_t* regs) {
-	kassert(processes[to_id].id != FREE_PCB_PID);
-
-	if (cur_pid != to_id) {
-		pcb_t* pcb_cur = &processes[cur_pid];
-		save_arch_state_to(pcb_cur, regs);
-
-		pcb_t* pcb_dest = &processes[to_id];
-		bool needs_segment_change =
-			pcb_cur->privilege_level != pcb_dest->privilege_level;
-
-		restore_arch_state_from(pcb_dest, regs, needs_segment_change);
-
-		cur_pid = to_id;
-	}
-}
-
-static void timer_handler(registers_t* regs) {
-	tick++;
-//	timer_draw_clock();
-
-	pid next_process = sched_tick();
-	if (next_process != cur_pid) {
-		vga_printf("switching to %d\n", next_process);
-		loader_switchto(next_process, regs);
-	}
 }
 

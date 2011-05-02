@@ -56,6 +56,8 @@ LS_INLINE void lds(uint_16 sel);
 LS_INLINE void les(uint_16 sel);
 LS_INLINE void lss(uint_16 sel);
 
+LS_INLINE void invlpg(void* page);
+
 /*** Implementaciones Inline ***/
 
 LS_INLINE uint_32 esp(void) {
@@ -264,6 +266,10 @@ LS_INLINE void les(uint_16 sel) {
 
 LS_INLINE void lss(uint_16 sel) {
 	__asm __volatile("mov %0, %%ss" : : "r" (sel));
+}
+
+LS_INLINE void invlpg(void* page) {
+	__asm __volatile("invlpg (%0)" : : "r" (page));
 }
 
 #endif

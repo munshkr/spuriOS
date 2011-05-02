@@ -18,8 +18,8 @@
 #define IDLE_PID 0
 
 #define TASK_DEFAULT_EFLAGS 0x202	// IF flag set
-#define TASK_STACK_ADDRESS 0xffbff000
-#define TASK_STACK_TOP_ADDRESS (TASK_STACK_ADDRESS + 0xfff)
+#define TASK_U_STACK_ADDRESS 0xffbfe000
+#define TASK_K_STACK_ADDRESS 0xffbff000
 
 void memcpy(void* src, void* dst, size_t size);
 void memset(void* addr, int value, size_t size);

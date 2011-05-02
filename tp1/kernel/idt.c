@@ -126,6 +126,17 @@ void idt_init(void) {
 	return;
 }
 
+void idt_register_asm(int intr, void (asm_handler)(void), int pl) {
+	kassert(pl == PL_KERNEL || pl == PL_USER);
+	kassert(intr >= 0 && intr < 256);
+
+	if (pl == PL_KERNEL) {
+		idt[intr] = make_idt_entry(asm_handler, SS_K_CODE, IDT_INT);
+	} else if (pl == PL_USER) {
+		idt[intr] = make_idt_entry(asm_handler, SS_U_CODE, IDT_INT);
+	}
+} 
+
 void idt_register(int intr, isr_t handler, int pl) {
 	// Privilege level must be KERNEL or USER
 	kassert(pl == PL_KERNEL || pl == PL_USER);

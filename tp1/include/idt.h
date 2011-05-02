@@ -8,6 +8,7 @@ void idt_init(void);
 
 /* Para registrar una ISR */
 void idt_register(int intr, isr_t handler, int pl);
+void idt_register_asm(int intr, void (*asm_handler)(), int pl);
 
 /* Números de interrupciones de la IDT */
 #define ISR_DIVIDE     0		// divide error
