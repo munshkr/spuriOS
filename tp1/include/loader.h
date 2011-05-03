@@ -19,8 +19,9 @@ typedef struct str_arch_state {
 
 typedef struct str_pcb {
 	pid id;
-	uint_32 privilege_level;	
+	uint_32 privilege_level;
 	arch_state_t arch_state;
+	pid prev, next;
 } pcb_t;
 
 extern pcb_t processes[];

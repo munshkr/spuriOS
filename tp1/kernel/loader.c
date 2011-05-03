@@ -14,6 +14,7 @@ const char PSO_SIGNATURE[4] = "PSO";
 static void timer_handler(registers_t* regs);
 
 #define FREE_PCB_PID 0xFFFFFFFF
+#define FREE_QUEUE -1
 #define USER_MEMORY_START 0x400000
 
 pcb_t processes[MAX_PID];
@@ -180,10 +181,32 @@ pid loader_load(pso_file* f, int pl) {
 	return pid;
 }
 
+// TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
 void loader_enqueue(int* cola) {
+	pid tmp_pid;
+	if (*cola == FREE_QUEUE) {
+		*cola = cur_pid;
+	} else {
+		tmp_pid = *cola;
+		while(processes[tmp_pid].next != FREE_PCB_PID) {
+			tmp_pid = processes[tmp_pid].next;
+		}
+		processes[tmp_pid].next = cur_pid;
+		processes[cur_pid].prev = tmp_pid;
+	}
+	sched_block();
 }
 
+// TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
 void loader_unqueue(int* cola) {
+	pid tmp_pid;
+	if (*cola != FREE_QUEUE) {
+		tmp_pid = processes[*cola].next;
+		processes[tmp_pid].prev = FREE_PCB_PID;
+		processes[*cola].next = FREE_PCB_PID;
+		sched_unblock(*cola);
+		*cola = tmp_pid;
+	}
 }
 
 void loader_exit(void) {
