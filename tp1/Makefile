@@ -69,8 +69,8 @@ tasks/pso_head.o: tasks/pso_head.asm
 tasks/pso_tail.o: tasks/pso_tail.asm
 	nasm $(NASMFLAGS:__KERNEL__=__TASK__) -felf32 -I $(DIRKERN) -o $@ $<
 
-tasks/syscalls.o: kernel/syscalls.asm
-	nasm $(NASMFLAGS:__KERNEL__=__TASK__) -felf32 -I $(DIRKERN) -o $@ $<
+tasks/syscalls.o: kernel/syscalls.c
+	$(CC) $(CFLAGS:__KERNEL__=__TASK__) -c -o $@ $<
 
 tasks/%.pso: tasks/%.elf
 	$(OBJCOPY) -S -O binary $< $@
