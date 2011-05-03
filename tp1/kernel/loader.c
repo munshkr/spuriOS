@@ -201,11 +201,16 @@ void loader_enqueue(pid* cola) {
 void loader_unqueue(pid* cola) {
 	pid tmp_pid;
 	if (*cola != FREE_QUEUE) {
-		tmp_pid = processes[*cola].next;
-		processes[tmp_pid].prev = FREE_PCB_PID;
-		processes[*cola].next = FREE_PCB_PID;
-		sched_unblock(*cola);
-		*cola = tmp_pid;
+		if (processes[*cola].next != FREE_PCB_PID) {
+			tmp_pid = processes[*cola].next;
+			processes[tmp_pid].prev = FREE_PCB_PID;
+			processes[*cola].next = FREE_PCB_PID;
+			sched_unblock(*cola);
+			*cola = tmp_pid;
+		} else {
+			sched_unblock(*cola);
+			*cola = -1;
+		}
 	}
 }
 
