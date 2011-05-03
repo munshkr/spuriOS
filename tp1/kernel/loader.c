@@ -182,7 +182,7 @@ pid loader_load(pso_file* f, int pl) {
 }
 
 // TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
-void loader_enqueue(int* cola) {
+void loader_enqueue(pid* cola) {
 	pid tmp_pid;
 	if (*cola == FREE_QUEUE) {
 		*cola = cur_pid;
@@ -198,7 +198,7 @@ void loader_enqueue(int* cola) {
 }
 
 // TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
-void loader_unqueue(int* cola) {
+void loader_unqueue(pid* cola) {
 	pid tmp_pid;
 	if (*cola != FREE_QUEUE) {
 		tmp_pid = processes[*cola].next;
