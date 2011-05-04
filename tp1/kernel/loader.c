@@ -20,10 +20,6 @@ pcb_t processes[MAX_PID];
 pid cur_pid;
 pid tmp_pid;
 
-inline void be_task() {
-	ltr(SS_TSS);
-}
-
 inline void initialize_process_list() {
 	uint_32 id;
 	for (id = 0; id < MAX_PID; id++) {
@@ -39,7 +35,6 @@ void loader_init(void) {
 
 	initialize_process_list();
 
-	be_task();
 	cur_pid = IDLE_PID;
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
@@ -122,9 +117,20 @@ pid loader_load(pso_file* f, int pl) {
 		processes[pid].esp = (uint_32)(TASK_K_STACK_ADDRESS + 1013 * 4); // "In switch" ESP
 	} else {
 		// User stack frame
-		//void* u_stack_frame = mm_mem_alloc();
-		//map_frame(u_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
-		//state->esp = state->ebp = TASK_U_STACK_ADDRESS;
+		void* u_stack_frame = mm_mem_alloc();
+		map_frame(u_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
+
+		((uint_32*) temp_page)[1023] = SS_U_DATA | PL_USER; // SS (USER)
+		((uint_32*) temp_page)[1022] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // USER ESP
+
+		((uint_32*) temp_page)[1021] = TASK_DEFAULT_EFLAGS; // EFLAGS
+		((uint_32*) temp_page)[1020] = SS_U_CODE | PL_USER; // CS (USER)
+		((uint_32*) temp_page)[1019] = (uint_32) f->_main; // EIP
+
+		((uint_32*) temp_page)[1014] = (uint_32)(TASK_K_STACK_ADDRESS + 1018 * 4); // ESP
+		((uint_32*) temp_page)[1013] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
+
+		processes[pid].esp = (uint_32)(TASK_K_STACK_ADDRESS + 1011 * 4); // "In switch" ESP
 	}
 
 	// Calculate number of pages required for the new task

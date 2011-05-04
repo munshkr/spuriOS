@@ -23,10 +23,19 @@ inline void enable_paging() {
 	lcr0(cr0);
 }
 
+inline void be_task() {
+	ltr(SS_TSS);
+}
+
 inline void go_idle() {
 	debug_log("the kernel is going idle");
 
-	sti();	
+	// Never changes
+	the_tss.ss0 = SS_K_DATA;
+	the_tss.esp0 = esp();
+	be_task();
+
+	sti();
 	while (1) hlt();
 }
 
@@ -44,7 +53,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_init();
 	sched_init();
 
-	loader_load(&task_task1_pso, PL_KERNEL);
+	loader_load(&task_task1_pso, PL_USER);
 
 	go_idle();
 	return;

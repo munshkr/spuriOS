@@ -34,6 +34,7 @@ gdt_entry gdt[GDT_COUNT] = {
 gdt_descriptor GDT_DESC = {sizeof(gdt)-1, (uint_32)&gdt};
 
 void gdt_init(void) {
+	// FIXME DPL = 3 or 0 ?
 	gdt[5] = make_gdt_entry(&the_tss, sizeof(the_tss) - 1,
-		GDT_ATTR_P | GDT_ATTR_DPL0 | GDT_ATTR_TYPE_TSS); // TSS
+		GDT_ATTR_P | GDT_ATTR_DPL3 | GDT_ATTR_TYPE_TSS); // TSS
 }

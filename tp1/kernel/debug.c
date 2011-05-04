@@ -132,7 +132,7 @@ void show_stack(uint_32* esp) {
 
 	uint_32 off;
 	uint_32 i;
-	for (off = 0; off < 0x20; off += 4) {
+	for (off = 0; off < 0x1C; off += 4) {
 		memcpy(esp, &char_stack, 16);
 		vga_printf("%p: %x %x %x %x ", esp, *esp, *(esp + 1), *(esp + 2), *(esp + 3));
 

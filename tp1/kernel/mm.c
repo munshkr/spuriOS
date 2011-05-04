@@ -45,10 +45,11 @@ void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
 
 	if (!(pd_entry->attr & MM_ATTR_P)) {
-		// TODO Review if kalloc is really neccesary
+		// TODO Review all this (kalloc/alloc, User, Supervisor)
+		// If not kalloc, fails because page is outside kernel mapping
 		*((uint_32*) pd_entry) = (uint_32) mm_mem_kalloc();
-		pd_entry->attr = MM_ATTR_P | MM_ATTR_RW |
-			(pl == PL_KERNEL ? MM_ATTR_US_S : MM_ATTR_US_U);
+		pd_entry->attr = MM_ATTR_P | MM_ATTR_RW | MM_ATTR_US_U;
+//			(pl == PL_KERNEL ? MM_ATTR_US_S : MM_ATTR_US_U);
 	}
 
 	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
