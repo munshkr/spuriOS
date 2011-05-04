@@ -8,7 +8,7 @@ extern cur_pid
 extern tmp_pid
 extern processes
 
-%define PCB_SZ 16
+%define PCB_SZ 24
 %define PCB_PL_OFF 4
 %define PCB_CR3_OFF 8
 %define PCB_ESP_OFF 12
