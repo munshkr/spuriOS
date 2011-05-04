@@ -13,10 +13,9 @@
 typedef struct str_pcb {
 	pid id;
 	uint_32 privilege_level;
-
 	uint_32 cr3;
 	uint_32 esp;
-
+	pid prev, next;
 } __attribute__((__packed__)) pcb_t;
 
 extern pcb_t processes[];
@@ -25,8 +24,8 @@ extern pid cur_pid;
 void loader_init(void);
 pid loader_load(pso_file* f, int pl);
 
-void loader_enqueue(int* cola);
-void loader_unqueue(int* cola);
+void loader_enqueue(pid* cola);
+void loader_unqueue(pid* cola);
 
 void loader_exit(void);
 

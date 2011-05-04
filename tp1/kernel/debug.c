@@ -76,6 +76,8 @@ void debug_kernelpanic(registers_t* regs) {
 		"\n\tEDX = %x (%d), ESI = %x (%d), EDI = %x (%d)\n",
 		regs->eax, regs->eax, regs->ebx, regs->ebx, regs->ecx, regs->ecx,
 		regs->edx, regs->edx, regs->esi, regs->esi, regs->edi, regs->edi);
+
+	hlt();
 }
 
 #define BT_MAX_PARAMS 2
