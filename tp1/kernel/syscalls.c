@@ -66,21 +66,19 @@ void* sys_palloc() {
 extern void* syscall_int(int number);
 
 uint_32 getpid() {
-	// TODO Write an assembly inline that calls an INT 0x30
-	// having in EAX the syscall number, and that, after the int,
-	// put EAX content in another variable (syscall's return value)
-	//
-	// :-(
-	return 0;
+  uint_32 res;
+  __asm __volatile("int $0x30" : "=a"(res) : "0"(SYS_GETPID));
+	return res;
 }
 
 void exit() {
-	// TODO
+  __asm __volatile("int $0x30" : : "a"(SYS_EXIT));
 }
 
 void* palloc() {
-	// TODO
-	return NULL;
+  void* res;
+  __asm __volatile("int $0x30" : "=a"(res) : "0"(SYS_PALLOC));
+	return res;
 }
 
 #endif

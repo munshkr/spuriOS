@@ -52,6 +52,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	loader_load(&task_task1_pso, PL_KERNEL);
 
+	syscalls_init();
+
 	go_idle();
 	return;
 }

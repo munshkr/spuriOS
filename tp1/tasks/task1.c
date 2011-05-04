@@ -1,7 +1,9 @@
 int data[10];
 
+extern unsigned int getpid(void);
+
 int main(void) {
+	unsigned int id = getpid();
 	while (1);
-	// void* p = palloc();
-	return 0;
+	return id;
 }
