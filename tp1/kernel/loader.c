@@ -132,7 +132,7 @@ pid loader_load(pso_file* f, int pl) {
 	if ((f->mem_end - f->mem_start) % PAGE_SIZE) total_pages++;
 
 	void* task_mem_p = (sint_8*) f->mem_start;
-	void* task_data_p = (sint_8*) f->data;
+	void* task_data_p = (sint_8*) f;
 
 	int i;
 	for (i = 0; i < total_pages; ++i) {
