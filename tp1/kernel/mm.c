@@ -50,6 +50,8 @@ void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
 		*((uint_32*) pd_entry) = (uint_32) mm_mem_kalloc();
 		pd_entry->attr = MM_ATTR_P | MM_ATTR_RW | MM_ATTR_US_U;
 //			(pl == PL_KERNEL ? MM_ATTR_US_S : MM_ATTR_US_U);
+		// TODO Initialize page table
+		//memset(pd_entry, 0, PAGE_SIZE);
 	}
 
 	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
