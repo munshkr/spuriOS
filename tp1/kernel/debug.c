@@ -77,6 +77,8 @@ void debug_kernelpanic(registers_t* regs) {
 		regs->eax, regs->eax, regs->ebx, regs->ebx, regs->ecx, regs->ecx,
 		regs->edx, regs->edx, regs->esi, regs->esi, regs->edi, regs->edi);
 
+	// Die
+	cli();
 	hlt();
 }
 
