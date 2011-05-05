@@ -227,9 +227,8 @@ void loader_exit(void) {
 	pid tmp_pid = sched_exit();
 
 	vga_printf("loader_exit() called for pid %u\n", tmp_pid);
-	breakpoint();
 
-	/* TODO Refactor
+	// TODO Refactor this shit
 	pcb_t* task = &processes[tmp_pid];
 	if (task->prev == FREE_PCB_PID && task->next == FREE_PCB_PID) {
 		// nothing
@@ -243,9 +242,8 @@ void loader_exit(void) {
 	} else {
 		processes[task->prev].next = FREE_PCB_PID;
 	}
-	*/
 
-	//mm_dir_free((mm_page*) processes[tmp_pid].cr3);
+	mm_dir_free((mm_page*) processes[tmp_pid].cr3);
 
 	processes[tmp_pid].id = FREE_PCB_PID;
 }

@@ -17,9 +17,10 @@ sched_task* first;
 sched_task* last;
 int running_tasks;
 
-void print_queue(void) {
+void print_queue(unsigned int max) {
+	kassert(max < MAX_PID);
 	int i;
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < max; i++) {
 		vga_printf("index %u\n", i);
 		vga_printf("\tpd = %u\n", tasks[i].pd);
 		vga_printf("\tquantum = %u\n", tasks[i].quantum);
@@ -33,6 +34,7 @@ void print_queue(void) {
 		} else {
 			vga_printf("\tnext_id = NULL\n");
 		}
+		breakpoint();
 	}
 	if (actual != NULL) {
 		vga_printf("actual_id = %u\t", actual->pd);
@@ -49,7 +51,7 @@ void print_queue(void) {
 	} else {
 		vga_printf("last_id = NULL\n");
 	}
-	//breakpoint();
+	breakpoint();
 }
 
 void sched_init(void) {
@@ -68,10 +70,6 @@ void sched_load(pid pd) {
 		}
 	}
 	kassert_verbose(i != MAX_PID, "Scheduler run out of task slots!!!");
-	//kassert(pd < MAX_PID);
-
-	vga_printf("before sched_load()\n");
-	print_queue();
 
 	sched_task* tmp_task = &tasks[i];
 	tasks[i].pd = pd;
@@ -90,10 +88,8 @@ void sched_load(pid pd) {
 		}
 		last = tmp_task;
 	}
+	first->prev = last;
 	running_tasks++;
-
-	vga_printf("after sched_load()\n");
-	print_queue();
 }
 
 void sched_unblock(pid pd) {
@@ -114,8 +110,7 @@ int sched_exit() {
 		actual = NULL;
 	}
 	running_tasks--;
-	vga_printf("sched_exit()\n");
-	print_queue();
+
 	// FIXME We should have a cur_pid here, instead of using loader's cur_pid
 	return cur_pid;
 }
