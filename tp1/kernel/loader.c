@@ -169,6 +169,7 @@ pid loader_load(pso_file* f, uint_32 pl) {
 
 	processes[pid].id = pid;
 	processes[pid].privilege_level = pl;
+	processes[pid].prev = processes[pid].next = FREE_PCB_ID;
 
 	mm_page* current_pdt = (mm_page*) processes[cur_pid].cr3;
 
@@ -190,7 +191,6 @@ pid loader_load(pso_file* f, uint_32 pl) {
 	return pid;
 }
 
-// TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
 void loader_enqueue(pid* cola) {
 	pid tmp_pid;
 	if (*cola == FREE_QUEUE) {
@@ -206,7 +206,6 @@ void loader_enqueue(pid* cola) {
 	sched_block();
 }
 
-// TODO: check if this should work with a mutex or at least with an STI (stop interrupts)
 void loader_unqueue(pid* cola) {
 	pid tmp_pid;
 	if (*cola != FREE_QUEUE) {
@@ -218,7 +217,7 @@ void loader_unqueue(pid* cola) {
 			*cola = tmp_pid;
 		} else {
 			sched_unblock(*cola);
-			*cola = -1;
+			*cola = FREE_QUEUE;
 		}
 	}
 }
