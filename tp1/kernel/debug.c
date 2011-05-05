@@ -38,8 +38,8 @@ const char* exp_name[] = {
 	"Alignment check"
 };
 
-void dummy_handler(registers_t* regs) {
-	vga_printf("Hola, soy espurio\n");
+void spurios_welcome(registers_t* regs) {
+	debug_log("hey mother fucker IRQ! This is SpuriOS.");
 }
 
 void debug_init(void) {
@@ -47,7 +47,8 @@ void debug_init(void) {
 	for (i = 0; i < 20; i++) {
 		idt_register(i, debug_kernelpanic, PL_KERNEL);
 	}
-	idt_register(0x27, dummy_handler, PL_KERNEL);
+
+	idt_register(0x27, spurios_welcome, PL_KERNEL);
 }
 
 bool in_panic = FALSE;

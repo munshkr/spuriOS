@@ -53,7 +53,11 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_init();
 	sched_init();
 
-	loader_load(&task_task1_pso, PL_USER);
+	uint_32 i;
+	for (i = 0; i < 15; i++) {
+		loader_load(&task_task1_pso, PL_USER);
+		loader_load(&task_task1_pso, PL_KERNEL);
+	}
 
 	syscalls_init();
 

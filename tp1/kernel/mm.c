@@ -28,7 +28,7 @@ int mm_bitmap_byte_len;
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
-void* get_frame_from_page(void* virt_addr, mm_page* pdt) {
+void* mm_frame_from_page(void* virt_addr, mm_page* pdt) {
 	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
 	kassert(pd_entry->attr & MM_ATTR_P);
@@ -38,7 +38,7 @@ void* get_frame_from_page(void* virt_addr, mm_page* pdt) {
 }
 
 // TODO Reuse this function when creating new directories
-void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
+void mm_map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
 	kassert((((uint_32) phys_addr) & 0xFFF) == 0);
 	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
 
@@ -62,7 +62,7 @@ void map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
 	invlpg(virt_addr);
 }
 
-void unmap_page(void* virt_addr, mm_page* pdt) {
+void mm_unmap_page(void* virt_addr, mm_page* pdt) {
 	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
 	
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
@@ -108,7 +108,6 @@ void* mm_mem_seek(char request_type) {
 		}
 	}
 
-	vga_printf("seek = %x\n", dir);
 	return (void*)dir;
 }
 

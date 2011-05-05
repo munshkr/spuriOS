@@ -22,7 +22,7 @@ extern pcb_t processes[];
 extern pid cur_pid;
 
 void loader_init(void);
-pid loader_load(pso_file* f, int pl);
+pid loader_load(pso_file* f, uint_32 pl);
 
 void loader_enqueue(pid* cola);
 void loader_unqueue(pid* cola);

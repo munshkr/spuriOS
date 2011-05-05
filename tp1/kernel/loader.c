@@ -61,50 +61,19 @@ static inline int get_new_pid() {
 	return pid;
 }
 
-pid loader_load(pso_file* f, int pl) {
-	// Verify file signature
-	kassert(f->signature[0] == PSO_SIGNATURE[0] &&
-			f->signature[1] == PSO_SIGNATURE[1] &&
-			f->signature[2] == PSO_SIGNATURE[2] &&
-			f->signature[3] == PSO_SIGNATURE[3]);
+inline uint_32 data_pages_needed_for(pso_file* f) {
+	uint_32 pages = (f->mem_end - f->mem_start) / PAGE_SIZE;
+	if ((f->mem_end - f->mem_start) % PAGE_SIZE) pages++;
+	return pages;
+}
 
-	print_pso_file(f);
+inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
+	uint_32 pl, void* temp_page, pcb_t* new_proc) {
 
-	int pid = get_new_pid();
+	void* kernel_stack_frame = mm_mem_alloc();
+	mm_map_frame(kernel_stack_frame, (void*) TASK_K_STACK_ADDRESS, new_pdt, PL_KERNEL);
 
-	processes[pid].id = pid;
-	processes[pid].privilege_level = pl;
-
-	// Temporal page to map new frames and initialize them
-	mm_page* current_pdt = (mm_page*) processes[cur_pid].cr3;
-
-	void* temp_page;
-	void* old_frame = NULL;
-	if (cur_pid == IDLE_PID) {
-		// Use first page for users (it's empty always)
-		temp_page = (void*) USER_MEMORY_START;
-	} else {
-		// Stash the frame used in the first page of
-		// the currently running task, because we'll use it
-		// for initializing the new task's frames.
-
-		// FIXME We know f->mem_start == USER_MEMORY_START for now,
-		// so no page table may be created when we map that page.
-		// We should store f->mem_start in the PCB to know where
-		// the first page is, to avoid a possible page table alloc.
-		temp_page = (void*) USER_MEMORY_START;
-		old_frame = get_frame_from_page(temp_page, current_pdt);
-	}
-
-	// Create new Page Directory Table
-	mm_page* new_pdt = mm_dir_new();
-	processes[pid].cr3 = (uint_32) new_pdt;
-
-	// Kernel stack frame
-	void* k_stack_frame = mm_mem_alloc();
-	map_frame(k_stack_frame, (void*) TASK_K_STACK_ADDRESS, new_pdt, PL_KERNEL);
-
-	map_frame(k_stack_frame, temp_page, current_pdt, PL_KERNEL);
+	mm_map_frame(kernel_stack_frame, temp_page, current_pdt, PL_KERNEL);
 	memset(temp_page, 0, PAGE_SIZE);
 
 	if (pl == PL_KERNEL) {
@@ -115,11 +84,10 @@ pid loader_load(pso_file* f, int pl) {
 		((uint_32*) temp_page)[1016] = (uint_32)(TASK_K_STACK_ADDRESS + 1020 * 4); // ESP
 		((uint_32*) temp_page)[1015] = (uint_32)(TASK_K_STACK_ADDRESS + 1023 * 4); // EBP
 
-		processes[pid].esp = (uint_32)(TASK_K_STACK_ADDRESS + 1013 * 4); // "In switch" ESP
+		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1013 * 4); // "In switch" ESP
 	} else {
-		// User stack frame
-		void* u_stack_frame = mm_mem_alloc();
-		map_frame(u_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
+		void* user_stack_frame = mm_mem_alloc();
+		mm_map_frame(user_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
 
 		((uint_32*) temp_page)[1023] = SS_U_DATA | PL_USER; // SS (USER)
 		((uint_32*) temp_page)[1022] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // USER ESP
@@ -131,12 +99,14 @@ pid loader_load(pso_file* f, int pl) {
 		((uint_32*) temp_page)[1014] = (uint_32)(TASK_K_STACK_ADDRESS + 1018 * 4); // ESP
 		((uint_32*) temp_page)[1013] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
 
-		processes[pid].esp = (uint_32)(TASK_K_STACK_ADDRESS + 1011 * 4); // "In switch" ESP
+		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1011 * 4); // "In switch" ESP
 	}
 
-	// Calculate number of pages required for the new task
-	uint_32 total_pages = (f->mem_end - f->mem_start) / PAGE_SIZE;
-	if ((f->mem_end - f->mem_start) % PAGE_SIZE) total_pages++;
+}
+
+inline void copy_data_from(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
+	void* temp_page, uint_32 pl) {
+	uint_32 total_pages = data_pages_needed_for(f);
 
 	void* task_mem_p = (sint_8*) f->mem_start;
 	void* task_data_p = (sint_8*) f;
@@ -144,9 +114,9 @@ pid loader_load(pso_file* f, int pl) {
 	int i;
 	for (i = 0; i < total_pages; ++i) {
 		void* frame = mm_mem_alloc();
-		map_frame(frame, task_mem_p, new_pdt, pl);
+		mm_map_frame(frame, task_mem_p, new_pdt, pl);
 
-		map_frame(frame, temp_page, current_pdt, PL_KERNEL);
+		mm_map_frame(frame, temp_page, current_pdt, PL_KERNEL);
 
 		// Copy task code from memory or initialize with zeros the new frames
 		if (task_mem_p >= (void*) f->mem_end_disk) {
@@ -160,13 +130,60 @@ pid loader_load(pso_file* f, int pl) {
 		task_mem_p  += PAGE_SIZE;
 		task_data_p += PAGE_SIZE;
 	}
+}
 
-	unmap_page(temp_page, current_pdt);
+inline void create_temp_mapping_on(void** temp_page, void** old_frame,
+	mm_page* current_pdt) {
 
-	// Restore original frame used by current task
-	if (cur_pid != IDLE_PID) {
-		map_frame(old_frame, temp_page, current_pdt, processes[cur_pid].privilege_level);
+	if (cur_pid == IDLE_PID) {
+		// Use first page for users (it's empty always)
+		*(uint_32**)temp_page = (uint_32*) USER_MEMORY_START;
+	} else {
+		// FIXME We know f->mem_start == USER_MEMORY_START for now,
+		// so no page table may be created when we map that page.
+		// We should store f->mem_start in the PCB to know where
+		// the first page is, to avoid a possible page table alloc.
+		*(uint_32**)temp_page = (uint_32*) USER_MEMORY_START;
+		*(uint_32**)old_frame = mm_frame_from_page(temp_page, current_pdt);
 	}
+}
+
+inline void undo_temp_mapping_on(void* temp_page, void* old_frame,
+	mm_page* current_pdt) {
+	mm_unmap_page(temp_page, current_pdt);
+	if (cur_pid != IDLE_PID) {
+		mm_map_frame(old_frame, temp_page, current_pdt, processes[cur_pid].privilege_level);
+	}
+}
+
+inline void check_signature_of(pso_file* f) {
+	kassert(f->signature[0] == PSO_SIGNATURE[0] &&
+			f->signature[1] == PSO_SIGNATURE[1] &&
+			f->signature[2] == PSO_SIGNATURE[2] &&
+			f->signature[3] == PSO_SIGNATURE[3]);
+}
+
+pid loader_load(pso_file* f, uint_32 pl) {
+	check_signature_of(f);
+	uint_32 pid = get_new_pid();
+
+	processes[pid].id = pid;
+	processes[pid].privilege_level = pl;
+
+	mm_page* current_pdt = (mm_page*) processes[cur_pid].cr3;
+
+	void* temp_page;
+	void* old_frame = NULL;
+
+	create_temp_mapping_on(&temp_page, &old_frame, current_pdt);
+
+	mm_page* new_pdt = mm_dir_new();
+	processes[pid].cr3 = (uint_32) new_pdt;
+
+	create_stacks_for(f, current_pdt, new_pdt, pl, temp_page, &processes[pid]);
+	copy_data_from(f, current_pdt, new_pdt, temp_page, pl);
+
+	undo_temp_mapping_on(temp_page, old_frame, current_pdt);
 
 	sched_load(pid);
 
