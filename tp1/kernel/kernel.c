@@ -18,7 +18,7 @@ extern pso_file task_task_kbd_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
-	lcr3((uint_32) kernel_page_dir);	
+	lcr3((uint_32) kernel_page_dir);
 
 	uint_32 cr0 = rcr0();
 	cr0 |= CR0_PG;
@@ -59,7 +59,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	kbd_init();
 
 	uint_32 i;
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 4; i++) {
 		loader_load(&task_task1_pso, PL_USER);
 	}
 

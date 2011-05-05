@@ -97,22 +97,25 @@ void sched_unblock(pid pd) {
 }
 
 int sched_exit() {
+	pid pd;
+
 	if (running_tasks > 1) {
 		sched_task* tmp_next = actual->next;
 		(actual->prev)->next = actual->next;
 		(actual->next)->prev = actual->prev;
 		memset(actual, 0, sizeof(sched_task));
 		actual = tmp_next;
+		pd = actual->pd;
 	} else {
 		memset(actual, 0, sizeof(sched_task));
 		first = NULL;
 		last = NULL;
 		actual = NULL;
+		pd = 0;
 	}
 	running_tasks--;
 
-	// FIXME We should have a cur_pid here, instead of using loader's cur_pid
-	return cur_pid;
+	return pd;
 }
 
 int sched_block() {

@@ -9,8 +9,9 @@ extern cur_pid
 extern tmp_pid
 extern processes
 extern the_tss
+extern loader_tick
 
-%define TSS_ESP0_OFF 4 
+%define TSS_ESP0_OFF 4
 
 %define PCB_SZ 24
 %define PCB_PL_OFF 4
@@ -31,9 +32,11 @@ extern tick
 timer_handler:
 	pushad
 
+	inc dword [tick]
+	call loader_tick
+
 	;== Debug ==
 	;xchg bx,bx
-	;inc dword [tick]
 	;call timer_draw_clock
 	;==
 
@@ -73,7 +76,7 @@ task_switch:
 	mov eax, [tmp_pid]
 	mov ebx, PCB_SZ
 	mul ebx
-	add eax, processes		
+	add eax, processes
 
 	; Restore stack pointer
 	mov esp, [eax + PCB_ESP_OFF]
@@ -83,7 +86,7 @@ task_switch:
 	mov ebx, [eax + PCB_PL_OFF]
 	cmp ebx, PL_KERNEL
 	je set_kernel_segments
-	
+
 	; User data segments
 	mov ax, SS_U_DATA
 	mov ds, ax

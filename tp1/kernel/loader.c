@@ -12,16 +12,30 @@
 const char PSO_SIGNATURE[4] = "PSO";
 
 extern void (timer_handler)();
+extern void (task_switch)();
 
 pcb_t processes[MAX_PID];
 pid cur_pid;
 pid tmp_pid;
+
+slept_task sleeping[MAX_PID];
+pid first_slept;
 
 inline void initialize_process_list() {
 	uint_32 id;
 	for (id = 0; id < MAX_PID; id++) {
 		processes[id].id = FREE_PCB_PID;
 	}
+}
+
+inline void initialize_sleeping_list() {
+	uint_32 id;
+	for (id = 0; id < MAX_PID; id++) {
+		sleeping[id].id = FREE_PCB_PID;
+		sleeping[id].time = 0;
+		sleeping[id].next = FREE_PCB_PID;
+	}
+	first_slept = FREE_PCB_PID;
 }
 
 void loader_init(void) {
@@ -31,6 +45,8 @@ void loader_init(void) {
 	timer_init(1193);
 
 	initialize_process_list();
+
+	initialize_sleeping_list();
 
 	cur_pid = IDLE_PID;
 	processes[IDLE_PID].id = IDLE_PID;
@@ -217,6 +233,83 @@ void loader_unqueue(pid* cola) {
 			sched_unblock(*cola);
 			*cola = FREE_QUEUE;
 		}
+	}
+}
+
+void loader_sleep(uint_32 time) {
+	pid tmp_slept;
+	pid prev_slept = FREE_PCB_PID;
+	if (time <= 0) {
+		return;
+	}
+
+	//loader_print_raw_sleeping();
+	//loader_print_sleeping();
+	//breakpoint();
+
+	if (first_slept == FREE_PCB_PID) {
+		first_slept = cur_pid;
+		sleeping[cur_pid].id = cur_pid;
+		sleeping[cur_pid].time = time;
+		sleeping[cur_pid].next = FREE_PCB_PID;
+	} else {
+		tmp_slept = first_slept;
+		while (tmp_slept != FREE_PCB_PID) {
+			if (sleeping[tmp_slept].time < time) {
+				time -= sleeping[tmp_slept].time;
+			} else {
+				break;
+			}
+			prev_slept = tmp_slept;
+			tmp_slept = sleeping[tmp_slept].next;
+		}
+		if (tmp_slept == FREE_PCB_PID) {
+			sleeping[prev_slept].next = cur_pid;
+			sleeping[cur_pid].id = cur_pid;
+			sleeping[cur_pid].time = time;
+			sleeping[cur_pid].next = FREE_PCB_PID;
+		} else {
+			sleeping[prev_slept].next = cur_pid;
+			sleeping[cur_pid].id = cur_pid;
+			sleeping[cur_pid].time = time;
+			sleeping[cur_pid].next = tmp_slept;
+			sleeping[tmp_slept].time -= time;
+		}
+	}
+
+	tmp_pid = sched_block();
+	task_switch();
+}
+
+void loader_print_sleeping() {
+	pid tmp_slept = first_slept;
+	vga_printf("DeltaQueue->");
+	while (tmp_slept != FREE_PCB_PID) {
+		vga_printf("{%d, %d}->", tmp_slept, sleeping[tmp_slept].time);
+		tmp_slept = sleeping[tmp_slept].next;
+	}
+	vga_printf("X\n");
+}
+
+void loader_print_raw_sleeping() {
+	vga_printf("first_slept = %d\n", first_slept);
+	int i;
+	for (i = 0; i < 5; i++) {
+		vga_printf("%d:\n\tid: %d\n\ttime: %d\n\tnext: %d\n", i, sleeping[i].id, sleeping[i].time, sleeping[i].next);
+		//breakpoint();
+	}
+}
+
+void loader_tick() {
+	if (first_slept == FREE_PCB_PID) {
+		return;
+	}
+
+	sleeping[first_slept].time--;
+	while(first_slept != FREE_PCB_PID && sleeping[first_slept].time == 0) {
+		sched_unblock(first_slept);
+		sleeping[first_slept].id = FREE_PCB_PID;
+		first_slept = sleeping[first_slept].next;
 	}
 }
 

@@ -10,6 +10,7 @@
 #define SYS_PALLOC 2
 #define SYS_PRINT  3
 #define SYS_GETCH  4
+#define SYS_SLEEP  5
 
 #ifdef __KERNEL__
 
@@ -22,6 +23,7 @@ void syscalls_init(void);
 // Sólo se compila en modo "tarea"
 // Declarar los "wrapers" para los syscalls que incluyen las tareas.
 
+void sleep(uint_32 time);
 uint_32 getpid(void);
 void exit(void);
 void* palloc(void);

@@ -15,6 +15,7 @@ uint_32 sys_getpid(void);
 void sys_exit(void);
 void* sys_palloc(void);
 void sys_print (registers_t* regs);
+void sys_sleep (registers_t* regs);
 
 void syscalls_init() {
 	idt_register(SYS_INT, syscalls_handler, PL_USER);
@@ -24,25 +25,29 @@ static void syscalls_handler(registers_t* regs) {
 	// Syscall number is in EAX
 	switch (regs->eax) {
 		case SYS_GETPID:
-		  regs->eax = sys_getpid();
-		  break;
+			regs->eax = sys_getpid();
+			break;
 		case SYS_PALLOC:
-		  regs->eax = (uint_32) sys_palloc();
-		  break;
+			regs->eax = (uint_32) sys_palloc();
+			break;
 		case SYS_EXIT:
-		  sys_exit();
-		  break;
+			sys_exit();
+			break;
 		case SYS_PRINT:
 			sys_print(regs);
 			break;
 		case SYS_GETCH:
 			regs->eax = (uint_32) sys_getch();
 			break;
+		case SYS_SLEEP:
+			sys_sleep(regs);
+			break;
 		default:
-		  vga_printf("Invalid system call! Exited");
-		  sys_exit();
-		  return;
+			vga_printf("Invalid system call! Exited");
+			sys_exit();
+			break;
 	}
+	return;
 }
 
 uint_32 sys_getpid() {
@@ -66,6 +71,12 @@ void* sys_palloc() {
 	// ...
 
 	return page;
+}
+
+void sys_sleep(registers_t* regs) {
+	// EBP (+0), EIP (+4), time (+8)
+	uint_32 time = *(uint_32*)(regs->user_esp + 8);
+	loader_sleep(time);
 }
 
 void sys_print(registers_t* regs) {
@@ -105,6 +116,10 @@ char getch() {
   uint_32 ret;
   __asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_GETCH));
 	return (char) ret;
+}
+
+void sleep(uint_32 time) {
+	__asm __volatile("int $0x30" : : "a"(SYS_SLEEP));
 }
 
 #endif

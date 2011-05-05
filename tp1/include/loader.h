@@ -22,6 +22,12 @@ typedef struct str_pcb {
 	pid prev, next;
 } __attribute__((__packed__)) pcb_t;
 
+typedef struct str_slept_task {
+	pid id;
+	uint_32 time;
+	pid next;
+} slept_task;
+
 extern pcb_t processes[];
 extern pid cur_pid;
 
@@ -30,6 +36,11 @@ pid loader_load(pso_file* f, uint_32 pl);
 
 void loader_enqueue(pid* cola);
 void loader_unqueue(pid* cola);
+
+void loader_sleep(uint_32 time);
+void loader_tick();
+void loader_print_raw_sleeping();
+void loader_print_sleeping();
 
 void loader_exit(void);
 
