@@ -169,7 +169,7 @@ pid loader_load(pso_file* f, uint_32 pl) {
 
 	processes[pid].id = pid;
 	processes[pid].privilege_level = pl;
-	processes[pid].prev = processes[pid].next = FREE_PCB_ID;
+	processes[pid].prev = processes[pid].next = FREE_PCB_PID;
 
 	mm_page* current_pdt = (mm_page*) processes[cur_pid].cr3;
 
