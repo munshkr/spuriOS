@@ -32,7 +32,8 @@ inline void go_idle() {
 
 	// Never changes
 	the_tss.ss0 = SS_K_DATA;
-	the_tss.esp0 = esp();
+
+	processes[IDLE_PID].esp = esp();
 	be_task();
 
 	sti();
