@@ -97,6 +97,8 @@ void sched_unblock(pid pd) {
 }
 
 int sched_exit() {
+	kassert(running_tasks > 0);
+	
 	pid pd;
 
 	if (running_tasks > 1) {

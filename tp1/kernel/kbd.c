@@ -49,7 +49,9 @@ void kbd_handler(registers_t* regs) {
 			buffered_ctrl &= ~KBD_CTRL_SHIFT; break; 
 		default:
 			if (buffered_scancode & 0x80) {
-				/* Ignore the break code */
+				if (buffered_char != 0)
+					while (char_queue != FREE_QUEUE)
+						loader_unqueue(&char_queue);
 			} else {
 				buffered_char = (buffered_ctrl & KBD_CTRL_SHIFT ?
 					uppercase : lowercase)[buffered_scancode];
@@ -57,23 +59,22 @@ void kbd_handler(registers_t* regs) {
 			break;
 	}
 
-	vga_printf("IRQ1 %x %d\n", buffered_scancode, buffered_ctrl);
+//	vga_printf("IRQ1 %x %d\n", buffered_scancode, buffered_ctrl);
 }
 
 
 // TODO The following functions will be syscalls for user tasks
 
 char sys_getch() {
+	while (1) {	
+		if (buffered_char != 0) {
+			char tmp = buffered_char;
+			buffered_char = 0;
+			return tmp;
+		} 
 	
-	if (buffered_char != 0) {
-		char tmp = buffered_char;
-		buffered_char = 0;
-		return tmp;
-	} 
-
-	loader_enqueue(&char_queue);
-
-	return 0;
+		loader_enqueue(&char_queue);
+	}
 }
 
 char get_scancode() {

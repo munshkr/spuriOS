@@ -206,29 +206,30 @@ pid loader_load(pso_file* f, uint_32 pl) {
 }
 
 void loader_enqueue(pid* cola) {
-	pid tmp_pid;
+	pid local_tmp_pid;
 	if (*cola == FREE_QUEUE) {
 		*cola = cur_pid;
 	} else {
-		tmp_pid = *cola;
-		while(processes[tmp_pid].next != FREE_PCB_PID) {
-			tmp_pid = processes[tmp_pid].next;
+		local_tmp_pid = *cola;
+		while(processes[local_tmp_pid].next != FREE_PCB_PID) {
+			local_tmp_pid = processes[local_tmp_pid].next;
 		}
-		processes[tmp_pid].next = cur_pid;
-		processes[cur_pid].prev = tmp_pid;
+		processes[local_tmp_pid].next = cur_pid;
+		processes[cur_pid].prev = local_tmp_pid;
 	}
-	sched_block();
+	tmp_pid = sched_block();
+	task_switch();
 }
 
 void loader_unqueue(pid* cola) {
-	pid tmp_pid;
+	pid local_tmp_pid;
 	if (*cola != FREE_QUEUE) {
 		if (processes[*cola].next != FREE_PCB_PID) {
-			tmp_pid = processes[*cola].next;
-			processes[tmp_pid].prev = FREE_PCB_PID;
+			local_tmp_pid = processes[*cola].next;
+			processes[local_tmp_pid].prev = FREE_PCB_PID;
 			processes[*cola].next = FREE_PCB_PID;
 			sched_unblock(*cola);
-			*cola = tmp_pid;
+			*cola = local_tmp_pid;
 		} else {
 			sched_unblock(*cola);
 			*cola = FREE_QUEUE;
@@ -314,12 +315,12 @@ void loader_tick() {
 }
 
 void loader_exit(void) {
-	pid tmp_pid = sched_exit();
+	pid local_tmp_pid = sched_exit();
 
-	vga_printf("loader_exit() called for pid %u\n", tmp_pid);
+	vga_printf("loader_exit() called for pid %u\n", local_tmp_pid);
 
 	// TODO Refactor this shit
-	pcb_t* task = &processes[tmp_pid];
+	pcb_t* task = &processes[local_tmp_pid];
 	if (task->prev == FREE_PCB_PID && task->next == FREE_PCB_PID) {
 		// nothing
 	} else if (task->prev == FREE_PCB_PID && task->next != FREE_PCB_PID) {
@@ -333,7 +334,9 @@ void loader_exit(void) {
 		processes[task->prev].next = FREE_PCB_PID;
 	}
 
-	mm_dir_free((mm_page*) processes[tmp_pid].cr3);
+	mm_dir_free((mm_page*) processes[local_tmp_pid].cr3);
 
-	processes[tmp_pid].id = FREE_PCB_PID;
+	processes[local_tmp_pid].id = FREE_PCB_PID;
+	tmp_pid = local_tmp_pid;
+	task_switch();
 }
