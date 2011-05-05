@@ -6,6 +6,7 @@
 #include <pic.h>
 #include <common.h>
 #include <debug.h>
+#include <syscalls.h>
 
 // Defined in isr.c
 extern isr_t interrupt_handlers[];
@@ -47,6 +48,8 @@ extern void (*irq12)(void);
 extern void (*irq13)(void);
 extern void (*irq14)(void);
 extern void (*irq15)(void);
+
+extern void (*sysint)(void);
 
 static const uint_32 IDT_ATTR_DPL_[4] = { IDT_ATTR_DPL0, IDT_ATTR_DPL1, IDT_ATTR_DPL2, IDT_ATTR_DPL3 };
 
@@ -114,6 +117,8 @@ void idt_init(void) {
 	idt_handlers[ISR_IRQ14]  = (void *) &irq14;
 	idt_handlers[ISR_IRQ15]  = (void *) &irq15;
 
+	idt_handlers[SYS_INT] = (void *) &sysint;
+
 	// Initialize and remap IRQs in both PICs
 	pic_reset(PIC1_START_IRQ, PIC2_START_IRQ);
 
@@ -131,9 +136,9 @@ void idt_register_asm(int intr, void (asm_handler)(void), int pl) {
 	kassert(intr >= 0 && intr < 256);
 
 	if (pl == PL_KERNEL) {
-		idt[intr] = make_idt_entry(asm_handler, SS_K_CODE, IDT_INT);
+		idt[intr] = make_idt_entry(asm_handler, SS_K_CODE, IDT_INT | IDT_ATTR_DPL0);
 	} else if (pl == PL_USER) {
-		idt[intr] = make_idt_entry(asm_handler, SS_U_CODE, IDT_INT);
+		idt[intr] = make_idt_entry(asm_handler, SS_K_CODE, IDT_INT | IDT_ATTR_DPL3);
 	}
 } 
 
@@ -154,8 +159,8 @@ void idt_register(int intr, isr_t handler, int pl) {
 
 	// Register ASM-handler wrapper in IDT
 	if (pl == PL_KERNEL) {
-		idt[intr] = make_idt_entry((void *) idt_handlers[intr], SS_K_CODE, IDT_INT);
+		idt[intr] = make_idt_entry((void *) idt_handlers[intr], SS_K_CODE, IDT_INT | IDT_ATTR_DPL0);
 	} else if (pl == PL_USER) {
-		idt[intr] = make_idt_entry((void *) idt_handlers[intr], SS_U_CODE, IDT_INT);
+		idt[intr] = make_idt_entry((void *) idt_handlers[intr], SS_K_CODE, IDT_INT | IDT_ATTR_DPL3);
 	}
 }

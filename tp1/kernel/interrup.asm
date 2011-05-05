@@ -44,6 +44,8 @@ global idt_ac
 global idt_mc
 global idt_xm
 
+global sysint
+
 idt_de:  ISR_NOERRCODE  0
 idt_db:  ISR_NOERRCODE  1
 idt_nmi: ISR_NOERRCODE  2
@@ -63,7 +65,7 @@ idt_mf:  ISR_NOERRCODE 16
 idt_ac:  ISR_NOERRCODE 17
 idt_mc:  ISR_ERRCODE   18
 idt_xm:  ISR_NOERRCODE 19
-
+sysint:  ISR_NOERRCODE 0x30
 
 ; Duplicated in kernel/idt.c
 %define PIC1_START_IRQ 0x20

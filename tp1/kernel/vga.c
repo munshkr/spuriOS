@@ -59,41 +59,43 @@ int vga_putchar(const char c) {
 	return c;
 }
 
-int vga_printf(const char* format, ...)
-{
+int vga_printf_fixed_args(const char* format, uint_32* args) {
 	int size = 0;
-	va_list ap;
 	const char* ptr = format;
 	char* str;
 
 	// Save current attributes
 	vga_attr_t old_attr = vga_attr;
 
-	va_start(ap, format);
 	while (*ptr) {
 		if (*ptr == '%') {
 			ptr++;
 			switch (*ptr) {
 			  case 'c':
-				putchar((char) va_arg(ap, int), FALSE);
+				putchar(*(char*) args, FALSE);
+				args++;
 				size++;
 				break;
 			  case 's':
-				str = va_arg(ap, char*);
+				str = *(char**) args;
+				args++;
 				while (*str) {
 					putchar(*str++, TRUE);
 					size++;
 				}
 				break;
 			  case 'd':
-				size += print_dec(va_arg(ap, int));
+				size += print_dec(*(int*)args);
+				args++;
 				break;
 			  case 'u':
-				size += print_udec(va_arg(ap, unsigned int));
+				size += print_udec(*(unsigned int*)args);
+				args++;
 				break;
 			  case 'x':
 			  case 'p':
-				size += print_uhex(va_arg(ap, int));
+				size += print_uhex(*(int*)args);
+				args++;
 				break;
 			  case '%':
 				putchar('%', FALSE);
@@ -115,13 +117,20 @@ int vga_printf(const char* format, ...)
 		}
 		ptr++;
 	}
-	va_end(ap);
 
 	// Restore attributes
 	vga_attr = old_attr;
 	update_cursor();
 
 	return size;
+}
+
+int vga_printf(const char* format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	int ret = vga_printf_fixed_args(format, (void*) ap);
+	va_end(ap);
+	return ret;
 }
 
 void vga_reset_colors(void) {
