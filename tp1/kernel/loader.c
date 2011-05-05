@@ -13,10 +13,6 @@ const char PSO_SIGNATURE[4] = "PSO";
 
 extern void (timer_handler)();
 
-#define FREE_PCB_PID 0xFFFFFFFF
-#define FREE_QUEUE -1
-#define USER_MEMORY_START 0x400000
-
 pcb_t processes[MAX_PID];
 pid cur_pid;
 pid tmp_pid;
@@ -80,9 +76,10 @@ inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pd
 		((uint_32*) temp_page)[1023] = TASK_DEFAULT_EFLAGS; // EFLAGS
 		((uint_32*) temp_page)[1022] = SS_K_CODE; // CS
 		((uint_32*) temp_page)[1021] = (uint_32) f->_main; // EIP
+		((uint_32*) temp_page)[1020] = (uint_32) timer_handler; // task_swith ret EIP
 
-		((uint_32*) temp_page)[1016] = (uint_32)(TASK_K_STACK_ADDRESS + 1020 * 4); // ESP
-		((uint_32*) temp_page)[1015] = (uint_32)(TASK_K_STACK_ADDRESS + 1023 * 4); // EBP
+		((uint_32*) temp_page)[1015] = (uint_32)(TASK_K_STACK_ADDRESS + 1019 * 4); // ESP
+		((uint_32*) temp_page)[1014] = (uint_32)(TASK_K_STACK_ADDRESS + 1022 * 4); // EBP
 
 		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1013 * 4); // "In switch" ESP
 	} else {
@@ -95,11 +92,12 @@ inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pd
 		((uint_32*) temp_page)[1021] = TASK_DEFAULT_EFLAGS; // EFLAGS
 		((uint_32*) temp_page)[1020] = SS_U_CODE | PL_USER; // CS (USER)
 		((uint_32*) temp_page)[1019] = (uint_32) f->_main; // EIP
+		((uint_32*) temp_page)[1018] = (uint_32) timer_handler; // task_swith ret EIP
 
-		((uint_32*) temp_page)[1014] = (uint_32)(TASK_K_STACK_ADDRESS + 1018 * 4); // ESP
-		((uint_32*) temp_page)[1013] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
+		((uint_32*) temp_page)[1013] = (uint_32)(TASK_K_STACK_ADDRESS + 1017 * 4); // ESP
+		((uint_32*) temp_page)[1012] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
 
-		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1011 * 4); // "In switch" ESP
+		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1010 * 4); // "In switch" ESP
 	}
 
 }

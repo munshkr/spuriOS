@@ -8,6 +8,10 @@
 
 #define MAX_PID 32
 
+#define FREE_PCB_PID 0xFFFFFFFF
+#define FREE_QUEUE 0xFFFFFFFF
+#define USER_MEMORY_START 0x400000
+
 #ifdef __KERNEL__
 
 typedef struct str_pcb {

@@ -7,6 +7,7 @@
 #include <loader.h>
 #include <mm.h>
 #include <vga.h>
+#include <kbd.h>
 
 static void syscalls_handler(registers_t*);
 
@@ -33,6 +34,9 @@ static void syscalls_handler(registers_t* regs) {
 		  break;
 		case SYS_PRINT:
 			sys_print(regs);
+			break;
+		case SYS_GETCH:
+			regs->eax = (uint_32) sys_getch();
 			break;
 		default:
 		  vga_printf("Invalid system call! Exited");
@@ -95,6 +99,12 @@ int printf(const char* format, ...) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_PRINT));
 	return ret;
+}
+
+char getch() {
+  uint_32 ret;
+  __asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_GETCH));
+	return (char) ret;
 }
 
 #endif

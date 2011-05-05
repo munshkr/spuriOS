@@ -1,4 +1,5 @@
 global timer_handler
+global task_switch
 
 ; == Scheduler ==
 extern sched_tick
@@ -46,6 +47,18 @@ timer_handler:
 
 	; Task switch needed
 	mov [tmp_pid], eax
+
+	call task_switch
+go_back:
+	; Send EOI
+	mov al, 0x20
+	out 0x20, al
+
+	popad
+	iret
+
+task_switch:
+	pushad
 
 	; Save current process information
 	mov eax, [cur_pid]
@@ -96,10 +109,5 @@ restore_cr3:
 	mov eax, [tmp_pid]
 	mov [cur_pid], eax
 
-go_back:
-	; Send EOI
-	mov al, 0x20
-	out 0x20, al
-
 	popad
-	iret
+	ret

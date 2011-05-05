@@ -36,13 +36,13 @@ OBJS_KERN=kernel/kinit.o kernel/common.o kernel/a20.o kernel/mmap.o \
   kernel/interrup.o kernel/isr.o kernel/pic.o kernel/timer.o \
   kernel/vga.o kernel/sched.o \
   kernel/mm.o kernel/debug.o kernel/loader.o kernel/tasks.o \
-  kernel/syscalls.o kernel/sem.o kernel/taskswitch.o
+  kernel/syscalls.o kernel/sem.o kernel/taskswitch.o kernel/kbd.o
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.dbg
 SYM_KERN=$(DIROUT)kernel.sym
 
 # Tareas
-TASKS=tasks/task1.pso
+TASKS=tasks/task1.pso tasks/task_kbd.pso
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
 

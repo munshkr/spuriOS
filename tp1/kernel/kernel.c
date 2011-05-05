@@ -10,9 +10,11 @@
 #include <syscalls.h>
 #include <i386.h>
 #include <common.h>
+#include <kbd.h>
 
 extern void* _end;
 extern pso_file task_task1_pso;
+extern pso_file task_task_kbd_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -54,8 +56,10 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_init();
 	sched_init();
 
+	kbd_init();
+
 	uint_32 i;
-	for (i = 0; i < 31; i++) {
+	for (i = 0; i < 2; i++) {
 		loader_load(&task_task1_pso, PL_USER);
 	}
 
