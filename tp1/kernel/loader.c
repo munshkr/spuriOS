@@ -224,5 +224,28 @@ void loader_unqueue(pid* cola) {
 }
 
 void loader_exit(void) {
-}
+	pid tmp_pid = sched_exit();
 
+	vga_printf("loader_exit() called for pid %u\n", tmp_pid);
+	breakpoint();
+
+	/* TODO Refactor
+	pcb_t* task = &processes[tmp_pid];
+	if (task->prev == FREE_PCB_PID && task->next == FREE_PCB_PID) {
+		// nothing
+	} else if (task->prev == FREE_PCB_PID && task->next != FREE_PCB_PID) {
+		// top of the list
+		processes[task->next].prev = FREE_PCB_PID;
+	} else if (task->prev != FREE_PCB_PID && task->next != FREE_PCB_PID) {
+		// man in the middle
+		processes[task->next].prev = task->prev;
+		processes[task->prev].next = task->next;
+	} else {
+		processes[task->prev].next = FREE_PCB_PID;
+	}
+	*/
+
+	//mm_dir_free((mm_page*) processes[tmp_pid].cr3);
+
+	processes[tmp_pid].id = FREE_PCB_PID;
+}

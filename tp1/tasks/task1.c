@@ -3,10 +3,11 @@ int data[10];
 #include <syscalls.h>
 
 int main(void) {
-	int i;
-	while (1) {
+	unsigned int j = 0, i = 0;
+	while (j < 120) {
 		printf("Hello world! I'm PID = %d\n", getpid());
-		for (i = 0; i < 10000000; i++); // DELAY
+		for (i = 0; i < 1000000000; i++); // DELAY
+		j++;
 	}
 
 	return 0;

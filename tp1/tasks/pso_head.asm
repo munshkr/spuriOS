@@ -5,6 +5,8 @@ extern main
 extern _end ; Esto es una cosa que define el ld (o alguien) que apunta al final del espacio de memoria
 extern __pso_end_disk ; Esto se define en pso_tail
 
+extern exit
+
 section .text
 __pso_start:
 	db "PSO",0   ; Tenemos magic chars y todo!
@@ -18,6 +20,5 @@ _start:
 	push DWORD 0 ; argv
 	push DWORD 0 ; env
 	call main
-	; exit(eax)
-	; Completar aqu'i la forma en la que llame a la syscall loader_exit(eax)
+	call exit
 	jmp $
