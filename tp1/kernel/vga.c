@@ -133,6 +133,20 @@ int vga_printf(const char* format, ...) {
 	return ret;
 }
 
+int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint_32* args) {
+	if (row > vga_rows || col > vga_cols) {
+		return 0;
+	}
+	int old_x = vga_get_x();
+	int old_y = vga_get_y();
+
+	vga_set_pos(col, row);
+	int ret = vga_printf_fixed_args(format, args);
+	vga_set_pos(old_x, old_y);
+
+	return ret;
+}
+
 void vga_reset_colors(void) {
 	vga_attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
 }

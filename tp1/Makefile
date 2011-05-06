@@ -42,7 +42,7 @@ DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.db
 SYM_KERN=$(DIROUT)kernel.sym
 
 # Tareas
-TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso
+TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso tasks/task_sin.pso
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
 
@@ -87,7 +87,7 @@ tasks/%.o: tasks/%.c
 tasks/%.elf: tasks/pso_head.o tasks/syscalls.o tasks/%.o tasks/pso_tail.o $(BIN_LIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0x400000 -o $@ tasks/pso_head.o tasks/syscalls.o $(@:.elf=.o) $(LDPSO) tasks/pso_tail.o
 
-$(BIN_KERN).elf: $(OBJS_KERN) 
+$(BIN_KERN).elf: $(OBJS_KERN)
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x1200 -o $@ $(OBJS_KERN) $(LDPSO)
 
 $(BIN_KERN): $(BIN_KERN).elf
@@ -95,11 +95,11 @@ $(BIN_KERN): $(BIN_KERN).elf
 
 $(BIN_KERN).asm: $(BIN_KERN).elf
 	$(OBJDUMP) -S -M intel $< >$@
-	
+
 $(BIN_KERN).dbg: $(BIN_KERN).elf
 	$(OBJCOPY) --only-keep-debug $< $@
 
-$(SYM_KERN): $(BIN_KERN).elf 
+$(SYM_KERN): $(BIN_KERN).elf
 	nm $< | cut -d ' ' -f 1,3 > $@
 
 # Images

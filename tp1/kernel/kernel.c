@@ -16,6 +16,7 @@ extern void* _end;
 extern pso_file task_task1_pso;
 extern pso_file task_task_kbd_pso;
 extern pso_file task_task_dummy_pso;
+extern pso_file task_task_sin_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -69,10 +70,14 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 */
 
 
+	loader_load(&task_task_sin_pso, PL_USER);
+
+	/*
 	loader_load(&task_task1_pso, PL_USER);
 	loader_load(&task_task_kbd_pso, PL_USER);
 	loader_load(&task_task_kbd_pso, PL_USER);
 	loader_load(&task_task_dummy_pso, PL_USER);
+	*/
 
 	syscalls_init();
 

@@ -151,5 +151,7 @@ int sched_tick() {
 			pd = actual->pd;
 		}
 	}
+	//print_queue(4);
+	//breakpoint();
 	return pd;
 }

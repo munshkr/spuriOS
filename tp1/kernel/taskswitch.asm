@@ -28,6 +28,7 @@ extern loader_tick
 
 ; == Debug ==
 extern timer_draw_clock
+extern timer_digital_clock
 extern tick
 
 timer_handler:
@@ -43,6 +44,7 @@ timer_handler:
 	;== Debug ==
 	;xchg bx,bx
 	;call timer_draw_clock
+	call timer_digital_clock
 	;==
 
 	; Ask scheduler who is next

@@ -51,6 +51,7 @@ int vga_putchar(const char c);
  */
 int vga_printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
 int vga_printf_fixed_args(const char* format, uint_32* args);
+int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint_32* args);
 
 /* Set foreground and background colors */
 void vga_reset_colors(void);

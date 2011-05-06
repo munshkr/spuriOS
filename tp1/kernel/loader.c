@@ -315,7 +315,6 @@ void loader_print_raw_sleeping() {
 }
 
 
-int val_loco = 0;
 
 void loader_tick() {
 	if (first_slept == FREE_PCB_PID) {
@@ -329,8 +328,6 @@ void loader_tick() {
 		sched_unblock(first_slept);
 		sleeping[first_slept].id = FREE_PCB_PID;
 		first_slept = sleeping[first_slept].next;
-		val_loco++;
-		vga_printf("%d\n", val_loco);
 	}
 }
 

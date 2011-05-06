@@ -37,3 +37,29 @@ void timer_draw_clock() {
 	// Restore cursor position
 	vga_set_pos(old_x, old_y);
 }
+
+// Get number of digits of a number (unsigned)
+static unsigned int ulen(const unsigned int number, const char base) {
+	unsigned int length = 1;
+	unsigned int div = number;
+
+	while (div) {
+		div /= base;
+		if (!div) break;
+		length++;
+	}
+	return length;
+}
+
+void timer_digital_clock() {
+	uint_32 time = tick / 100;
+	int old_x = vga_get_x();
+	int old_y = vga_get_y();
+
+	// Draw a clock in the lower right corner of the screen
+	vga_set_pos(vga_cols - ulen(time/10, 10) - 4, 0);
+	vga_printf("\\c0B%u.%us", (time / 10), (time % 10));
+
+	// Restore cursor position
+	vga_set_pos(old_x, old_y);
+}

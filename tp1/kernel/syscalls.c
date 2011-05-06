@@ -8,6 +8,7 @@
 #include <mm.h>
 #include <vga.h>
 #include <kbd.h>
+#include <debug.h>
 
 static void syscalls_handler(registers_t*);
 
@@ -15,6 +16,7 @@ uint_32 sys_getpid(void);
 void sys_exit(void);
 void* sys_palloc(void);
 void sys_print (registers_t* regs);
+void sys_loc_print (registers_t* regs);
 void sys_sleep (registers_t* regs);
 
 void syscalls_init() {
@@ -35,6 +37,9 @@ static void syscalls_handler(registers_t* regs) {
 			break;
 		case SYS_PRINT:
 			sys_print(regs);
+			break;
+		case SYS_LOCPRINT:
+			sys_loc_print(regs);
 			break;
 		case SYS_GETSC:
 			regs->eax = (uint_32) sys_getsc();
@@ -86,6 +91,16 @@ void sys_print(registers_t* regs) {
 	regs->eax = ret;
 }
 
+void sys_loc_print(registers_t* regs) {
+	//breakpoint();
+	// EBP (+0), EIP (+4), row (+8), col (+12), format (+16), ... args (+20)
+	uint_32 row = *(uint_32*)(regs->user_esp + 8);
+	uint_32 col = *(uint_32*)(regs->user_esp + 12);
+	char* format = *(char**)(regs->user_esp + 16);
+	uint_32 ret = vga_loc_printf_fixed_args(row, col, format, (uint_32*)(regs->user_esp + 12));
+	regs->eax = ret;
+}
+
 #else // __TASK__
 
 extern void* syscall_int(int number);
@@ -109,6 +124,12 @@ void* palloc() {
 int printf(const char* format, ...) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_PRINT));
+	return ret;
+}
+
+int loc_printf(uint_32 row, uint_32 col, const char* format, ...) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_LOCPRINT));
 	return ret;
 }
 
