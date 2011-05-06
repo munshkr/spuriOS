@@ -102,6 +102,12 @@ int sched_exit() {
 	pid pd;
 
 	if (running_tasks > 1) {
+		if (first->pd == actual->pd) {
+			first = actual->next;
+		}
+		if (last->pd == actual->pd) {
+			last = actual->prev;
+		}
 		sched_task* tmp_next = actual->next;
 		(actual->prev)->next = actual->next;
 		(actual->next)->prev = actual->prev;
