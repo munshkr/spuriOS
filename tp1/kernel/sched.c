@@ -98,7 +98,7 @@ void sched_unblock(pid pd) {
 
 int sched_exit() {
 	kassert(running_tasks > 0);
-	
+
 	pid pd;
 
 	if (running_tasks > 1) {
@@ -140,6 +140,7 @@ int sched_tick() {
 			pd = actual->pd;
 		} else {
 			actual->quantum = SCHED_QUANTUM_DEFAULT;
+			kassert(actual->next != 0);
 			actual = actual->next;
 			pd = actual->pd;
 		}

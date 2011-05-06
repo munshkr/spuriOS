@@ -5,7 +5,7 @@ int data[10];
 int main(void) {
 	while (1) {
 		printf("Hello world! I'm PID = %d\n", getpid());
-		sleep(5000);
+		sleep(3000);
 	}
 
 	return 0;

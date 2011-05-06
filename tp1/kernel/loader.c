@@ -43,7 +43,7 @@ void loader_init(void) {
 	debug_log("initializing loader");
 
 	idt_register_asm(ISR_IRQ0, timer_handler, PL_KERNEL);
-	timer_init(1193);
+	timer_init(200);
 
 	initialize_process_list();
 
@@ -250,11 +250,13 @@ void loader_sleep(uint_32 time) {
 	//breakpoint();
 
 	if (first_slept == FREE_PCB_PID) {
+//		breakpoint();
 		first_slept = cur_pid;
 		sleeping[cur_pid].id = cur_pid;
 		sleeping[cur_pid].time = time;
 		sleeping[cur_pid].next = FREE_PCB_PID;
 	} else {
+//		breakpoint();
 		tmp_slept = first_slept;
 		while (tmp_slept != FREE_PCB_PID) {
 			if (sleeping[tmp_slept].time < time) {
@@ -262,16 +264,26 @@ void loader_sleep(uint_32 time) {
 			} else {
 				break;
 			}
+//			breakpoint();
 			prev_slept = tmp_slept;
 			tmp_slept = sleeping[tmp_slept].next;
 		}
 		if (tmp_slept == FREE_PCB_PID) {
+//			breakpoint();
 			sleeping[prev_slept].next = cur_pid;
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = FREE_PCB_PID;
 		} else {
-			sleeping[prev_slept].next = cur_pid;
+//			breakpoint();
+			if (prev_slept == FREE_PCB_PID) {
+//				breakpoint();
+				first_slept = cur_pid;
+			} else {
+//				breakpoint();
+				sleeping[prev_slept].next = cur_pid;
+			}
+//			breakpoint();
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = tmp_slept;
@@ -302,16 +314,23 @@ void loader_print_raw_sleeping() {
 	}
 }
 
+
+int val_loco = 0;
+
 void loader_tick() {
 	if (first_slept == FREE_PCB_PID) {
 		return;
 	}
+
+	//breakpoint();
 
 	sleeping[first_slept].time--;
 	while(first_slept != FREE_PCB_PID && sleeping[first_slept].time == 0) {
 		sched_unblock(first_slept);
 		sleeping[first_slept].id = FREE_PCB_PID;
 		first_slept = sleeping[first_slept].next;
+		val_loco++;
+		vga_printf("%d\n", val_loco);
 	}
 }
 
