@@ -339,7 +339,7 @@ void loader_tick() {
 void loader_exit(void) {
 	pid local_tmp_pid = sched_exit();
 
-	vga_printf("loader_exit() called for pid %u\n", local_tmp_pid);
+	debug_log("loader_exit() called");
 
 	// TODO Refactor this shit
 	pcb_t* task = &processes[local_tmp_pid];

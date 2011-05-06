@@ -59,27 +59,36 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	sched_init();
 
 	kbd_init();
-
-/*
-	uint_32 i;
-	for (i = 0; i < 4; i++) {
-		loader_load(&task_task1_pso, PL_USER);
-	}
-//	loader_load(&task_task_kbd_pso, PL_USER);
-	loader_load(&task_task_dummy_pso, PL_KERNEL);
-*/
-
-
-	loader_load(&task_task_sin_pso, PL_USER);
+	syscalls_init();
 
 	/*
-	loader_load(&task_task1_pso, PL_USER);
-	loader_load(&task_task_kbd_pso, PL_USER);
-	loader_load(&task_task_kbd_pso, PL_USER);
-	loader_load(&task_task_dummy_pso, PL_USER);
-	*/
+	 * Test Tasks
+	 */
 
-	syscalls_init();
+	// Dummy task, loops forever.
+	loader_load(&task_task_dummy_pso, PL_KERNEL);
+
+	// A task that uses `sleep` syscall to go to sleep for N ms.
+	// When it wakes up, it calls `palloc` for a new page, and tries
+	// to use it succesfully.
+	loader_load(&task_task1_pso, PL_USER);
+	//loader_load(&task_task1_pso, PL_USER);
+
+	// A task that listens key presses and prints the scancode when
+	// something arrives at the keyboard input port.
+	// After some key presses, it dies.
+	loader_load(&task_task_kbd_pso, PL_USER);
+	loader_load(&task_task_kbd_pso, PL_USER);
+
+	// TODO A task that tries to read to a nonmapped page and exits
+	// because of a Page Fault.
+	//loader_load(&task_task_pf_pso, PL_USER);
+
+	// Draw something :) Also uses `sleep`.
+	//loader_load(&task_task_sin_pso, PL_USER);
+
+	/*
+	 */
 
 	go_idle();
 	return;
