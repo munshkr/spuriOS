@@ -66,14 +66,14 @@ void sys_exit() {
 void* sys_palloc() {
 	void* frame = mm_mem_alloc();
 
-	if (!frame) {
-		return NULL;
-	}
+	if (!frame) { return NULL; }
 
-	// TODO map frame to an empty page
-	// of current task PDT
-	void* page = NULL;
-	// ...
+	void* page = (void*) processes[cur_pid].next_empty_page_addr;
+
+	mm_map_frame(frame, page, (mm_page*) processes[cur_pid].cr3,
+		processes[cur_pid].privilege_level);
+
+	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
 
 	return page;
 }

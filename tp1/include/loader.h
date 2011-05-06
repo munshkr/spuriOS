@@ -19,6 +19,7 @@ typedef struct str_pcb {
 	uint_32 privilege_level;
 	uint_32 cr3;
 	uint_32 esp;
+	uint_32 next_empty_page_addr;
 	pid prev, next;
 } __attribute__((__packed__)) pcb_t;
 

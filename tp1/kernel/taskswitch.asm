@@ -14,7 +14,7 @@ extern loader_tick
 
 %define TSS_ESP0_OFF 4
 
-%define PCB_SZ 24
+%define PCB_SZ 28
 %define PCB_PL_OFF 4
 %define PCB_CR3_OFF 8
 %define PCB_ESP_OFF 12

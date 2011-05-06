@@ -119,7 +119,7 @@ inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pd
 
 }
 
-inline void copy_data_from(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
+inline uint_32 copy_data_from(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
 	void* temp_page, uint_32 pl) {
 	uint_32 total_pages = data_pages_needed_for(f);
 
@@ -145,6 +145,8 @@ inline void copy_data_from(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
 		task_mem_p  += PAGE_SIZE;
 		task_data_p += PAGE_SIZE;
 	}
+
+	return total_pages;
 }
 
 inline void create_temp_mapping_on(void** temp_page, void** old_frame,
@@ -197,7 +199,10 @@ pid loader_load(pso_file* f, uint_32 pl) {
 	processes[pid].cr3 = (uint_32) new_pdt;
 
 	create_stacks_for(f, current_pdt, new_pdt, pl, temp_page, &processes[pid]);
-	copy_data_from(f, current_pdt, new_pdt, temp_page, pl);
+	uint_32 total_pages = copy_data_from(f, current_pdt, new_pdt, temp_page, pl);
+
+	// Store address for fast palloc
+	processes[pid].next_empty_page_addr = USER_MEMORY_START + (total_pages * PAGE_SIZE);
 
 	undo_temp_mapping_on(temp_page, old_frame, current_pdt);
 
