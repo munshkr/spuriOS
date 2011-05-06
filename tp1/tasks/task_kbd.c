@@ -2,11 +2,10 @@
 
 int main () {
 	int i = 0;
-	char c = 0;
+	char sc = 0;
 	for (i = 0; i < 10; i++) {
-		c = getch();
-//		__asm __volatile ("xchg %%bx, %%bx" : : );
-		printf("%d ", (uint_32) c);
+		sc = getsc();
+		printf("(PID %d) Scancode = %d\n", getpid(), (uint_32) sc);
 	}
 	printf("\n");
 

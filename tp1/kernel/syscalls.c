@@ -36,8 +36,8 @@ static void syscalls_handler(registers_t* regs) {
 		case SYS_PRINT:
 			sys_print(regs);
 			break;
-		case SYS_GETCH:
-			regs->eax = (uint_32) sys_getch();
+		case SYS_GETSC:
+			regs->eax = (uint_32) sys_getsc();
 			break;
 		case SYS_SLEEP:
 			sys_sleep(regs);
@@ -112,9 +112,9 @@ int printf(const char* format, ...) {
 	return ret;
 }
 
-char getch() {
+char getsc() {
   uint_32 ret;
-  __asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_GETCH));
+  __asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_GETSC));
 	return (char) ret;
 }
 

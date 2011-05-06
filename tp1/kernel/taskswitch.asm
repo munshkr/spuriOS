@@ -1,4 +1,5 @@
 global timer_handler
+global task_init
 global task_switch
 
 ; == Scheduler ==
@@ -32,6 +33,10 @@ extern tick
 timer_handler:
 	pushad
 
+	; Send EOI
+	mov al, 0x20
+	out 0x20, al
+
 	inc dword [tick]
 	call loader_tick
 
@@ -53,10 +58,6 @@ timer_handler:
 
 	call task_switch
 go_back:
-	; Send EOI
-	mov al, 0x20
-	out 0x20, al
-
 	popad
 	iret
 
@@ -114,3 +115,6 @@ restore_cr3:
 
 	popad
 	ret
+
+task_init:
+	iret

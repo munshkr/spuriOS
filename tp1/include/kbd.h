@@ -10,7 +10,7 @@
 void kbd_handler(registers_t* regs);
 void kbd_init();
 
-char sys_getch(void);
-char get_scancode(void);
+//char sys_getch(void);
+char sys_getsc(void);
 
 #endif // __KBD_H__

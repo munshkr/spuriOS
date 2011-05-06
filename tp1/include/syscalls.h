@@ -9,7 +9,7 @@
 #define SYS_EXIT   1
 #define SYS_PALLOC 2
 #define SYS_PRINT  3
-#define SYS_GETCH  4
+#define SYS_GETSC  4
 #define SYS_SLEEP  5
 
 #ifdef __KERNEL__
@@ -28,7 +28,8 @@ uint_32 getpid(void);
 void exit(void);
 void* palloc(void);
 int printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
-char getch(void);
+//char getch(void);
+char getsc(void);
 
 #endif
 
