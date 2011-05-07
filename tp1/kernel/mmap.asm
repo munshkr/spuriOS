@@ -25,10 +25,10 @@ bits 16
 extern _end
 %define MMAP_ADDRESS _end
 
-mmap_entries dd  0x0000
-
-global make_mmap
 global mmap_entries
+global make_mmap
+
+mmap_entries dd  0x0000
 
 make_mmap:
 	pushad
