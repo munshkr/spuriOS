@@ -2,8 +2,6 @@
 ; interrup.asm ~ Wrappers for ISR / IRQ handlers
 ;
 
-section .text
-
 %macro ISR_NOERRCODE 1
 	push byte 0		; Dummy error code
 	push byte %1
@@ -111,7 +109,7 @@ irq_common:
 	add esp, 8
 	iret
 
-
-section .bss
-; TODO
-;handlers: resd 256
+; Spurious interrupts
+global spurious_handler
+spurious_handler:
+	iret

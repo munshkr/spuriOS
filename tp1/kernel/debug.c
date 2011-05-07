@@ -38,9 +38,7 @@ const char* exp_name[] = {
 	"Alignment check"
 };
 
-void spurios_welcome(registers_t* regs) {
-	debug_log("hey mother fucker IRQ! This is SpuriOS.");
-}
+extern void spurious_handler(void);
 
 void debug_init(void) {
 	int i;
@@ -48,7 +46,12 @@ void debug_init(void) {
 		idt_register(i, debug_kernelpanic, PL_KERNEL);
 	}
 
-	idt_register(0x27, spurios_welcome, PL_KERNEL);
+	// FIXME This is not the correct way to handler spurious interrupts
+	// because we're disabling handling of LPT1 interrupts or Secondary IDE.
+	// We should read the ISR register of the PIC to find out if it's a fake
+	// IRQ or a real one.  For now, we ignore them all.
+	idt_register_asm(ISR_IRQ7, spurious_handler, PL_KERNEL);
+	idt_register_asm(ISR_IRQ15, spurious_handler, PL_KERNEL);
 }
 
 bool in_panic = FALSE;
