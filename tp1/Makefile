@@ -42,7 +42,7 @@ DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.db
 SYM_KERN=$(DIROUT)kernel.sym
 
 # Tareas
-TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso tasks/task_sin.pso tasks/task_pf.pso
+TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso tasks/task_sin.pso tasks/task_pf.pso tasks/task_funky.pso
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
 
