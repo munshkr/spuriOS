@@ -1,5 +1,5 @@
 % Trabajo Práctico 1 ~ PSO
-% Liptak, Leandro; Reboratti, Patricio; Silvani, Damián
+% Liptak, Leandro - leandroliptak@gmail.com; Reboratti, Patricio - darthpolly@gmail.com; Silvani, Damián - dsilvani@gmail.com
 
 Documentación
 =============
@@ -150,10 +150,6 @@ en una variable global pues es utilizada al crear nuevos directorios de páginas
 de tener mapeado con *identity mapping* toda la memoria en el rango 4KB a 4MB -
 1).
 
-### `sched` - Scheduler
-
-...
-
 ### `loader` - Loader y administrador de tareas
 
 La inicialización del módulo consiste en registrar el handler de la IRQ0
@@ -211,7 +207,3 @@ dependiendo el nivel de privilegio de la tarea para así poder indicar el cambio
 a una pila de anillo 3 o no, según corresponda. Finalmente cabe destacar que la
 rutina de cambio de contexto es llamada no sólo desde la interrupción del reloj
 sino también cuando una tarea se bloquea frente a algún evento o termina.
-
-### `sem` - Semáforos de kernel
-
-...
