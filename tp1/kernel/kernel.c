@@ -25,6 +25,7 @@ extern pso_file task_task1_pso;
 extern pso_file task_task_kbd_pso;
 extern pso_file task_task_dummy_pso;
 extern pso_file task_task_sin_pso;
+extern pso_file task_task_pf_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -100,10 +101,12 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	// After some key presses, it dies.
 	loader_load(&task_task_kbd_pso, PL_USER);
 	loader_load(&task_task_kbd_pso, PL_USER);
+	loader_load(&task_task_kbd_pso, PL_USER);
 
-	// TODO A task that tries to read to a nonmapped page and exits
+	// A task that tries to read to a nonmapped page and exits
 	// because of a Page Fault.
-	//loader_load(&task_task_pf_pso, PL_USER);
+	loader_load(&task_task_pf_pso, PL_USER);	// Kill it with fire
+	//loader_load(&task_task_pf_pso, PL_KERNEL);	// OH SHI-
 
 	// Draw something :) Also uses `sleep`.
 	//loader_load(&task_task_sin_pso, PL_USER);

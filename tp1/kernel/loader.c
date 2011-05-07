@@ -39,6 +39,15 @@ inline void initialize_sleeping_list() {
 	first_slept = FREE_PCB_PID;
 }
 
+static void page_fault_handler(registers_t* regs) {
+	if (processes[cur_pid].privilege_level == PL_USER) {
+		vga_printf("Page fault! Killed %u\n", cur_pid);
+		loader_exit();
+	} else {
+		debug_kernelpanic(regs);
+	}
+}
+
 void loader_init(void) {
 	debug_log("initializing loader");
 
@@ -53,6 +62,8 @@ void loader_init(void) {
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
 	processes[IDLE_PID].cr3 = rcr3();
+
+	idt_register(ISR_PGFLT, page_fault_handler, PL_KERNEL);
 }
 
 static inline void print_pso_file(pso_file* f) {
