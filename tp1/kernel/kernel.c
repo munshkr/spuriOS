@@ -12,6 +12,14 @@
 #include <common.h>
 #include <kbd.h>
 
+const char* fancy_logo[5] = {
+	"    //   ) )                                //   ) ) //   ) )",
+	"   ((         ___               __     ( ) //   / / ((       ",
+	"     \\\\     //   ) ) //   / / //  ) ) / / //   / /    \\\\ ",
+	"       ) ) //___/ / //   / / //      / / //   / /       ) )  ",
+	"((___ / / //       ((___( ( //      / / ((___/ / ((___ / /   ",
+};
+
 extern void* _end;
 extern pso_file task_task1_pso;
 extern pso_file task_task_kbd_pso;
@@ -44,6 +52,17 @@ inline void go_idle() {
 	while (1) hlt();
 }
 
+void print_logo(void) {
+	int i;
+	for (i = 0; i < 5; i++) {
+		vga_attr.fld.forecolor = i + 2;
+		vga_attr.fld.light = TRUE;
+		vga_printf("%s\n", fancy_logo[i]);
+	}
+	vga_printf("\n");
+	vga_reset_colors();
+}
+
 /* Entry-point del modo protegido luego de cargar los registros de
  * segmento y armar un stack */
 void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
@@ -60,6 +79,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	kbd_init();
 	syscalls_init();
+
+	print_logo();
 
 	/*
 	 * Test Tasks
