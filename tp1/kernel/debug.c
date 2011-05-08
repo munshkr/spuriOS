@@ -17,6 +17,14 @@
 #define HAS_DF(x) (x & 1024)
 #define HAS_OF(x) (x & 2048)
 
+typedef struct str_symbol_entry_t {
+	uint_32 address;
+	char* string;
+} symbol_entry_t;
+
+extern symbol_entry_t __symbols[];
+extern uint_32 __symbols_total;
+
 const char* exp_name[] = {
 	"Divide Error",
 	"Debug Interrupt",
@@ -39,6 +47,7 @@ const char* exp_name[] = {
 };
 
 extern void spurious_handler(void);
+
 
 void debug_init(void) {
 	int i;
@@ -96,18 +105,18 @@ void debug_kernelpanic(registers_t* regs) {
 /* We assume calls were near and didn't push a segment selector */
 void show_backtrace(uint_32* ebp) {
 	vga_printf("\nBacktrace at %p\n", ebp);
-	
+
 	uint_32 param_id;
-	uint_32* top = ebp; 
+	uint_32* top = ebp;
 
 	uint_32 back_count;
-	for (back_count = 0; back_count < BT_MAX; back_count++) {	
+	for (back_count = 0; back_count < BT_MAX; back_count++) {
 		if (*top < (uint_32) ebp) {
 			break;
 		}
 
 		ebp = (uint_32*) *top;
-		
+
 		param_id = 0;
 		top++;
 		if (*top == 0 || *top == ~0) {
@@ -160,7 +169,19 @@ void show_stack(uint_32* esp) {
 }
 
 void show_cs_eip(uint_32 cs, uint_32 eip) {
-	vga_printf("\\c0FAt (CS:EIP) %x:%x, privilege level %d\n", cs, eip, SS_PL(cs));
+	vga_printf("\\c0FAt (CS:EIP) %x:%x", cs, eip);
+
+	char *name = NULL;
+	unsigned int displacement = symbol_name(eip, &name);
+	if (name != NULL) {
+		if (displacement > 0) {
+			vga_printf("\\c0F [%s+%u]", name, displacement);
+		} else {
+			vga_printf("\\c0F [%s]", name);
+		}
+	}
+
+	vga_printf("\\c0F - privilege level %d\n", SS_PL(cs));
 }
 
 void show_eflags(uint_32 eflags) {
@@ -181,4 +202,19 @@ void debug_log(const char* message) {
 	/* Perhaps this function should log to a file in the future */
 	uint_64 tsc = read_tsc();
 	vga_printf("[%d.%d] %s\n", (uint_32)(tsc >> 32), (uint_32)(tsc & 0xFFFFFFFF), message);
+}
+
+unsigned int symbol_name(uint_32 address, char** string_p) {
+	// Linear search on the symbols table
+	int i;
+	for (i = 0; i < __symbols_total; i++) {
+		if (address >= __symbols[i].address &&
+				address < __symbols[i + 1].address) {
+			*string_p = __symbols[i].string;
+			return __symbols[i + 1].address - address;
+		}
+	}
+
+	*string_p = NULL;
+	return 0;
 }

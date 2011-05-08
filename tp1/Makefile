@@ -38,8 +38,10 @@ OBJS_KERN=kernel/kinit.o kernel/common.o kernel/a20.o kernel/mmap.o \
   kernel/mm.o kernel/debug.o kernel/loader.o kernel/tasks.o \
   kernel/syscalls.o kernel/sem.o kernel/taskswitch.o kernel/kbd.o
 BIN_KERN=$(DIROUT)kernel.bin
-DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.dbg
+DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
 SYM_KERN=$(DIROUT)kernel.sym
+SYMBOLS=$(DIROUT)symbols
+SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
 TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso tasks/task_sin.pso tasks/task_pf.pso tasks/task_funky.pso
@@ -87,20 +89,35 @@ tasks/%.o: tasks/%.c
 tasks/%.elf: tasks/pso_head.o tasks/syscalls.o tasks/%.o tasks/pso_tail.o $(BIN_LIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0x400000 -o $@ tasks/pso_head.o tasks/syscalls.o $(@:.elf=.o) $(LDPSO) tasks/pso_tail.o
 
-$(BIN_KERN).elf: $(OBJS_KERN)
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x1200 -o $@ $(OBJS_KERN) $(LDPSO)
+$(BIN_KERN).orig.elf: $(OBJS_KERN) $(SYMBOLS)_null.o
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0x1200 -o $@ $(OBJS_KERN) $(SYMBOLS)_null.o $(LDPSO)
+
+$(BIN_KERN).elf: $(BIN_KERN).orig.elf $(SYMBOLS).o
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0x1200 -o $@ $(OBJS_KERN) $(SYMBOLS).o $(LDPSO)
 
 $(BIN_KERN): $(BIN_KERN).elf
 	$(OBJCOPY) -S -O binary $< $@
 
-$(BIN_KERN).asm: $(BIN_KERN).elf
+$(BIN_KERN).asm: $(BIN_KERN).orig.elf
 	$(OBJDUMP) -S -M intel $< >$@
 
-$(BIN_KERN).dbg: $(BIN_KERN).elf
+$(BIN_KERN).dbg: $(BIN_KERN).orig.elf
 	$(OBJCOPY) --only-keep-debug $< $@
 
-$(SYM_KERN): $(BIN_KERN).elf
+$(SYM_KERN): $(BIN_KERN).orig.elf
 	nm $< | cut -d ' ' -f 1,3 > $@
+
+$(SYMBOLS).asm: $(SYM_KERN)
+	cat $(SYM_KERN) | python gensym.py > $(SYMBOLS).asm
+
+$(SYMBOLS).o: $(SYMBOLS).asm
+	nasm $(NASMFLAGS) -felf32 -o $@ $<
+
+$(SYMBOLS)_null.asm:
+	python gensym.py --null > $(SYMBOLS)_null.asm
+
+$(SYMBOLS)_null.o: $(SYMBOLS)_null.asm
+	nasm $(NASMFLAGS) -felf32 -o $@ $<
 
 # Images
 $(IMG_BASE):
@@ -122,7 +139,7 @@ doc/%.pdf: doc/%.md
 
 # Otros
 clean:
-	rm -f $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf)
+	rm -f $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(SYMBOLS_FILES) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf)
 	#rm -f deps
 
 # Dependencias

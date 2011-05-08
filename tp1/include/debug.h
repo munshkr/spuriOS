@@ -14,6 +14,8 @@ void show_cs_eip(uint_32 cs, uint_32 eip);
 void show_stack(uint_32* esp);
 void show_backtrace(uint_32* ebp);
 
+unsigned int symbol_name(uint_32 address, char** string_p);
+
 #include <vga.h>
 #include <i386.h>
 
