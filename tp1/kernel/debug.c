@@ -124,8 +124,35 @@ void show_backtrace(uint_32* ebp) {
 			break;
 		}
 
-		uint_8* call_addr = (uint_8*)(((uint_8*)*top) - 5);
-		vga_printf("\tFrom %p, call %p (", call_addr, call_addr + 5 + *(uint_32*)(call_addr + 1));
+		uint_8* from = (uint_8*)(((uint_8*)*top) - 5);
+		uint_8* to = from + 5 + *(uint_32*)(from + 1);
+
+		char *name = NULL;
+		unsigned int displacement = 0;
+
+		// Print `from` symbol name
+		displacement = symbol_name((uint_32) from, &name);
+		if (name != NULL) {
+			if (displacement > 0) {
+				vga_printf("\t[%s+%u]", name, displacement);
+			} else {
+				vga_printf("\t[%s]", name);
+			}
+		} else {
+			vga_printf("\t%p", from);
+		}
+
+		// Print `to` symbol name
+		displacement = symbol_name((uint_32) to, &name);
+		if (name != NULL) {
+			if (displacement > 0) {
+				vga_printf(" -> [%s+%u] (", name, displacement);
+			} else {
+				vga_printf(" -> [%s] (", name);
+			}
+		} else {
+			vga_printf(" -> %p (", to);
+		}
 
 		top++;
 		if (top >= ebp) {
@@ -211,7 +238,7 @@ unsigned int symbol_name(uint_32 address, char** string_p) {
 		if (address >= __symbols[i].address &&
 				address < __symbols[i + 1].address) {
 			*string_p = __symbols[i].string;
-			return __symbols[i + 1].address - address;
+			return address - __symbols[i].address;
 		}
 	}
 
