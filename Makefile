@@ -54,7 +54,7 @@ IMG_BASE=$(DIROUT)base.img
 IMG_FLOPPY=$(DIROUT)floppy.img
 
 # Documents
-DOC_FILES=$(DIRDOC)informe.pdf
+DOC_FILES=$(DIRDOC)tp2-docs.pdf
 
 
 .PHONY: all clean
