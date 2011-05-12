@@ -17,10 +17,16 @@
 #include <serial.h>
 #include <con.h>
 
+// Proc
+#include <proc.h>
 
 static sint_32 strcmp(const char* p, const char* q) {
 	for (; *p && *q && *p==*q; p++,q++);
 	return *p?(*q?(sint_32)*p-(sint_32)*q:1):*q?-1:0;
+}
+static sint_32 strncmp(const char* p, const char* q, uint_32 n) {
+	for (; n && *p && *q && *p==*q; p++,q++,n--);
+	return n?(*p?(*q?(sint_32)*p-(sint_32)*q:1):*q?-1:0):0;
 }
 
 /*
@@ -51,10 +57,12 @@ chardev* fs_open(const char* filename, uint_32 flags) {
 	if (!strcmp(filename, "/serial1")) return serial_open(1);
 	if (!strcmp(filename, "/console")) return con_open();
 
+	if (!strcmp(filename, "/proc/cpuid")) return proc_cpuid_open();
+
 	/*
 	 * Pedido para el disco 1: Usamos fat12 para abrirlo
 	 */ 
-	if (!strcmp(filename, "/disk/")) return fat12_open(&disk, filename+5, flags);
+	if (!strncmp(filename, "/disk/", 6)) return fat12_open(&disk, filename+5, flags);
 	
 	return NULL;
 }

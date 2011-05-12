@@ -58,7 +58,9 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/tasks.o \
 	kernel/taskswitch.o \
 	kernel/timer.o \
-  kernel/vga.o
+	kernel/vga.o \
+	kernel/proc.o
+
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
 SYM_KERN=$(DIROUT)kernel.sym

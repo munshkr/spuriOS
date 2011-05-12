@@ -2,6 +2,9 @@
 #define __DEVICE_H__
 
 #include <tipos.h>
+#include <loader.h>
+
+#define MAX_FD 32
 
 /* Devices */
 typedef struct str_dev device;
@@ -51,6 +54,8 @@ struct str_blockdev {
 void device_init(void);
 
 int device_descriptor(chardev* dev);
+
+device* devices[MAX_PID][MAX_FD];
 
 // Syscalls
 /*
