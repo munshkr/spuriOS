@@ -13,6 +13,8 @@
 #include <kbd.h>
 #include <device.h>
 
+#define __UNIT_TESTING__
+
 const char* fancy_logo[5] = {
 	"    //   ) )                                //   ) ) //   ) )",
 	"   ((         ___               __     ( ) //   / / ((       ",
@@ -22,13 +24,14 @@ const char* fancy_logo[5] = {
 };
 
 extern void* _end;
-extern pso_file task_task1_pso;
+extern pso_file task_ut_getpid_pso;
 extern pso_file task_task_kbd_pso;
-extern pso_file task_task_dummy_pso;
+extern pso_file task_ut_dummy_pso;
 extern pso_file task_task_sin_pso;
 extern pso_file task_task_pf_pso;
 extern pso_file task_task_funky_pso;
-extern pso_file task_open_pso;
+extern pso_file task_ut_cpuid_pso;
+extern pso_file task_ut_palloc_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -88,38 +91,13 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	print_logo();
 
-	/*
-	 * Test Tasks
-	 */
-/*
-	// Dummy task, loops forever.
-	loader_load(&task_task_dummy_pso, PL_KERNEL);
-
-	// A task that uses `sleep` syscall to go to sleep for N ms.
-	// When it wakes up, it calls `palloc` for a new page, and tries
-	// to use it succesfully.
-	loader_load(&task_task1_pso, PL_USER);
-	//loader_load(&task_task1_pso, PL_USER);
-
-	// A task that listens key presses and prints the scancode when
-	// something arrives at the keyboard input port.
-	// After some key presses, it dies.
-	loader_load(&task_task_kbd_pso, PL_USER);
-	loader_load(&task_task_kbd_pso, PL_USER);
-	loader_load(&task_task_kbd_pso, PL_USER);
-
-	// A task that tries to read to a nonmapped page and exits
-	// because of a Page Fault.
-	loader_load(&task_task_pf_pso, PL_USER);	// Kill it with fire
-	//loader_load(&task_task_pf_pso, PL_KERNEL);	// OH SHI-
-
-	// Draw something :) Also uses `sleep`.
-	//loader_load(&task_task_sin_pso, PL_USER);
-
-	loader_load(&task_task_funky_pso, PL_USER);
-
-*/
-	loader_load(&task_open_pso, PL_USER);
+	#ifdef __UNIT_TESTING__
+	debug_log("running unitary tests");
+	loader_load(&task_ut_dummy_pso, PL_KERNEL);
+	loader_load(&task_ut_getpid_pso, PL_USER);
+	loader_load(&task_ut_palloc_pso, PL_USER);
+	loader_load(&task_ut_cpuid_pso, PL_USER);
+	#endif
 
 	go_idle();
 	return;

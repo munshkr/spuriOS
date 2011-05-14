@@ -69,9 +69,10 @@ SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
 TASKS=\
-	tasks/open.pso \
-	tasks/task1.pso \
-	tasks/task_dummy.pso \
+	tasks/cpuid.pso \
+	tasks/palloc.pso \
+	tasks/getpid.pso \
+	tasks/dummy.pso \
 	tasks/task_funky.pso \
 	tasks/task_kbd.pso \
 	tasks/task_pf.pso \
