@@ -60,12 +60,10 @@ fd_t device_descriptor(chardev* dev);
 
 device* devices[MAX_PID][MAX_FD];
 
-// Syscalls
-/*
+/* Syscalls */
 int read(int fd, void* buf, uint_32 size);
 int write(int fd, const void* buf, uint_32 size);
 int seek(int fd, uint_32 size);
 int close(int fd);
-*/
 
 #endif

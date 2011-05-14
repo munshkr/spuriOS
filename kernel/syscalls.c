@@ -10,6 +10,7 @@
 #include <kbd.h>
 #include <debug.h>
 #include <fs.h>
+#include <device.h>
 
 static void syscalls_handler(registers_t*);
 
@@ -50,6 +51,9 @@ static void syscalls_handler(registers_t* regs) {
 			break;
 		case SYS_OPEN:
 			regs->eax = sys_open((const char*) regs->ebx, (uint_32) regs->ecx);
+			break;
+		case SYS_CLOSE:
+			regs->eax = (uint_32) close((int) regs->ebx);
 			break;
 		default:
 			vga_printf("Invalid system call! Exited");
@@ -112,6 +116,12 @@ extern void* syscall_int(int number);
 int open(const char* filename, uint_32 flags) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (filename), "c" (flags));
+	return ret;
+}
+
+int close(int fd) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (fd));
 	return ret;
 }
 

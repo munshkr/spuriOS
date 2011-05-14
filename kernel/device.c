@@ -22,7 +22,7 @@ inline void init_fd_association() {
 	uint_32 pid, fd;
 	for (pid = 0; pid < MAX_PID; pid++) {
 		for (fd = 0; fd < MAX_FD; fd++) {
-			devices[pid][fd] = 0;
+			devices[pid][fd] = NULL;
 		}
 	}
 }
@@ -35,4 +35,25 @@ void device_init(void) {
 	debug_log("initializing device drivers");
 	init_fd_association();
 	init_dev_modules();		
+}
+
+/* Syscalls */
+int close(int fd) {
+	if (fd < 0 || fd > MAX_FD) {
+		return -EINVALID;
+	}
+
+	device* dev = devices[cur_pid][fd];
+	if (dev == NULL) {
+		return -EINVALID;
+	}
+
+	kassert(dev->refcount > 0);
+	dev->refcount--;
+
+	if (dev->refcount == 0 && dev->flush != NULL) {
+		return dev->flush(dev);
+	}
+
+	return 0;
 }
