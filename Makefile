@@ -69,11 +69,11 @@ SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
 TASKS=\
+	tasks/open.pso \
 	tasks/task1.pso \
 	tasks/task_dummy.pso \
 	tasks/task_funky.pso \
 	tasks/task_kbd.pso \
-	tasks/task_open.pso \
 	tasks/task_pf.pso \
 	tasks/task_sin.pso \
 
