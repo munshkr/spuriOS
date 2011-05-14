@@ -6,6 +6,8 @@
 extern pid cur_pid;
 
 fd_t device_descriptor(chardev* dev) {
+	kassert(dev != NULL);
+
 	fd_t fd;
 	for (fd = 0; fd < MAX_FD; fd++) {
 		if (!devices[cur_pid][fd]) {
