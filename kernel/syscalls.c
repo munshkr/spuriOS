@@ -113,18 +113,6 @@ void sys_loc_print(registers_t* regs) {
 
 extern void* syscall_int(int number);
 
-int open(const char* filename, uint_32 flags) {
-	uint_32 ret;
-	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (filename), "c" (flags));
-	return ret;
-}
-
-int close(int fd) {
-	uint_32 ret;
-	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (fd));
-	return ret;
-}
-
 uint_32 getpid() {
   uint_32 res;
   __asm __volatile("int $0x30" : "=a"(res) : "0"(SYS_GETPID));
@@ -161,6 +149,19 @@ char getsc() {
 
 void sleep(uint_32 time) {
 	__asm __volatile("int $0x30" : : "a"(SYS_SLEEP));
+}
+
+/* Devices */
+int open(const char* filename, uint_32 flags) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (filename), "c" (flags));
+	return ret;
+}
+
+int close(int fd) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (fd));
+	return ret;
 }
 
 #endif
