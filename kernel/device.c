@@ -62,16 +62,52 @@ int close(int fd) {
 }
 
 int read(int fd, void* buf, uint_32 size) {
-	// TODO
-	return 0;
+	if (fd < 0 || fd > MAX_FD) {
+		return -EINVALID;
+	}
+
+	chardev* dev = (chardev*) devices[cur_pid][fd];
+	if (dev == NULL) {
+		return -EINVALID;
+	}
+
+	if (dev->read) {
+		return dev->read(dev, buf, size);
+	}
+
+	return -ENOFUNC;
 }
 
 int write(int fd, const void* buf, uint_32 size) {
-	// TODO
-	return 0;
+	if (fd < 0 || fd > MAX_FD) {
+		return -EINVALID;
+	}
+
+	chardev* dev = (chardev*) devices[cur_pid][fd];
+	if (dev == NULL) {
+		return -EINVALID;
+	}
+
+	if (dev->write) {
+		return dev->write(dev, buf, size);
+	}
+
+	return -ENOFUNC;
 }
 
 int seek(int fd, uint_32 size) {
-	// TODO
-	return 0;
+	if (fd < 0 || fd > MAX_FD) {
+		return -EINVALID;
+	}
+
+	chardev* dev = (chardev*) devices[cur_pid][fd];
+	if (dev == NULL) {
+		return -EINVALID;
+	}
+
+	if (dev->seek) {
+		return dev->seek(dev, size);
+	}
+
+	return -ENOFUNC;
 }
