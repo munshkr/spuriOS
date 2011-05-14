@@ -57,3 +57,18 @@ int close(int fd) {
 
 	return 0;
 }
+
+int read(int fd, void* buf, uint_32 size) {
+	// TODO
+	return 0;
+}
+
+int write(int fd, const void* buf, uint_32 size) {
+	// TODO
+	return 0;
+}
+
+int seek(int fd, uint_32 size) {
+	// TODO
+	return 0;
+}

@@ -53,7 +53,16 @@ static void syscalls_handler(registers_t* regs) {
 			regs->eax = open((const char*) regs->ebx, (uint_32) regs->ecx);
 			break;
 		case SYS_CLOSE:
-			regs->eax = (uint_32) close((int) regs->ebx);
+			regs->eax = close((int) regs->ebx);
+			break;
+		case SYS_READ:
+			regs->eax = read((int) regs->ebx, (void*) regs->ecx, regs->edx);
+			break;
+		case SYS_WRITE:
+			regs->eax = write((int) regs->ebx, (const void*) regs->ecx, regs->edx);
+			break;
+		case SYS_SEEK:
+			regs->eax = seek((int) regs->ebx, regs->ecx);
 			break;
 		default:
 			vga_printf("Invalid system call! Exited");
@@ -161,6 +170,24 @@ int open(const char* filename, uint_32 flags) {
 int close(int fd) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_CLOSE), "b" (fd));
+	return ret;
+}
+
+int read(int fd, void* buf, uint_32 size) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_READ), "b" (fd), "c" (buf), "d" (size));
+	return ret;
+}
+
+int write(int fd, const void* buf, uint_32 size) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_WRITE), "b" (fd), "c" (buf), "d" (size));
+	return ret;
+}
+
+int seek(int fd, uint_32 size) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_SEEK), "b" (fd), "c" (size));
 	return ret;
 }
 
