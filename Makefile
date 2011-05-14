@@ -40,26 +40,26 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/fat16.o \
 	kernel/fdd.o \
 	kernel/fs.o \
-  kernel/gdt.o \
+	kernel/gdt.o \
 	kernel/hdd.o \
 	kernel/idt.o \
-  kernel/interrup.o \
+	kernel/interrup.o \
 	kernel/isr.o \
 	kernel/kbd.o \
-  kernel/kernel.o \
+	kernel/kernel.o \
 	kernel/loader.o \
 	kernel/mmap.o \
-  kernel/mm.o \
+	kernel/mm.o \
 	kernel/pic.o \
+	kernel/proc.o \
 	kernel/sched.o \
 	kernel/sem.o \
 	kernel/serial.o \
-  kernel/syscalls.o \
+	kernel/syscalls.o \
 	kernel/tasks.o \
 	kernel/taskswitch.o \
 	kernel/timer.o \
 	kernel/vga.o \
-	kernel/proc.o
 
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
@@ -68,7 +68,15 @@ SYMBOLS=$(DIROUT)symbols
 SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
-TASKS=tasks/task1.pso tasks/task_kbd.pso tasks/task_dummy.pso tasks/task_sin.pso tasks/task_pf.pso tasks/task_funky.pso tasks/task_open.pso
+TASKS=\
+	tasks/task1.pso \
+	tasks/task_dummy.pso \
+	tasks/task_funky.pso \
+	tasks/task_kbd.pso \
+	tasks/task_open.pso \
+	tasks/task_pf.pso \
+	tasks/task_sin.pso \
+
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
 
