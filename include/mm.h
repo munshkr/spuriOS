@@ -53,6 +53,10 @@ typedef struct str_mm_page {
 #define make_mm_entry(base, attr) (mm_page){(uint_32)(attr), (uint_32)(base)}
 #define make_mm_entry_addr(addr, attr) (mm_page){(uint_32)(attr), (uint_32)(addr) >> 12}
 
+#define MM_REQUEST_KERNEL 0
+#define MM_REQUEST_USER 1
+uint_32 mm_free_page_count(char request_type); 
+
 void mm_map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl);
 void mm_unmap_page(void* virt_addr, mm_page* pdt);
 void* mm_frame_from_page(void* virt_addr, mm_page* pdt);

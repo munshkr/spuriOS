@@ -8,8 +8,6 @@
 #define PAGE_SIZE 4096
 #define HIMEM_BEGIN 0x100000
 #define MM_KERNEL_LIMIT 0x400000
-#define MM_REQUEST_KERNEL 0
-#define MM_REQUEST_USER 1
 
 #define WITHOUT_ATTRS(x) ((uint_32)x & ~0xFFF)
 
@@ -27,6 +25,34 @@ int mm_bitmap_byte_len;
 // --
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
+
+uint_32 mm_free_page_count(char request_type) {
+	uint_32 free_pg_count = 0;
+
+	uint_8* cursor = 0;
+	uint_8* limit = 0;
+	switch(request_type) {
+		case MM_REQUEST_KERNEL:
+			cursor = mm_bitmap;
+			limit = mm_bitmap + (MM_KERNEL_LIMIT - HIMEM_BEGIN) / PAGE_SIZE / 8;
+		break;
+		case MM_REQUEST_USER:
+			cursor = mm_bitmap + (MM_KERNEL_LIMIT - HIMEM_BEGIN) / PAGE_SIZE / 8;
+			limit = mm_bitmap + mm_bitmap_byte_len;
+		break;
+	}
+
+	for (; cursor < limit ; cursor++) {
+		if (*cursor != 0xFF) {
+			uint_8 bitfld = ~*cursor;
+			while (bitfld != 0) {
+				if (bitfld & 1) free_pg_count++;
+				bitfld >>= 1;
+			}
+		}
+	}
+	return free_pg_count;
+}
 
 void* mm_frame_from_page(void* virt_addr, mm_page* pdt) {
 	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
