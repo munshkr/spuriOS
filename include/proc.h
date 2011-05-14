@@ -3,6 +3,7 @@
 
 #include <device.h>
 
+#define PROC_CPUID_BUFSZ 100
 struct str_dev_proc_cpuid {
 	uint_32 klass;
 	uint_32 refcount;
@@ -12,6 +13,8 @@ struct str_dev_proc_cpuid {
 	chardev_seek_t* seek;
 
 	// Proper attributes
+	char buffer[PROC_CPUID_BUFSZ];
+	uint_32 stream_length;
 	uint_32 stream_position;
 } __attribute__((packed));
 
@@ -21,6 +24,8 @@ typedef struct str_dev_proc_cpuid dev_proc_cpuid;
 #define MAX_PROC_CPUID_DEVS MAX_FD
 dev_proc_cpuid proc_cpuid_devs[MAX_PROC_CPUID_DEVS];
 
+uint_32 proc_cpuid_flush(chardev* self);
+sint_32 proc_cpuid_read(chardev* self, void* buf, uint_32 size);
 chardev* proc_cpuid_open();
 void proc_init();
 
