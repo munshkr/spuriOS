@@ -160,7 +160,7 @@ int open(const char* filename, uint_32 flags) {
 
 int close(int fd) {
 	uint_32 ret;
-	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_OPEN), "b" (fd));
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_CLOSE), "b" (fd));
 	return ret;
 }
 
