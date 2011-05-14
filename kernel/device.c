@@ -51,8 +51,11 @@ int close(int fd) {
 	kassert(dev->refcount > 0);
 	dev->refcount--;
 
-	if (dev->refcount == 0 && dev->flush != NULL) {
-		return dev->flush(dev);
+	if (dev->refcount == 0) {
+		devices[cur_pid][fd] = NULL;
+		if (dev->flush != NULL) {
+			return dev->flush(dev);
+		}
 	}
 
 	return 0;
