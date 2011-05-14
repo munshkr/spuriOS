@@ -1,3 +1,4 @@
+#include <common.h>
 #include <fs.h>
 #include <device.h>
 #include <debug.h>
@@ -19,15 +20,6 @@
 
 // Proc
 #include <proc.h>
-
-static sint_32 strcmp(const char* p, const char* q) {
-	for (; *p && *q && *p==*q; p++,q++);
-	return *p?(*q?(sint_32)*p-(sint_32)*q:1):*q?-1:0;
-}
-static sint_32 strncmp(const char* p, const char* q, uint_32 n) {
-	for (; n && *p && *q && *p==*q; p++,q++,n--);
-	return n?(*p?(*q?(sint_32)*p-(sint_32)*q:1):*q?-1:0):0;
-}
 
 /*
  * Disco 1;
@@ -67,8 +59,9 @@ chardev* fs_open(const char* filename, uint_32 flags) {
 	return NULL;
 }
 
-// Syscalls:
-// int open(const char* filename, uint_32 flags);
-
-
+int sys_open(const char* filename, uint_32 flags) {
+	chardev* dev = fs_open(filename, flags);
+	fd_t fd = device_descriptor(dev);
+	return fd;
+}
 

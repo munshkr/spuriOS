@@ -21,9 +21,13 @@
 #define TASK_U_STACK_ADDRESS 0xffbfe000
 #define TASK_K_STACK_ADDRESS 0xffbff000
 
+#include <tipos.h>
+
 void memcpy(void* src, void* dst, size_t size);
 void memset(void* addr, int value, size_t size);
-
+sint_32 strcmp(const char* p, const char* q);
+sint_32 strncmp(const char* p, const char* q, uint_32 n);
+ 
 // Use GCC built-in functionality for variable arguments
 #define va_start(v,l) __builtin_va_start(v,l)
 #define va_arg(v,l)   __builtin_va_arg(v,l)

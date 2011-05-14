@@ -11,6 +11,7 @@
 #include <i386.h>
 #include <common.h>
 #include <kbd.h>
+#include <device.h>
 
 const char* fancy_logo[5] = {
 	"    //   ) )                                //   ) ) //   ) )",
@@ -27,6 +28,7 @@ extern pso_file task_task_dummy_pso;
 extern pso_file task_task_sin_pso;
 extern pso_file task_task_pf_pso;
 extern pso_file task_task_funky_pso;
+extern pso_file task_task_open_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -82,12 +84,14 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	kbd_init();
 	syscalls_init();
 
+	device_init();
+
 	print_logo();
 
 	/*
 	 * Test Tasks
 	 */
-
+/*
 	// Dummy task, loops forever.
 	loader_load(&task_task_dummy_pso, PL_KERNEL);
 
@@ -114,8 +118,9 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	loader_load(&task_task_funky_pso, PL_USER);
 
-	/*
-	 */
+*/
+
+	loader_load(&task_task_open_pso, PL_USER);
 
 	go_idle();
 	return;

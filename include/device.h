@@ -6,12 +6,15 @@
 
 #define MAX_FD 32
 
+#define CLASS_DEV_NONE 0
+#define CLASS_DEV_PROC_CPUID 1
+
 /* Devices */
 typedef struct str_dev device;
 typedef uint_32(dev_flush_t)(device* this);
 
 struct str_dev {
-	uint_32 clase;
+	uint_32 klass;
 	uint_32 refcount;
 	dev_flush_t* flush;
 } __attribute__((packed));
@@ -26,7 +29,7 @@ typedef sint_32(chardev_seek_t)(chardev* this, uint_32 pos);
 typedef uint_32(chardev_flush_t)(chardev* this);
 
 struct str_chardev {
-	uint_32 clase;
+	uint_32 klass;
 	uint_32 refcount;
 	chardev_flush_t* flush;
 	chardev_read_t* read;
@@ -43,7 +46,7 @@ typedef sint_32(blockdev_write_t)(blockdev* this, uint_32 pos, const void* buf, 
 typedef uint_32(blockdev_flush_t)(blockdev* this);
 
 struct str_blockdev {
-	uint_32 clase;
+	uint_32 klass;
 	uint_32 refcount;
 	blockdev_flush_t* flush;
 	blockdev_read_t* read;
@@ -53,7 +56,7 @@ struct str_blockdev {
 
 void device_init(void);
 
-int device_descriptor(chardev* dev);
+fd_t device_descriptor(chardev* dev);
 
 device* devices[MAX_PID][MAX_FD];
 

@@ -9,15 +9,13 @@
 #define FS_OPEN_WRONLY   0x0002
 #define FS_OPEN_RDWR     0x0003
 
-// Syscalls
-// int open(const char*, uint_32)
-
 #ifdef __KERNEL__
 
 void fs_init(void);
 
 chardev* fs_open(const char* filename, uint_32 flags);
-
+int sys_open(const char* filename, uint_32 flags);
+ 
 #endif
 
 #endif

@@ -5,13 +5,14 @@
 
 #define SYS_INT 0x30
 
-#define SYS_GETPID   0
-#define SYS_EXIT     1
-#define SYS_PALLOC   2
-#define SYS_PRINT    3
-#define SYS_GETSC    4
-#define SYS_SLEEP    5
-#define SYS_LOCPRINT 6
+#define SYS_GETPID		0
+#define SYS_EXIT		1
+#define SYS_PALLOC		2
+#define SYS_PRINT		3
+#define SYS_GETSC		4
+#define SYS_SLEEP		5
+#define SYS_LOCPRINT	6
+#define SYS_OPEN		7
 
 #ifdef __KERNEL__
 
@@ -24,6 +25,7 @@ void syscalls_init(void);
 // Sólo se compila en modo "tarea"
 // Declarar los "wrapers" para los syscalls que incluyen las tareas.
 
+int open(const char* filename, uint_32 flags);
 void sleep(uint_32 time);
 uint_32 getpid(void);
 void exit(void);
