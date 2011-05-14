@@ -50,7 +50,7 @@ static void syscalls_handler(registers_t* regs) {
 			sys_sleep(regs);
 			break;
 		case SYS_OPEN:
-			regs->eax = sys_open((const char*) regs->ebx, (uint_32) regs->ecx);
+			regs->eax = open((const char*) regs->ebx, (uint_32) regs->ecx);
 			break;
 		case SYS_CLOSE:
 			regs->eax = (uint_32) close((int) regs->ebx);

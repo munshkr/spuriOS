@@ -59,7 +59,8 @@ chardev* fs_open(const char* filename, uint_32 flags) {
 	return NULL;
 }
 
-int sys_open(const char* filename, uint_32 flags) {
+/* Syscalls */
+int open(const char* filename, uint_32 flags) {
 	chardev* dev = fs_open(filename, flags);
 	fd_t fd = device_descriptor(dev);
 	return fd;

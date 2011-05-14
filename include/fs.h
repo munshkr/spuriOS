@@ -14,7 +14,9 @@
 void fs_init(void);
 
 chardev* fs_open(const char* filename, uint_32 flags);
-int sys_open(const char* filename, uint_32 flags);
+
+/* Syscalls */
+int open(const char* filename, uint_32 flags);
  
 #endif
 
