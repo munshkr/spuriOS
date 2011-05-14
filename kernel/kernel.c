@@ -120,11 +120,14 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 */
 
-	loader_load(&task_open_pso, PL_USER);
-
-	vga_printf("free kernel mem = %dKB, user = %dKB\n",
+	char str[50];
+	sint_32 sz = sprintf((char*)&str, "free kernel mem = %dKB, user = %dKB, p = %p",
 		mm_free_page_count(MM_REQUEST_KERNEL) * PAGE_SIZE / 1024,
-		mm_free_page_count(MM_REQUEST_USER) * PAGE_SIZE / 1024);
+		mm_free_page_count(MM_REQUEST_USER) * PAGE_SIZE / 1024,
+		&str);
+	vga_printf("sz = %d\n%s\n", sz, (char*)&str);
+
+	loader_load(&task_open_pso, PL_USER);
 
 	go_idle();
 	return;

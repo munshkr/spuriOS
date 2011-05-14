@@ -4,10 +4,6 @@
 #include <debug.h>
 #include "vga.h"
 
-/* ASCII hex number for '0' and 'a' letters (for printing hex numbers) */
-#define ASCII_0 0x30
-#define ASCII_a 0x61
-
 /* How many spaces a TAB char represents */
 #define TAB_WIDTH 4
 
@@ -33,9 +29,6 @@ static void putchar(const char c, const char raw);
 static void scroll(void);
 static void putln(void);
 static void update_cursor(void);
-static unsigned int len(const int number, const char base);
-static unsigned int ulen(const unsigned int number, const char base);
-static int pow(const int base, const unsigned int exponent);
 static int print_dec(const int number);
 static int print_udec(const unsigned int number);
 static int print_uhex(const unsigned int number);
@@ -235,43 +228,6 @@ static void update_cursor(void) {
 	outb(0x3D5, (unsigned char)((location >> 8) & 0xFF));
 	outb(0x3D4, 0x0F);			// Send the low cursor byte
 	outb(0x3D5, (unsigned char)(location & 0xFF));
-}
-
-// Get number of digits of a number (signed)
-static unsigned int len(const int number, const char base) {
-	unsigned int length = 1;
-	unsigned int div = ABS(number);
-
-	while (div) {
-		div /= base;
-		if (!div) break;
-		length++;
-	}
-	return length;
-}
-
-// Get number of digits of a number (unsigned)
-static unsigned int ulen(const unsigned int number, const char base) {
-	unsigned int length = 1;
-	unsigned int div = number;
-
-	while (div) {
-		div /= base;
-		if (!div) break;
-		length++;
-	}
-	return length;
-}
-
-// Exponentiation function
-static int pow(const int base, const unsigned int exponent) {
-	unsigned int i;
-	unsigned int res = 1;
-
-	for (i = 0; i < exponent; ++i) {
-		res *= base;
-	}
-	return res;
 }
 
 static int print_dec(int number) {

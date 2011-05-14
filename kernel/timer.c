@@ -38,19 +38,6 @@ void timer_draw_clock() {
 	vga_set_pos(old_x, old_y);
 }
 
-// Get number of digits of a number (unsigned)
-static unsigned int ulen(const unsigned int number, const char base) {
-	unsigned int length = 1;
-	unsigned int div = number;
-
-	while (div) {
-		div /= base;
-		if (!div) break;
-		length++;
-	}
-	return length;
-}
-
 void timer_digital_clock() {
 	uint_32 time = tick / 100;
 	int old_x = vga_get_x();
