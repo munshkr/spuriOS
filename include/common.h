@@ -27,6 +27,8 @@
 
 #include <tipos.h>
 
+sint_32 copy2user(void* src, void* dst_usr, size_t size);
+
 int pow(const int base, const unsigned int exponent);
 unsigned int len(const int number, const char base);
 unsigned int ulen(const unsigned int number, const char base);

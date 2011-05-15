@@ -24,6 +24,7 @@ const char* fancy_logo[5] = {
 };
 
 extern void* _end;
+extern pso_file task_ut_cp2user_pso;
 extern pso_file task_ut_getpid_pso;
 extern pso_file task_task_kbd_pso;
 extern pso_file task_ut_dummy_pso;
@@ -97,6 +98,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_load(&task_ut_getpid_pso, PL_USER);
 	loader_load(&task_ut_palloc_pso, PL_USER);
 	loader_load(&task_ut_cpuid_pso, PL_USER);
+	loader_load(&task_ut_cp2user_pso, PL_USER);
 	#endif
 
 	go_idle();

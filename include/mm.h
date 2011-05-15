@@ -55,10 +55,15 @@ typedef struct str_mm_page {
 
 #define MM_REQUEST_KERNEL 0
 #define MM_REQUEST_USER 1
+
+mm_page* mm_pt_entry_for(void* vaddr, mm_page* pdt); 
+uint_32 mm_pl_of_vaddr(void* vaddr, mm_page* pdt);
+ 
 uint_32 mm_free_page_count(char request_type); 
 
 void mm_map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl);
 void mm_unmap_page(void* virt_addr, mm_page* pdt);
+
 void* mm_frame_from_page(void* virt_addr, mm_page* pdt);
 
 void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries);

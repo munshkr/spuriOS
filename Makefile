@@ -69,6 +69,7 @@ SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
 TASKS=\
+	tasks/cp2user.pso \
 	tasks/cpuid.pso \
 	tasks/palloc.pso \
 	tasks/getpid.pso \

@@ -1,5 +1,7 @@
 #include <tipos.h>
 #include <common.h>
+#include <mm.h>
+#include <loader.h>
 
 int pow(const int base, const unsigned int exponent) {
 	unsigned int i;
@@ -144,6 +146,16 @@ sint_32 sprintf_fixed_args(char* str, const char* format, uint_32* args) {
 
 	*str = 0;
 	return size;
+}
+
+sint_32 copy2user(void* src, void* dst_usr, size_t size) {
+	uint_32 pl = mm_pl_of_vaddr(dst_usr, cur_pdt());
+	if (pl == PL_KERNEL) {
+		return -1;
+	} else {
+		memcpy(src, dst_usr, size);
+		return size;
+	}
 }
 
 void memcpy(void* src, void* dst, size_t size) {

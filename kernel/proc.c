@@ -43,11 +43,15 @@ sint_32 proc_cpuid_read(chardev* self, void* buf, uint_32 size) {
 		size = C(self)->stream_length - C(self)->stream_position;
 	}
 
-	memcpy(
+	sint_32 effective_sz = copy2user(
 		(void*)(C(self)->buffer + C(self)->stream_position),
 		buf, size);
-	C(self)->stream_position += size;
-	return size;
+
+	if (effective_sz > 0) {
+		C(self)->stream_position += effective_sz;
+	}
+
+	return effective_sz;
 }
 
 uint_32 proc_cpuid_flush(chardev* self) {

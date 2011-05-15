@@ -5,6 +5,7 @@
 #include <tss.h>
 #include <syscalls.h>
 #include <isr.h>
+#include <mm.h>
 
 #define MAX_PID 32
 
@@ -31,6 +32,8 @@ typedef struct str_slept_task {
 
 extern pcb_t processes[];
 extern pid cur_pid;
+
+mm_page* cur_pdt();
 
 void loader_init(void);
 pid loader_load(pso_file* f, uint_32 pl);

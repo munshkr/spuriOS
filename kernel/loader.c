@@ -22,6 +22,10 @@ pid tmp_pid;
 slept_task sleeping[MAX_PID];
 pid first_slept;
 
+mm_page* cur_pdt() {
+	return (mm_page*) processes[cur_pid].cr3;
+}
+
 inline void initialize_process_list() {
 	uint_32 id;
 	for (id = 0; id < MAX_PID; id++) {

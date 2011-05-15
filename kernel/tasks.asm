@@ -11,6 +11,7 @@ global task_%1_pso_end
 task_%1_pso_end:
 %endmacro
 
+include_task ut_cp2user, "tasks/cp2user.pso"
 include_task ut_getpid, "tasks/getpid.pso"
 include_task task_kbd, "tasks/task_kbd.pso"
 include_task ut_dummy, "tasks/dummy.pso"

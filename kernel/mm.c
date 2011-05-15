@@ -55,12 +55,32 @@ uint_32 mm_free_page_count(char request_type) {
 }
 
 void* mm_frame_from_page(void* virt_addr, mm_page* pdt) {
-	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
-	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
-	kassert(pd_entry->attr & MM_ATTR_P);
+	return ((void*)(mm_pt_entry_for(virt_addr, pdt)->base << 12));
+}
 
-	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
-	return ((void*)(page_table[PT_ENTRY_FOR(virt_addr)].base << 12));
+mm_page* mm_pt_entry_for(void* vaddr, mm_page* pdt) {
+	kassert((((uint_32) vaddr) & 0xFFF) == 0);
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(vaddr)];
+
+	if (!(pd_entry->attr & MM_ATTR_P)) {
+		return (mm_page*) 0;
+	} else {
+		mm_page* page_table = (mm_page*)(pd_entry->base << 12);
+		return &(page_table[PT_ENTRY_FOR(vaddr)]);
+	}
+}
+
+uint_32 mm_pl_of_vaddr(void* vaddr, mm_page* pdt) {
+	mm_page* entry = mm_pt_entry_for((void*)((uint_32) vaddr & ~0xFFF), pdt);
+	if (!entry) {
+		return PL_KERNEL;
+	} else {
+		if (entry->attr & MM_ATTR_US_U) {
+			return PL_USER;
+		} else {
+			return PL_KERNEL;
+		}
+	}
 }
 
 // TODO Reuse this function when creating new directories

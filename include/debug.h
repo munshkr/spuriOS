@@ -36,7 +36,7 @@ unsigned int symbol_name(uint_32 address, char** string_p);
 #else // __TASK__
 
 #define assert(EXP) { if (!(EXP)) { printf("\nAssertion failed at " \
-  __mac_str(__FILE__)":"__mac_str(__LINE__)": "#EXP); while(1); } }
+  __mac_str(__FILE__)":"__mac_str(__LINE__)": "#EXP"\n"); } }
 
 #endif
 
