@@ -80,8 +80,9 @@ sint_32 con_read(chardev* self, void* buf, uint_32 size) {
 }
 
 sint_32 con_write(chardev* self, const void* buf, uint_32 size) {
-	// TODO
-	return 0;
+	int sz = vga_write_buffer(buf, size);
+	vga_update_cursor();
+	return sz;
 }
 
 uint_32 con_flush(chardev* self) {

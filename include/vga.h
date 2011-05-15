@@ -53,6 +53,8 @@ int vga_printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
 int vga_printf_fixed_args(const char* format, uint_32* args);
 int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint_32* args);
 
+int vga_write_buffer(const char* buf, const size_t size);
+
 /* Set foreground and background colors */
 void vga_reset_colors(void);
 
@@ -64,6 +66,7 @@ int vga_get_y(void);
 void vga_set_pos(uint_16 x, uint_16 y);
 void vga_reset_pos(void);
 
+void vga_update_cursor(void);
 
 /* Color attributes */
 #define VGA_FC_BLACK   0x00

@@ -28,7 +28,6 @@ vga_attr_t vga_attr;
 static void putchar(const char c, const char raw);
 static void scroll(void);
 static void putln(void);
-static void update_cursor(void);
 static int print_dec(const int number);
 static int print_udec(const unsigned int number);
 static int print_uhex(const unsigned int number);
@@ -48,8 +47,40 @@ void vga_clear(void) {
 
 int vga_putchar(const char c) {
 	putchar(c, TRUE);
-	update_cursor();
+	vga_update_cursor();
 	return c;
+}
+
+int vga_write_buffer(const char* buf, const size_t size) {
+	int sz;
+	const char* ptr = buf;
+
+	vga_attr_t old_attr = vga_attr;
+
+	for (sz = 0; sz < size; ptr++, sz++) {
+		if (*ptr == '\0') {
+			sz++;
+			break;
+		} else if (*ptr == '\\') {
+			ptr++;
+			sz++;
+			switch (*ptr) {
+			  case 'c':
+				ptr++;
+				const char back = scan_uhex(*ptr);
+				ptr++;
+				const char fore = scan_uhex(*ptr);
+				vga_attr.vl.vl = (back << 8) | fore;
+				sz+=2;
+			}
+		} else {
+			putchar(*ptr, FALSE);
+		}
+	}
+
+	vga_attr = old_attr;
+
+	return sz;
 }
 
 int vga_printf_fixed_args(const char* format, uint_32* args) {
@@ -113,7 +144,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 
 	// Restore attributes
 	vga_attr = old_attr;
-	update_cursor();
+	vga_update_cursor();
 
 	return size;
 }
@@ -162,7 +193,7 @@ void vga_set_pos(uint_16 x, uint_16 y) {
 void vga_reset_pos(void) {
 	vga_x = 0;
 	vga_y = 0;
-	update_cursor();
+	vga_update_cursor();
 }
 
 int vga_get_x() {
@@ -171,6 +202,17 @@ int vga_get_x() {
 
 int vga_get_y() {
 	return vga_y;
+}
+
+void vga_update_cursor(void) {
+	short location = vga_y * vga_cols + vga_x;
+	volatile short *pos = (short *) vga_addr + location;
+	*pos = WHITE_SPACE;
+
+	outb(0x3D4, 0x0E);			// Send the high cursor byte
+	outb(0x3D5, (unsigned char)((location >> 8) & 0xFF));
+	outb(0x3D4, 0x0F);			// Send the low cursor byte
+	outb(0x3D5, (unsigned char)(location & 0xFF));
 }
 
 
@@ -211,24 +253,9 @@ static void putln(void) {
 		scroll();
 		vga_y--;
 	}
-	update_cursor();
+	vga_update_cursor();
 }
 
-// It Works, but cursor will only be visible if it's position has a character printed in.
-// temp workaround: add a blank space before updating cursor.
-// FIXME: we should find the right position in the code for the putchar(' ') sentence,
-// because this way it's leaving a blank space each time we use putln() and if a backcolor
-// is set, that blank space is visible. (check kernel.c)
-static void update_cursor(void) {
-	short location = vga_y * vga_cols + vga_x;
-	volatile short *pos = (short *) vga_addr + location;
-	*pos = WHITE_SPACE;
-
-	outb(0x3D4, 0x0E);			// Send the high cursor byte
-	outb(0x3D5, (unsigned char)((location >> 8) & 0xFF));
-	outb(0x3D4, 0x0F);			// Send the low cursor byte
-	outb(0x3D5, (unsigned char)(location & 0xFF));
-}
 
 static int print_dec(int number) {
 	int size = 0;
