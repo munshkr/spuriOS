@@ -33,6 +33,7 @@ static inline void switch_console(con_device* new_con);
 static inline void add_console_after_current(con_device* new_con);
 static inline void remove_console(con_device* con);
 static inline void draw_empty_frame(void);
+//static void print_ring(void);
 
 
 void con_init(void) {
@@ -65,6 +66,8 @@ chardev* con_open(void) {
 			c->seek = NULL;
 
 			add_console_after_current(c);
+			//print_ring();
+
 			switch_console(c);
 
 			return (chardev*) c;
@@ -87,18 +90,17 @@ sint_32 con_write(chardev* self, const void* buf, uint_32 size) {
 
 uint_32 con_flush(chardev* self) {
 	remove_console(C(self));
+	//print_ring();
 
 	if (C(self) == current) {
-		con_device* cur_prev = current->prev;
-		con_device* cur_next = current->next;
 		current = NULL;
-
-		if (cur_prev == cur_next) {
+		if (C(self)->prev == C(self) && C(self)->next == C(self)) {
 			draw_empty_frame();
 		} else {
-			switch_console(cur_prev);
+			switch_console(C(self)->prev);
 		}
 	}
+	//print_ring();
 
 	mm_mem_free(C(self)->buffer);
 	self->klass = CLASS_DEV_NONE;
@@ -122,6 +124,7 @@ static inline void switch_console(con_device* new_con) {
 	memcpy(current->buffer, vga_addr, PAGE_SIZE);
 	vga_attr = current->attr;
 	vga_set_pos(current->x, current->y);
+	vga_update_cursor();
 }
 
 static inline void add_console_after_current(con_device* new_con) {
@@ -137,7 +140,7 @@ static inline void add_console_after_current(con_device* new_con) {
 }
 
 static inline void remove_console(con_device* con) {
-	if (con->prev != con->next) {
+	if (!(con->prev == con && con->next == con)) {
 		C(con->prev)->next = con->next;
 		C(con->next)->prev = con->prev;
 	}
@@ -149,3 +152,18 @@ static inline void draw_empty_frame(void) {
 	vga_reset_colors();
 	vga_printf("[empty]");
 }
+
+/*
+static void print_ring(void) {
+	uint_32 i;
+	vga_clear();
+	vga_printf("current = %p\n", current);
+	for (i = 0; i < MAX_CONSOLES; i++) {
+		vga_printf("[%u] %p, ", i, &consoles[i]);
+		vga_printf("buf = %p, x = %u, y = %u, prev = %p, next = %p\n",
+			consoles[i].buffer, consoles[i].x, consoles[i].y,
+			consoles[i].prev, consoles[i].next);
+	}
+	breakpoint();
+}
+*/
