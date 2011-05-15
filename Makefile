@@ -78,6 +78,7 @@ TASKS=\
 	tasks/task_kbd.pso \
 	tasks/task_pf.pso \
 	tasks/task_sin.pso \
+	tasks/console.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o

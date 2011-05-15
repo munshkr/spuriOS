@@ -34,6 +34,8 @@ extern pso_file task_task_funky_pso;
 extern pso_file task_ut_cpuid_pso;
 extern pso_file task_ut_palloc_pso;
 
+extern pso_file task_console_pso;
+
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
 	lcr3((uint_32) kernel_page_dir);
@@ -100,6 +102,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_load(&task_ut_cpuid_pso, PL_USER);
 	loader_load(&task_ut_cp2user_pso, PL_USER);
 	#endif
+
+	loader_load(&task_console_pso, PL_USER);
 
 	go_idle();
 	return;

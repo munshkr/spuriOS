@@ -8,6 +8,7 @@
 
 #define CLASS_DEV_NONE 0
 #define CLASS_DEV_PROC_CPUID 1
+#define CLASS_DEV_CONSOLE 2
 
 /* Devices */
 typedef struct str_dev device;
