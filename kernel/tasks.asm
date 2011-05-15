@@ -20,5 +20,6 @@ include_task task_pf, "tasks/task_pf.pso"
 include_task task_funky, "tasks/task_funky.pso"
 include_task ut_cpuid, "tasks/cpuid.pso"
 include_task ut_palloc, "tasks/palloc.pso"
+include_task ut_con, "tasks/ut_con.pso"
 
 include_task console, "tasks/console.pso"
