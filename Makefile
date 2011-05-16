@@ -75,7 +75,6 @@ TASKS=\
 	tasks/getpid.pso \
 	tasks/dummy.pso \
 	tasks/task_funky.pso \
-	tasks/task_kbd.pso \
 	tasks/task_pf.pso \
 	tasks/task_sin.pso \
 	tasks/console.pso \

@@ -43,9 +43,6 @@ static void syscalls_handler(registers_t* regs) {
 		case SYS_LOCPRINT:
 			sys_loc_print(regs);
 			break;
-		case SYS_GETSC:
-			regs->eax = (uint_32) sys_getsc();
-			break;
 		case SYS_SLEEP:
 			sys_sleep(regs);
 			break;
@@ -148,12 +145,6 @@ int loc_printf(uint_32 row, uint_32 col, const char* format, ...) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_LOCPRINT));
 	return ret;
-}
-
-char getsc() {
-  uint_32 ret;
-  __asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_GETSC));
-	return (char) ret;
 }
 
 void sleep(uint_32 time) {

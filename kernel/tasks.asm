@@ -13,7 +13,6 @@ task_%1_pso_end:
 
 include_task ut_cp2user, "tasks/cp2user.pso"
 include_task ut_getpid, "tasks/getpid.pso"
-include_task task_kbd, "tasks/task_kbd.pso"
 include_task ut_dummy, "tasks/dummy.pso"
 include_task task_sin, "tasks/task_sin.pso"
 include_task task_pf, "tasks/task_pf.pso"

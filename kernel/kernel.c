@@ -10,7 +10,6 @@
 #include <syscalls.h>
 #include <i386.h>
 #include <common.h>
-#include <kbd.h>
 #include <device.h>
 
 #define __UNIT_TESTING__
@@ -26,7 +25,6 @@ const char* fancy_logo[5] = {
 extern void* _end;
 extern pso_file task_ut_cp2user_pso;
 extern pso_file task_ut_getpid_pso;
-extern pso_file task_task_kbd_pso;
 extern pso_file task_ut_dummy_pso;
 extern pso_file task_task_sin_pso;
 extern pso_file task_task_pf_pso;
@@ -87,10 +85,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	loader_init();
 	sched_init();
-
-	kbd_init();
 	syscalls_init();
-
 	device_init();
 
 	print_logo();

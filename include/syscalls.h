@@ -9,7 +9,6 @@
 #define SYS_EXIT		1
 #define SYS_PALLOC		2
 #define SYS_PRINT		3
-#define SYS_GETSC		4
 #define SYS_SLEEP		5
 #define SYS_LOCPRINT	6
 
@@ -39,7 +38,6 @@ void* palloc(void);
 /* Deprecated */
 int loc_printf(uint_32 row, uint_32 col, const char* format, ...);// __attribute__ ((format (printf, 3, 4)));
 int printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
-char getsc(void);
 
 /* Device */
 int open(const char* filename, uint_32 flags);
