@@ -30,7 +30,7 @@ dev_serial serial_devs[SERIAL_PORTS];
 
 void serial_init();
 
-chardev* serial_open(int nro);
+chardev* serial_open(sint_32 nro, uint_32 flags);
 
 #endif
 

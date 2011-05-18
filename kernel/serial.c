@@ -6,6 +6,8 @@
 #include <pic.h>
 #include <debug.h>
 #include <common.h>
+#include <mm.h>
+#include <fs.h>
 
 #define PORT_1 0x3F8
 #define PORT_2 0x2F8
@@ -83,10 +85,9 @@
 
 void read_from_serial(uint_32 index) {
 	uint_32 port = serial_devs[index].io_port;
+//	breakpoint();
 	uint_8 intid = inb(port + PORT_IIR);
 	if (intid & II_ID_RDA) {
-		while (!(inb(port + PORT_LSTAT) & LS_DR));
-	
 		char data = inb(port);
 		serial_devs[index].buffer = data;
 		serial_devs[index].buffer_free = FALSE;
@@ -100,7 +101,6 @@ void read_from_serial(uint_32 index) {
 }
 
 void com_1_3_handler(registers_t* regs) {
-//	breakpoint();
 	read_from_serial(0); // FIXME 1 or 3
 }
 
@@ -109,49 +109,67 @@ void com_2_4_handler(registers_t* regs) {
 }
 
 sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
-	if (C(self)->buffer_free) {
-		loader_enqueue(&(C(self)->read_queue));
-	}
+	if (size > 0) {
+		if (C(self)->buffer_free) {
+			loader_enqueue(&(C(self)->read_queue));
+		}
+		
+		sint_32 copied = copy2user(&(C(self)->buffer), buf, 1);
 	
-	sint_32 copied = copy2user(&(C(self)->buffer), buf, 1);
-
-	if (copied > 0) {
-		C(self)->buffer_free = TRUE;
+		if (copied > 0) {
+			C(self)->buffer_free = TRUE;
+		}
+		
+		return copied;
+	} else {
+		return size;
 	}
-
-	return copied;
 }
 
 sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
-	// FIXME Check buf PL
-
-	uint_32 port = C(self)->io_port;
-	uint_32 writed;
-	for (writed = 0; writed < size; writed++) {
-		if (inb(port + PORT_LSTAT) & LS_THRE) {
-			outb(port, *(char*)buf);
-			buf++;
-		} else {
-			loader_enqueue(&(C(self)->write_queue));
-			outb(port, *(char*)buf);
-			buf++;
+	uint_32 buf_pl = mm_pl_of_vaddr((void*) buf, cur_pdt());
+	if (buf_pl == PL_USER) {
+		uint_32 port = C(self)->io_port;
+		uint_32 writed;
+		for (writed = 0; writed < size; writed++) {
+			if (inb(port + PORT_LSTAT) & LS_THRE) {
+				outb(port, *(char*)buf);
+				buf++;
+			} else {
+				loader_enqueue(&(C(self)->write_queue));
+				outb(port, *(char*)buf);
+				buf++;
+			}
 		}
+	
+		return writed;
+	} else {
+		return -1;
 	}
-
-	return writed;
 }
 
 uint_32 serial_flush(chardev* self) {
+	C(self)->klass = CLASS_DEV_NONE;
+	C(self)->read = 0;
+	C(self)->write = 0;	
+
 	return 0;
 }
 
-chardev* serial_open(int index) { /* 0 for COM1, 1 for COM2 and so on */
+chardev* serial_open(sint_32 index, uint_32 flags) { /* 0 for COM1, 1 for COM2 and so on */
 	// FIXME Attributes R/W, pass it
 	if (index < 0 || index >= SERIAL_PORTS) {
 		return 0;
 	} else if (serial_devs[index].klass != CLASS_DEV_NONE) {
 		return 0;
 	} else {
+		if (flags & FS_OPEN_RD) {
+			serial_devs[index].read = serial_read;
+		}
+		if (flags & FS_OPEN_WR) {
+			serial_devs[index].write = serial_write;
+		}
+
 		serial_devs[index].read_queue = FREE_QUEUE;
 		serial_devs[index].write_queue = FREE_QUEUE;
 		serial_devs[index].buffer_free = TRUE;
@@ -165,8 +183,8 @@ inline void init_serial_dev(uint_32 index, uint_32 io_port) {
 	serial_devs[index].klass = CLASS_DEV_NONE;
 	serial_devs[index].refcount = 0;
 	serial_devs[index].flush = 0;
-	serial_devs[index].read = serial_read;
-	serial_devs[index].write = serial_write;
+	serial_devs[index].read = 0;
+	serial_devs[index].write = 0;
 	serial_devs[index].seek = 0;
 
 	serial_devs[index].io_port = io_port;
@@ -179,6 +197,9 @@ inline void init_serial_dev(uint_32 index, uint_32 io_port) {
 	outb(io_port + PORT_IER, 0);
 
 	outb(io_port + PORT_LCTRL, LC_BIT8); // 8 bits, no parity, 1 stop bit
+
+//	outb(io_port + PORT_FCTRL, FC_FIFO | FC_CL_RCVFIFO | FC_CL_XMTFIFO | FC_TRIGGER_14); // Buffering (14 bytes)
+	outb(io_port + PORT_FCTRL, 0); // No buffering
 
 	outb(io_port + PORT_MCTRL, 0x0B); // IRQs enabled, RTS/DSR set, clear LDAB
 	outb(io_port + PORT_IER, IE_RDA | IE_THRE); // Int on RDA or THRE

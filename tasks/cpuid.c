@@ -4,7 +4,7 @@
 
 int main () {
 	char* buf = (char*) palloc();
-	int fd = open("/proc/cpuid", FS_OPEN_RDONLY);
+	int fd = open("/proc/cpuid", FS_OPEN_RD);
 	assert(fd == 0);
 
 	int sz = read(fd, buf, 4096);
@@ -12,13 +12,13 @@ int main () {
 
 	close(fd);
 
-	fd = open("/proc/cpuid", FS_OPEN_RDONLY);
+	fd = open("/proc/cpuid", FS_OPEN_RD);
 	assert(fd == 0);
 
 	sz = read(fd, buf, 4096);
 	assert(sz > 0 && sz <= 4096);
 
-	int fd1 = open("/proc/cpuid", FS_OPEN_RDONLY);
+	int fd1 = open("/proc/cpuid", FS_OPEN_RD);
 	assert(fd1 == 1);
 
 	sz = read(fd1, buf, 4096);

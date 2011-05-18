@@ -3,7 +3,7 @@
 #include <debug.h>
 
 int main () {
-	int fd = open("/proc/cpuid", FS_OPEN_RDONLY);
+	int fd = open("/proc/cpuid", FS_OPEN_RD);
 	char* buggy = (char*) 0x1000;
 
 	int sz = read(fd, buggy, 4096);

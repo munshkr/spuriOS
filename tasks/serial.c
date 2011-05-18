@@ -7,11 +7,10 @@ int main () {
 
 	char buf[2];
 	while (1) {
-		read(com, (char*) &buf, 4096);
+		uint_32 readed = read(com, (char*) &buf, 4096);
+		write(com, buf, readed);
 		write(tty, buf, 4096);
 	}
-
-	write(com, "buenos dias", 11);
 
 	close(tty);
 	close(com);

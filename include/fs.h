@@ -5,9 +5,9 @@
 #include <device.h>
 #include <syscalls.h>
 
-#define FS_OPEN_RDONLY   0x0001
-#define FS_OPEN_WRONLY   0x0002
-#define FS_OPEN_RDWR     0x0003
+#define FS_OPEN_RD		0x0001
+#define FS_OPEN_WR		0x0002
+#define FS_OPEN_RDWR	0x0003
 
 #ifdef __KERNEL__
 
