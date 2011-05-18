@@ -101,6 +101,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	#endif
 
 	loader_load(&task_console_pso, PL_USER);
+	loader_load(&task_console_pso, PL_USER);
+	loader_load(&task_console_pso, PL_USER);
 
 	go_idle();
 	return;

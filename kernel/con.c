@@ -3,9 +3,13 @@
 #include <mm.h>
 #include <common.h>
 #include <debug.h>
+#include <kbd.h>
+#include <pic.h>
+#include <idt.h>
 
-#define MAX_CONSOLES 8
 #define C(x) ((con_device*) x)
+#define MAX_CONSOLES 8
+
 
 typedef struct str_con_device {
 	uint_32 klass;
@@ -15,7 +19,9 @@ typedef struct str_con_device {
 	chardev_write_t* write;
 	chardev_seek_t* seek;
 
-	short* buffer;
+	pid kbd_queue;
+
+	sint_8* buffer;
 	vga_attr_t attr;
 	uint_8 x;
 	uint_8 y;
@@ -23,7 +29,6 @@ typedef struct str_con_device {
 	void* prev;
 	void* next;
 } __attribute__((packed)) con_device;
-
 
 static con_device consoles[MAX_CONSOLES];
 static con_device* current;
@@ -33,15 +38,24 @@ static inline void switch_console(con_device* new_con);
 static inline void add_console_after_current(con_device* new_con);
 static inline void remove_console(con_device* con);
 static inline void draw_empty_frame(void);
+static inline void init_keyboard(void);
+static inline void wait_byte(void);
+static inline uint_8 read_scancode(void);
+static inline void update_kbd_state(void);
+static void keyboard_handler(registers_t* regs);
 //static void print_ring(void);
 
 
 void con_init(void) {
+	debug_log("initializing console");
+
 	uint_32 i;
 	for (i = 0; i < MAX_CONSOLES; i++) {
 		consoles[i].klass = CLASS_DEV_NONE;
 	}
 	current = NULL;
+
+	init_keyboard();
 }
 
 chardev* con_open(void) {
@@ -57,6 +71,8 @@ chardev* con_open(void) {
 			c->attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
 			c->x = 0;
 			c->y = 0;
+
+			c->kbd_queue = FREE_QUEUE;
 
 			c->klass = CLASS_DEV_CONSOLE;
 			c->refcount = 0;
@@ -78,7 +94,15 @@ chardev* con_open(void) {
 }
 
 sint_32 con_read(chardev* self, void* buf, uint_32 size) {
-	// TODO
+	uint_32 sz;
+	for (sz = 0; sz < size; sz++) {
+		loader_enqueue(&C(self)->kbd_queue);
+
+		if (kbd_char_buf) {
+			// FIXME A bit of an overkill for just one byte, isn't it?
+			copy2user(&kbd_char_buf, buf, 1);
+		}
+	}
 	return 0;
 }
 
@@ -109,6 +133,10 @@ uint_32 con_flush(chardev* self) {
 
 
 static inline void switch_console(con_device* new_con) {
+	if (new_con == current) {
+		return;
+	}
+
 	if (current) {
 		// Save current state
 		memcpy(vga_addr, current->buffer, PAGE_SIZE);
@@ -151,6 +179,109 @@ static inline void draw_empty_frame(void) {
 	vga_reset_pos();
 	vga_reset_colors();
 	vga_printf("[empty]");
+}
+
+static inline void init_keyboard(void) {
+	debug_log("setting up keyboard");
+	pic_clear_irq_mask(1);
+	idt_register(ISR_IRQ1, keyboard_handler, PL_KERNEL);
+}
+
+static void keyboard_handler(registers_t* regs) {
+	// FIXME Do this only if there are more than 1 console
+	if (current) {
+		// TODO Check if a 1-byte buffer is alright with keyboard
+		// Maybe we need a bigger buffer?
+		wait_byte();
+		update_kbd_state();
+
+		if (KBD_ALT_ON && KBD_SHIFT_ON && KBD_LEFT_PRESS) {
+			//vga_printf("switching to left...\n");
+			switch_console(C(current->prev));
+			return;
+		}
+
+		if (KBD_ALT_ON && KBD_SHIFT_ON && KBD_RIGHT_PRESS) {
+			//vga_printf("switching to right...\n");
+			switch_console(C(current->next));
+			return;
+		}
+
+		// If there is a current console, and there's a task waiting
+		// on a `read` from the current console, wake her up.
+		if (current->kbd_queue != FREE_QUEUE) {
+			loader_unqueue(&current->kbd_queue);
+		}
+	}
+}
+
+static inline void wait_byte(void) {
+	uint_8 ctrl;
+	for (ctrl = 0; (ctrl & 1) == 0; ctrl = inb(KBD_CTRL_PORT));
+}
+
+static inline uint_8 read_scancode(void) {
+	return inb(KBD_DATA_PORT);
+}
+
+static inline void update_kbd_state(void) {
+	kbd_sc_buf = read_scancode();
+	//vga_printf("sc: %x\n", kbd_sc_buf);
+
+	switch (kbd_sc_buf) {
+	case KBD_SC_ESCAPE:
+		kbd_escaped = TRUE; break;
+
+	case KBD_SC_LSHIFT:
+		kbd_md_state |= KBD_MD_LSHIFT;
+		//vga_printf("LSHIFT pressing\n");
+		break;
+	case KBD_SC_LSHIFT | 0x80:
+		kbd_md_state &= ~KBD_MD_LSHIFT;
+		//vga_printf("LSHIFT released\n");
+		break;
+
+	case KBD_SC_RSHIFT:
+		kbd_md_state |= KBD_MD_RSHIFT;
+		//vga_printf("RSHIFT pressing\n");
+		break;
+	case KBD_SC_RSHIFT | 0x80:
+		kbd_md_state &= ~KBD_MD_RSHIFT;
+		//vga_printf("RSHIFT released\n");
+		break;
+
+	case KBD_SC_CTRL:
+		kbd_md_state |= (kbd_escaped ? KBD_MD_RCTRL : KBD_MD_LCTRL);
+		//vga_printf("CTRL pressing\n");
+		break;
+	case KBD_SC_CTRL | 0x80:
+		kbd_md_state &= ~(kbd_escaped ? KBD_MD_RCTRL : KBD_MD_LCTRL);
+		//vga_printf("CTRL released\n");
+		break;
+
+	case KBD_SC_ALT:
+		kbd_md_state |= (kbd_escaped ? KBD_MD_RALT : KBD_MD_LALT);
+		//vga_printf("ALT pressing\n");
+		break;
+	case KBD_SC_ALT | 0x80:
+		kbd_md_state &= (kbd_escaped ? ~KBD_MD_RALT : ~KBD_MD_LALT);
+		//vga_printf("ALT released\n");
+		break;
+
+	default:
+		if (!(kbd_sc_buf & 0x80)) {
+			kbd_char_buf = (KBD_SHIFT_ON ? KBD_UPPER_MAP :
+			                               KBD_LOWER_MAP)[kbd_sc_buf];
+		} else {
+			kbd_char_buf = 0;
+		}
+		break;
+	}
+
+	// Reset escape state once escaped scancode was received
+	if (kbd_escaped && kbd_sc_buf != KBD_SC_ESCAPE) {
+		kbd_escaped = FALSE;
+	}
 }
 
 /*

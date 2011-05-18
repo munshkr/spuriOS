@@ -72,6 +72,10 @@ int vga_write_buffer(const char* buf, const size_t size) {
 				const char fore = scan_uhex(*ptr);
 				vga_attr.vl.vl = (back << 8) | fore;
 				sz+=2;
+				break;
+			  default:
+				putchar('\\', FALSE);
+				break;
 			}
 		} else {
 			putchar(*ptr, FALSE);

@@ -4,7 +4,11 @@
 int main () {
 	int fd = open("/console", FS_OPEN_RDWR);
 
-	sleep(2000);
+	while (1) {
+		char sc = 0;
+		read(fd, &sc, 1);
+		write(fd, &sc, 1);
+	}
 
 	close(fd);
 
