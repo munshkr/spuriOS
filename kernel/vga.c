@@ -260,7 +260,6 @@ static void print_backspace(void) {
 		vga_x = vga_cols - 1;
 		vga_y--;
 	}
-	pos--;
 }
 
 static void putln(void) {
