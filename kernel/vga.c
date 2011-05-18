@@ -28,6 +28,7 @@ vga_attr_t vga_attr;
 static void putchar(const char c, const char raw);
 static void scroll(void);
 static void putln(void);
+static void print_backspace(void);
 static int print_dec(const int number);
 static int print_udec(const unsigned int number);
 static int print_uhex(const unsigned int number);
@@ -225,6 +226,8 @@ static void putchar(const char c, const char raw) {
 		putln();
 	} else if (c == '\t' && !raw) {
 		vga_x += TAB_WIDTH;
+	} else if (c == '\b' && !raw) {
+		print_backspace();
 	} else {
 		volatile short *pos;
 		pos = (short *) vga_addr + (vga_y * vga_cols + vga_x);
@@ -248,6 +251,16 @@ static void scroll(void) {
 	for (col=0; col < vga_cols; ++col) {
 		*pos++ = 0;
 	}
+}
+
+static void print_backspace(void) {
+	if (vga_x > 0) {
+		vga_x--;
+	} else if (vga_y > 0) {
+		vga_x = vga_cols - 1;
+		vga_y--;
+	}
+	pos--;
 }
 
 static void putln(void) {
