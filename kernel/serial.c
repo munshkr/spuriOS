@@ -1,11 +1,16 @@
 #include <serial.h>
 #include <tipos.h>
 #include <i386.h>
+#include <idt.h>
 #include <isr.h>
 #include <pic.h>
 #include <debug.h>
+#include <common.h>
+#include <mm.h>
+#include <fs.h>
 
-#define SP_PORT 0x03F8
+#define PORT_1 0x3F8
+#define PORT_2 0x2F8
 
 /* Serial Controler sub-SP_PORTs */
 #define PORT_DATA  0 /* R/W - DATA flow */
@@ -76,28 +81,138 @@
 #define IE_RLS   0x04 /* Int Enable: Receiver Line Status */
 #define IE_MODEM 0x08 /* Int Enable: MODEM Status */
 
+#define C(x) ((dev_serial*) x)
 
-/** Char device **/
-
-sint_32 serial_read(chardev* this, void* buf, uint_32 size) {
-	return 0;
-}
-
-sint_32 serial_write(chardev* this, const void* buf, uint_32 size) {
-	return 0;
-}
-
-uint_32 serial_flush(chardev* this) {
-	return 0;
-}
-
-chardev* serial_open(int nro) { /* 0 para COM1, 1 para COM2, ... */
-
-	return NULL;
-}
-
-/** Init **/
-void serial_init() {
+void read_from_serial(uint_32 index) {
+	uint_32 port = serial_devs[index].io_port;
+//	breakpoint();
+	uint_8 intid = inb(port + PORT_IIR);
+	if (intid & II_ID_RDA) {
+		char data = inb(port);
+		serial_devs[index].buffer = data;
+		serial_devs[index].buffer_free = FALSE;
 	
+		if (serial_devs[index].read_queue != FREE_QUEUE) {
+			loader_unqueue(&(serial_devs[index].read_queue));
+		}
+	} else if (intid & II_ID_THRE) {
+		loader_unqueue(&(serial_devs[index].write_queue));
+	}
+}
+
+void com_1_3_handler(registers_t* regs) {
+	read_from_serial(0); // FIXME 1 or 3
+}
+
+void com_2_4_handler(registers_t* regs) {
+	read_from_serial(1); // FIXME 2 or 4
+}
+
+sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
+	if (size > 0) {
+		if (C(self)->buffer_free) {
+			loader_enqueue(&(C(self)->read_queue));
+		}
+		
+		sint_32 copied = copy2user(&(C(self)->buffer), buf, 1);
+	
+		if (copied > 0) {
+			C(self)->buffer_free = TRUE;
+		}
+		
+		return copied;
+	} else {
+		return size;
+	}
+}
+
+sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
+	uint_32 buf_pl = mm_pl_of_vaddr((void*) buf, cur_pdt());
+	if (buf_pl == PL_USER) {
+		uint_32 port = C(self)->io_port;
+		uint_32 writed;
+		for (writed = 0; writed < size; writed++) {
+			if (inb(port + PORT_LSTAT) & LS_THRE) {
+				outb(port, *(char*)buf);
+				buf++;
+			} else {
+				loader_enqueue(&(C(self)->write_queue));
+				outb(port, *(char*)buf);
+				buf++;
+			}
+		}
+	
+		return writed;
+	} else {
+		return -1;
+	}
+}
+
+uint_32 serial_flush(chardev* self) {
+	C(self)->klass = CLASS_DEV_NONE;
+	C(self)->read = 0;
+	C(self)->write = 0;	
+
+	return 0;
+}
+
+chardev* serial_open(sint_32 index, uint_32 flags) { /* 0 for COM1, 1 for COM2 and so on */
+	// FIXME Attributes R/W, pass it
+	if (index < 0 || index >= SERIAL_PORTS) {
+		return 0;
+	} else if (serial_devs[index].klass != CLASS_DEV_NONE) {
+		return 0;
+	} else {
+		if (flags & FS_OPEN_RD) {
+			serial_devs[index].read = serial_read;
+		}
+		if (flags & FS_OPEN_WR) {
+			serial_devs[index].write = serial_write;
+		}
+
+		serial_devs[index].read_queue = FREE_QUEUE;
+		serial_devs[index].write_queue = FREE_QUEUE;
+		serial_devs[index].buffer_free = TRUE;
+
+		return (chardev*) &serial_devs[index];
+	}
+}
+
+inline void init_serial_dev(uint_32 index, uint_32 io_port) {
+	// Initialize dev
+	serial_devs[index].klass = CLASS_DEV_NONE;
+	serial_devs[index].refcount = 0;
+	serial_devs[index].flush = 0;
+	serial_devs[index].read = 0;
+	serial_devs[index].write = 0;
+	serial_devs[index].seek = 0;
+
+	serial_devs[index].io_port = io_port;
+
+	// Setup UART
+	outb(io_port + PORT_IER, 0); // Disable all interrupts
+
+	outb(io_port + PORT_LCTRL, LC_DLAB);
+	outb(io_port + PORT_DATA, 12); // Set bauds to 9600 (115200 / 12)
+	outb(io_port + PORT_IER, 0);
+
+	outb(io_port + PORT_LCTRL, LC_BIT8); // 8 bits, no parity, 1 stop bit
+
+//	outb(io_port + PORT_FCTRL, FC_FIFO | FC_CL_RCVFIFO | FC_CL_XMTFIFO | FC_TRIGGER_14); // Buffering (14 bytes)
+	outb(io_port + PORT_FCTRL, 0); // No buffering
+
+	outb(io_port + PORT_MCTRL, 0x0B); // IRQs enabled, RTS/DSR set, clear LDAB
+	outb(io_port + PORT_IER, IE_RDA | IE_THRE); // Int on RDA or THRE
+}
+
+void serial_init() {
+	idt_register(ISR_IRQ4, com_1_3_handler, PL_KERNEL);
+	pic_clear_irq_mask(4);
+
+	idt_register(ISR_IRQ3, com_2_4_handler, PL_KERNEL);
+	pic_clear_irq_mask(3);
+
+	init_serial_dev(0, PORT_1);
+	init_serial_dev(1, PORT_2);	
 }
 

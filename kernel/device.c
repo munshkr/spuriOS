@@ -3,6 +3,7 @@
 #include <proc.h>
 #include <con.h>
 #include <debug.h>
+#include <serial.h>
 
 extern pid cur_pid;
 
@@ -33,6 +34,7 @@ inline void init_fd_association() {
 inline void init_dev_modules() {
 	proc_init();
 	con_init();
+	serial_init();
 }
 
 void device_init(void) {

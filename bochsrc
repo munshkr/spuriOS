@@ -481,8 +481,9 @@ debugger_log: -
 #   com4: enabled=1, mode=pipe-client, dev=\\.\pipe\mypipe
 #   com4: enabled=1, mode=pipe-server, dev=\\.\pipe\mypipe
 #=======================================================================
-#com1: enabled=1, mode=term, dev=/dev/ttyp9
-
+#com1: enabled=1, mode=term, dev=/dev/pts/3
+#com4: enabled=1, mode=term, dev=/dev/pts/4
+#com1: enabled=1, mode=file, dev=serial.out
 
 #=======================================================================
 # PARPORT1, PARPORT2:
@@ -497,7 +498,7 @@ debugger_log: -
 #   parport2: enabled=1, file="/dev/lp0"
 #   parport1: enabled=0
 #=======================================================================
-parport1: enabled=1, file="parport.out"
+#parport1: enabled=1, file="parport.out"
 
 #=======================================================================
 # SB16:

@@ -32,6 +32,7 @@ extern pso_file task_task_funky_pso;
 extern pso_file task_ut_cpuid_pso;
 extern pso_file task_ut_palloc_pso;
 extern pso_file task_ut_con_pso;
+extern pso_file task_serial_pso;
 
 extern pso_file task_console_pso;
 
@@ -103,6 +104,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_load(&task_console_pso, PL_USER);
 	loader_load(&task_console_pso, PL_USER);
 	loader_load(&task_console_pso, PL_USER);
+	loader_load(&task_serial_pso, PL_USER);
 
 	go_idle();
 	return;

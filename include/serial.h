@@ -6,9 +6,31 @@
 
 #ifdef __KERNEL__
 
+struct str_dev_serial {
+	uint_32 klass;
+	uint_32 refcount;
+	chardev_flush_t* flush;
+	chardev_read_t* read;
+	chardev_write_t* write;
+	chardev_seek_t* seek;
+
+	uint_32 io_port;
+	pid read_queue;
+
+	bool buffer_free;
+	char buffer;
+
+	pid write_queue;
+} __attribute__((packed));
+
+typedef struct str_dev_serial dev_serial;
+
+#define SERIAL_PORTS 2
+dev_serial serial_devs[SERIAL_PORTS];
+
 void serial_init();
 
-chardev* serial_open(int nro);
+chardev* serial_open(sint_32 nro, uint_32 flags);
 
 #endif
 
