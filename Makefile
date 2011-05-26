@@ -47,6 +47,7 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/isr.o \
 	kernel/kbd.o \
 	kernel/kernel.o \
+	kernel/lib.o \
 	kernel/loader.o \
 	kernel/mmap.o \
 	kernel/mm.o \
@@ -82,7 +83,7 @@ TASKS=\
 	tasks/serial.pso
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
-OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o
+OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o
 
 # Imagenes
 DISK_LABEL="KERNEL  PSO"
@@ -116,14 +117,17 @@ tasks/pso_tail.o: tasks/pso_tail.asm
 tasks/syscalls.o: kernel/syscalls.c
 	$(CC) $(CFLAGS:__KERNEL__=__TASK__) -c -o $@ $<
 
+tasks/lib.o: kernel/lib.c
+	$(CC) $(CFLAGS:__KERNEL__=__TASK__) -c -o $@ $<
+
 tasks/%.pso: tasks/%.elf
 	$(OBJCOPY) -S -O binary $< $@
 
 tasks/%.o: tasks/%.c
 	$(CC) $(CFLAGS:__KERNEL__=__TASK__) -c -o $@ $<
 
-tasks/%.elf: tasks/pso_head.o tasks/syscalls.o tasks/%.o tasks/pso_tail.o $(BIN_LIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0x400000 -o $@ tasks/pso_head.o tasks/syscalls.o $(@:.elf=.o) $(LDPSO) tasks/pso_tail.o
+tasks/%.elf: tasks/pso_head.o tasks/syscalls.o tasks/lib.o tasks/%.o tasks/pso_tail.o $(BIN_LIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0x400000 -o $@ tasks/pso_head.o tasks/syscalls.o tasks/lib.o $(@:.elf=.o) $(LDPSO) tasks/pso_tail.o
 
 $(BIN_KERN).orig.elf: $(OBJS_KERN) $(SYMBOLS)_null.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x1200 -o $@ $(OBJS_KERN) $(SYMBOLS)_null.o $(LDPSO)

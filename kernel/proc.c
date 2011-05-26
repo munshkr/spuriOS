@@ -1,6 +1,7 @@
 #include <proc.h>
 #include <common.h>
 #include <mm.h>
+#include <lib.h>
 #include <debug.h>
 
 #define C(x) ((dev_proc_cpuid*) x)

@@ -1,4 +1,5 @@
 #include <common.h>
+#include <lib.h>
 #include <fs.h>
 #include <device.h>
 #include <debug.h>

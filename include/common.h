@@ -21,26 +21,13 @@
 #define TASK_U_STACK_ADDRESS 0xffbfe000
 #define TASK_K_STACK_ADDRESS 0xffbff000
 
-/* ASCII hex number for '0' and 'a' letters (for printing hex numbers) */
-#define ASCII_0 0x30
-#define ASCII_a 0x61
-
 #include <tipos.h>
 
 sint_32 copy2user(void* src, void* dst_usr, size_t size);
 
-int pow(const int base, const unsigned int exponent);
-unsigned int len(const int number, const char base);
-unsigned int ulen(const unsigned int number, const char base);
- 
-sint_32 sprintf(char* str, const char* format, ...) __attribute__ ((format (printf, 2, 3)));
-sint_32 sprintf_fixed_args(char* str, const char* format, uint_32* args);
-
 void memcpy(void* src, void* dst, size_t size);
 void memset(void* addr, int value, size_t size);
-sint_32 strcmp(const char* p, const char* q);
-sint_32 strncmp(const char* p, const char* q, uint_32 n);
- 
+
 // Use GCC built-in functionality for variable arguments
 #define va_start(v,l) __builtin_va_start(v,l)
 #define va_arg(v,l)   __builtin_va_arg(v,l)

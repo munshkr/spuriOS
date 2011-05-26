@@ -1,6 +1,7 @@
 #include <i386.h>
 #include <tipos.h>
 #include <common.h>
+#include <lib.h>
 #include <debug.h>
 #include "vga.h"
 

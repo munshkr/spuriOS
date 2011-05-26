@@ -1,4 +1,5 @@
 #include <timer.h>
+#include <lib.h>
 #include <common.h>
 #include <i386.h>
 #include <idt.h>
