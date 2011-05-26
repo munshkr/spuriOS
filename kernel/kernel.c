@@ -89,6 +89,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	syscalls_init();
 	device_init();
 
+	loader_load(&task_console_pso, PL_USER);
 	print_logo();
 
 	#ifdef __UNIT_TESTING__
@@ -99,12 +100,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	loader_load(&task_ut_cpuid_pso, PL_USER);
 	loader_load(&task_ut_cp2user_pso, PL_USER);
 	loader_load(&task_ut_con_pso, PL_USER);
+	//loader_load(&task_ut_serial_pso, PL_USER);	// TODO
 	#endif
-
-	loader_load(&task_console_pso, PL_USER);
-	loader_load(&task_console_pso, PL_USER);
-	loader_load(&task_console_pso, PL_USER);
-	loader_load(&task_serial_pso, PL_USER);
 
 	go_idle();
 	return;

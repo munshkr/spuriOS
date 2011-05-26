@@ -67,10 +67,19 @@ chardev* con_open(void) {
 			if (!c->buffer) {
 				return NULL;
 			}
-			memset(c->buffer, 0, PAGE_SIZE);
-			c->attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
-			c->x = 0;
-			c->y = 0;
+
+			// Copy current display buffer if this is the first console
+			if (current == NULL) {
+				memcpy(vga_addr, c->buffer, PAGE_SIZE);
+				c->attr.vl.vl = vga_attr.vl.vl;
+				c->x = vga_get_x();
+				c->y = vga_get_y();
+			} else {
+				memset(c->buffer, 0, PAGE_SIZE);
+				c->attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
+				c->x = 0;
+				c->y = 0;
+			}
 
 			c->kbd_queue = FREE_QUEUE;
 
