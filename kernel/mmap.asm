@@ -22,8 +22,7 @@
 ;; ----------------------------------------
 bits 16
 
-extern _end
-%define MMAP_ADDRESS _end
+extern mmap_buffer
 
 global mmap_entries
 global make_mmap
@@ -33,7 +32,7 @@ mmap_entries dd  0x0000
 make_mmap:
 	pushad
 
-	mov di, MMAP_ADDRESS	; Init
+	mov di, mmap_buffer     ; Init
 	xor ebx, ebx			;
 
 	mov edx, 0x534d4150		;

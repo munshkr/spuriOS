@@ -1,5 +1,12 @@
 bits 16
+
 %include "bios.mac"
+
+global mmap_buffer
+
+section .data
+mmap_buffer: times 240 db 0
+
 section .text
 
 %define seg_code_0 8
@@ -13,9 +20,6 @@ extern enable_A20
 ; both defined in mmap.asm
 extern make_mmap
 extern mmap_entries
-
-extern _end
-%define MMAP_ADDRESS _end
 
 global start
 
@@ -43,7 +47,7 @@ memory_map:
 
 	jmp 0x08:modo_protegido
 
-BITS 32
+bits 32
 modo_protegido:
 	mov 	ax, 0x10
 	mov 	ds, ax
@@ -55,6 +59,6 @@ modo_protegido:
 
 	mov		eax, [mmap_entries]
 	push	eax
-	push	MMAP_ADDRESS
+	push	mmap_buffer
 	call 	kernel_init
 	jmp $

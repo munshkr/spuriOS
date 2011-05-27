@@ -22,7 +22,6 @@ const char* fancy_logo[5] = {
 	"((___ / / //       ((___( ( //      / / ((___/ / ((___ / /   ",
 };
 
-extern void* _end;
 extern pso_file task_ut_cp2user_pso;
 extern pso_file task_ut_getpid_pso;
 extern pso_file task_ut_dummy_pso;
