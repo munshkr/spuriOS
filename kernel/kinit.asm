@@ -11,16 +11,6 @@ extern gdt
 extern make_mmap
 extern mmap_entries
 
-
-section .data
-
-; FIXME E820 function can overwrite code if it overflows this buffer.
-%define MMAP_MAX_ENTRIES 10
-%define MMAP_ENTRY_SIZE 24
-
-mmap_buffer: times (MMAP_ENTRY_SIZE * MMAP_MAX_ENTRIES) db 0
-
-
 section .text
 
 bits 16
@@ -30,6 +20,12 @@ bits 16
 gdt_desc:
 	dw (GDT_COUNT * 8) - 1
 	dd gdt
+
+; FIXME E820 function can overwrite code if it overflows this buffer.
+%define MMAP_MAX_ENTRIES 10
+%define MMAP_ENTRY_SIZE 24
+
+mmap_buffer: times (MMAP_ENTRY_SIZE * MMAP_MAX_ENTRIES) db 0
 
 
 ; start MUST be at the very begining of this file
