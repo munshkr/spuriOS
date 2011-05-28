@@ -17,8 +17,12 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 
 	if (!size) { return size; }
 
-	__lib_fp_buffer = (char*) (__lib_fp_buffer || (char*) palloc());
-	if (!__lib_fp_buffer) { return 0; }
+	if (!__lib_fp_buffer) {
+		__lib_fp_buffer = (char*) palloc();
+		if (!__lib_fp_buffer) { return 0; }
+	}
+
+	printf("fpbuf = %p\n", __lib_fp_buffer);
 
 	va_list args;
 	va_start(args, format);
