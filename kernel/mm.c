@@ -144,15 +144,17 @@ void* mm_mem_seek(char request_type) {
 		return 0;
 	}
 
-	int dir = 0;
+	uint_32 dir = 0;
 	int i;
 	for (i = (int)(cursor - mm_bitmap) * 8 ; i < (int)(cursor - mm_bitmap) * 8 + 8 ; i++) {
 		if (get_bit(i) == 0) {
-			dir = HIMEM_BEGIN + i * PAGE_SIZE;
+			dir = HIMEM_BEGIN + (i * PAGE_SIZE);
 			set_bit(i);
 			break;
 		}
 	}
+
+	kassert((dir & 0xfff) == 0);
 
 	return (void*)dir;
 }
@@ -239,7 +241,6 @@ void iterate_mmap(void (f)(mmap_entry_t* entry, void* result), void* args) {
 
 inline void mm_init_kernel_pagetable() {
 	kernel_pagetable = (mm_page*) mm_mem_kalloc();
-	kassert(kernel_pagetable->attr == 0);
 
 	uint_32 pte;
 	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing 
