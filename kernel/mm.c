@@ -242,7 +242,6 @@ void iterate_mmap(void (f)(mmap_entry_t* entry, void* result), void* args) {
 
 inline void mm_init_kernel_pagetable() {
 	kernel_pagetable = (mm_page*) mm_mem_kalloc();
-	memset((void*) kernel_pagetable, 0, PAGE_SIZE);
 
 	uint_32 pte;
 	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing 
