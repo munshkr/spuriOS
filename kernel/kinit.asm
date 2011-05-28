@@ -1,27 +1,36 @@
-bits 16
-
 %include "bios.mac"
 
+global start
 global mmap_buffer
 
-section .data
-mmap_buffer: times 240 db 0
-
-section .text
-
-%define seg_code_0 8
-%define seg_data_0 16
-%define GDT_COUNT 32 ; WARNING, must match value defined in gdt.h
-
 extern kernel_init
-extern GDT_DESC
 extern enable_A20
+extern gdt
 
 ; both defined in mmap.asm
 extern make_mmap
 extern mmap_entries
 
-global start
+
+section .data
+
+; FIXME E820 function can overwrite code if it overflows this buffer.
+%define MMAP_MAX_ENTRIES 10
+%define MMAP_ENTRY_SIZE 24
+
+mmap_buffer: times (MMAP_ENTRY_SIZE * MMAP_MAX_ENTRIES) db 0
+
+
+section .text
+
+bits 16
+
+%define GDT_COUNT 6 ; WARNING, must match value defined in gdt.h
+
+gdt_desc:
+	dw (GDT_COUNT * 8) - 1
+	dd gdt
+
 
 ; start MUST be at the very begining of this file
 start:
@@ -39,7 +48,7 @@ memory_map:
 	jmp .halt
 
 .mmap_ok:
-	lgdt [GDT_DESC]
+	lgdt [gdt_desc]
 
 	mov eax, cr0
 	or eax, 0x1
@@ -48,12 +57,14 @@ memory_map:
 	jmp 0x08:modo_protegido
 
 bits 32
+
 modo_protegido:
 	mov 	ax, 0x10
 	mov 	ds, ax
 	mov 	es, ax
 	mov 	fs, ax
 	mov 	ss, ax
+	mov 	gs, ax
 	mov 	esp, 0xA0000
 	mov 	ebp, 0xA0000
 

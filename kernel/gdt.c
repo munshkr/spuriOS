@@ -31,7 +31,8 @@ gdt_entry gdt[GDT_COUNT] = {
 	make_gdt_entry(0, 0xFFFFF, GDT_ATTR_SEG | GDT_ATTR_SEG_DATA | GDT_ATTR_DPL3)  // SEG_DATA_3
 };
 
-gdt_descriptor GDT_DESC = {sizeof(gdt)-1, (uint_32)&gdt};
+// NOTE Replaced by the GDT_DESC defined in kernel/kinit.asm
+//gdt_descriptor GDT_DESC = {sizeof(gdt)-1, (uint_32)&gdt};
 
 void gdt_init(void) {
 	// FIXME DPL = 3 or 0 ?
