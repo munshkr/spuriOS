@@ -135,10 +135,10 @@ $(BIN_KERN).elf: $(BIN_KERN).orig.elf $(SYMBOLS).o
 $(BIN_KERN): $(BIN_KERN).elf
 	$(OBJCOPY) -S -O binary $< $@
 
-$(BIN_KERN).asm: $(BIN_KERN).orig.elf
+$(BIN_KERN).asm: $(BIN_KERN).elf
 	$(OBJDUMP) -S -M intel $< >$@
 
-$(BIN_KERN).dbg: $(BIN_KERN).orig.elf
+$(BIN_KERN).dbg: $(BIN_KERN).elf
 	$(OBJCOPY) --only-keep-debug $< $@
 
 $(SYM_KERN): $(BIN_KERN).orig.elf
