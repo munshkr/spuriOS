@@ -112,7 +112,7 @@ sint_32 con_read(chardev* self, void* buf, uint_32 size) {
 			copy2user(&kbd_char_buf, buf, 1);
 		}
 	}
-	return 0;
+	return sz;
 }
 
 sint_32 con_write(chardev* self, const void* buf, uint_32 size) {
