@@ -160,7 +160,7 @@ void* mm_mem_seek(char request_type) {
 }
 
 void* mm_mem_kalloc() {
-	return 	mm_mem_seek(MM_REQUEST_KERNEL);
+	return mm_mem_seek(MM_REQUEST_KERNEL);
 }
 
 void* mm_mem_alloc() {
@@ -175,6 +175,7 @@ void mm_mem_free(void* page) {
 // FIXME Ask about the prototype return type (should not be a pointer?)
 mm_page* mm_dir_new(void) {
 	mm_page* cr3 = (mm_page*) mm_mem_kalloc();
+	memset((void*) cr3, 0, PAGE_SIZE);
 //	cr3.attr = 0;
 
 	cr3[0].base = (uint_32) kernel_pagetable >> 12;
@@ -241,6 +242,7 @@ void iterate_mmap(void (f)(mmap_entry_t* entry, void* result), void* args) {
 
 inline void mm_init_kernel_pagetable() {
 	kernel_pagetable = (mm_page*) mm_mem_kalloc();
+	memset((void*) kernel_pagetable, 0, PAGE_SIZE);
 
 	uint_32 pte;
 	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing 
