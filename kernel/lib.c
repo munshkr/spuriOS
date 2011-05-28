@@ -8,6 +8,7 @@ static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
 
 #include <syscalls.h>
 
+#define FPRINTF_BUFFER_SIZE 4096
 char* __lib_fp_buffer = NULL;
 
 sint_32 fprintf(fd_t file, const char* format, ...) {
@@ -26,8 +27,9 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 	va_start(args, format);
 	sint_32 ret = 0;
 	while (ret < size) {
-		ret += vsnprintf(__lib_fp_buffer, 4096, &format, args);
-		write(file, __lib_fp_buffer, ret);
+		sint_32 sz = vsnprintf(__lib_fp_buffer, FPRINTF_BUFFER_SIZE, &format, args);
+		write(file, __lib_fp_buffer, sz);
+		ret += sz;
 	}
 	va_end(args);
 
