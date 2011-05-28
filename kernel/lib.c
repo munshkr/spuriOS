@@ -22,8 +22,6 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 		if (!__lib_fp_buffer) { return 0; }
 	}
 
-	printf("fpbuf = %p\n", __lib_fp_buffer);
-
 	va_list args;
 	va_start(args, format);
 	sint_32 ret = 0;
