@@ -75,12 +75,9 @@ TASKS=\
 	tasks/palloc.pso \
 	tasks/getpid.pso \
 	tasks/dummy.pso \
-	tasks/task_funky.pso \
-	tasks/task_pf.pso \
-	tasks/task_sin.pso \
 	tasks/console.pso \
 	tasks/ut_con.pso \
-	tasks/serial.pso
+	tasks/serial.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o
