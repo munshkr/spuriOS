@@ -1,61 +1,57 @@
 #include <lib.h>
 #include <common.h>
 
+static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
+                         const char** format, va_list arg_ptr);
 
-sint_32 sprintf_fixed_args(char* str, const char* format, uint_32* args);
-static sint_32 put_dec(char** str, sint_32 number);
-static sint_32 put_uhex(char** str, const uint_32 number);
-static sint_32 print_udec(char** str, const uint_32 number);
+#ifndef __KERNEL__	// TASK-ONLY
 
+#include <syscalls.h>
 
-sint_32 sprintf(char* str, const char* format, ...) {
-	va_list ap;
-	va_start(ap, format);
-	int ret = sprintf_fixed_args(str, format, (void*) ap);
-	va_end(ap);
+char* __lib_fp_buffer = NULL;
+
+sint_32 fprintf(fd_t file, const char* format, ...) {
+	sint_32 size = 0;
+	const char* str_p = format;
+	while (*str_p) { str_p++; size++; }
+
+	if (!size) { return size; }
+
+	__lib_fp_buffer = (char*) (__lib_fp_buffer || (char*) palloc());
+	if (!__lib_fp_buffer) { return 0; }
+
+	va_list args;
+	va_start(args, format);
+	sint_32 ret = 0;
+	while (ret < size) {
+		ret += vsnprintf(__lib_fp_buffer, 4096, &format, args);
+		write(file, __lib_fp_buffer, ret);
+	}
+	va_end(args);
+
 	return ret;
 }
 
-// FIXME Now that printf is not a syscall anymore, we don't need this workaround.
-sint_32 sprintf_fixed_args(char* str, const char* format, uint_32* args) {
-	sint_32 size = 0;
+#endif
 
-	while (*format) {
-		if (*format == '%') {
-			format++;
-			switch (*format) {
-				case 'c':
-					*str = *(char*) args; str++;
-					args++;	size++;	break;
-				case 's':;
-					char* s = *(char**) args; args++;
-					while (*s) { *str = *s++; str++; size++; }
-					break;
-				case 'd':
-					size += put_dec(&str, *(sint_32*)args);
-					args++;	break;
-				case 'u':
-					size += print_udec(&str, *(uint_32*)args);
-					args++;	break;
-				case 'x':
-				case 'p':
-					size += put_uhex(&str, *(sint_32*)args);
-					args++;	break;
-				case '%':
-					*str = '%'; str++;
-					size++; break;
-				default:
-					return -1;
-			}
-		} else {
-			*str = *format; str++;
-			size++;
-		}
-		format++;
-	}
+sint_32 sprintf(char* buffer, const char* format, ...) {
+	va_list args;
+	va_start(args, format);
 
-	*str = 0;
-	return size;
+	int ret = vsnprintf(buffer, -1, &format, args);
+
+	va_end(args);
+	return ret;
+}
+
+sint_32 snprintf(char* buffer, sint_32 buff_size, const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+
+	int ret = vsnprintf(buffer, buff_size, &format, args);
+
+	va_end(args);
+	return ret;
 }
 
 sint_32 strcmp(const char* p, const char* q) {
@@ -104,6 +100,64 @@ uint_32 ulen(const uint_32 number, const char base) {
 	return length;
 }
 
+static sint_32 put_dec(char** str, sint_32 number);
+static sint_32 put_uhex(char** str, const uint_32 number);
+static sint_32 print_udec(char** str, const uint_32 number);
+
+static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
+                         const char** format, va_list arg_ptr)
+{
+	uint_32 sz;
+
+	for (sz = 0; buff_size < 0 || sz < buff_size; ) {
+		if (**format == '\0') {
+			break;
+		} else if (**format == '%') {
+			(*format)++;
+			switch (**format) {
+			case 'c':
+				*buffer = *(char*) arg_ptr;
+				buffer++;
+				arg_ptr++;
+				sz++;
+				break;
+			case 's':;
+				char* s = *(char**) arg_ptr;
+				arg_ptr++;
+				while (*s) { *buffer = *s++; buffer++; sz++; }
+				break;
+			case 'd':
+				sz += put_dec(&buffer, *(sint_32*) arg_ptr);
+				arg_ptr++;
+				break;
+			case 'u':
+				sz += print_udec(&buffer, *(uint_32*) arg_ptr);
+				arg_ptr++;
+				break;
+			case 'x':
+			case 'p':
+				sz += put_uhex(&buffer, *(sint_32*) arg_ptr);
+				arg_ptr++;
+				break;
+			case '%':
+				*buffer = '%';
+				buffer++;
+				sz++;
+				break;
+			default:
+				return -1;
+			}
+		} else {
+			*buffer = **format;
+			buffer++;
+			sz++;
+		}
+		(*format)++;
+	}
+
+	*buffer = 0;
+	return sz;
+}
 
 static sint_32 put_dec(char** str, sint_32 number) {
 	sint_32 size = 0;
