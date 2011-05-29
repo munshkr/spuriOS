@@ -15,11 +15,17 @@ typedef union str_vga_attr_t {
 	} vl;
 } __attribute__((__packed__)) vga_attr_t;
 
+typedef struct str_vga_screen_state_t {
+	uint_8 x;
+	uint_8 y;
+	vga_attr_t attr;
+} __attribute__((__packed__)) vga_screen_state_t;
+
 
 extern uint_8* vga_addr;
+extern vga_screen_state_t vga_state;
 extern const uint_16 vga_cols;
 extern const uint_16 vga_rows;
-extern vga_attr_t vga_attr;
 
 
 void vga_init(void);
@@ -57,16 +63,16 @@ int vga_write_buffer(const char* buf, const size_t size);
 
 /* Set foreground and background colors */
 void vga_reset_colors(void);
+void vga_reset_pos(void);
+void vga_update_cursor(void);
 
 /* Set cursor location */
+// TODO Delete these. Deprecated
 void vga_set_x(uint_16 x);
 int vga_get_x(void);
 void vga_set_y(uint_16 y);
 int vga_get_y(void);
 void vga_set_pos(uint_16 x, uint_16 y);
-void vga_reset_pos(void);
-
-void vga_update_cursor(void);
 
 /* Color attributes */
 #define VGA_FC_BLACK   0x00

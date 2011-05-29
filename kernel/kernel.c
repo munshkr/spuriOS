@@ -64,8 +64,8 @@ inline void go_idle() {
 void print_logo(void) {
 	int i;
 	for (i = 0; i < 5; i++) {
-		vga_attr.fld.forecolor = i + 2;
-		vga_attr.fld.light = TRUE;
+		vga_state.attr.fld.forecolor = i + 2;
+		vga_state.attr.fld.light = TRUE;
 		vga_printf("%s\n", fancy_logo[i]);
 	}
 	vga_printf("\n");

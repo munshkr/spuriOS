@@ -20,9 +20,7 @@ const uint_16 vga_rows = 25;
 
 
 /* Current cursor location and color attributes */
-int vga_x = 0;
-int vga_y = 0;
-vga_attr_t vga_attr;
+vga_screen_state_t vga_state;
 
 
 /* Auxiliary functions */
@@ -37,9 +35,9 @@ static unsigned int scan_uhex(const char value);
 
 
 void vga_init(void) {
-	vga_attr.fld.forecolor = VGA_FC_WHITE;
-	vga_attr.fld.backcolor = VGA_BC_BLACK;
 	vga_clear();
+	vga_state.attr.fld.forecolor = VGA_FC_WHITE;
+	vga_state.attr.fld.backcolor = VGA_BC_BLACK;
 }
 
 void vga_clear(void) {
@@ -57,7 +55,7 @@ int vga_write_buffer(const char* buf, const size_t size) {
 	int sz;
 	const char* ptr = buf;
 
-	vga_attr_t old_attr = vga_attr;
+	vga_attr_t old_attr = vga_state.attr;
 
 	for (sz = 0; sz < size; ptr++, sz++) {
 		if (*ptr == '\0') {
@@ -72,7 +70,7 @@ int vga_write_buffer(const char* buf, const size_t size) {
 				const char back = scan_uhex(*ptr);
 				ptr++;
 				const char fore = scan_uhex(*ptr);
-				vga_attr.vl.vl = (back << 8) | fore;
+				vga_state.attr.vl.vl = (back << 8) | fore;
 				sz+=2;
 				break;
 			  default:
@@ -84,7 +82,7 @@ int vga_write_buffer(const char* buf, const size_t size) {
 		}
 	}
 
-	vga_attr = old_attr;
+	vga_state.attr = old_attr;
 
 	return sz;
 }
@@ -95,7 +93,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 	char* str;
 
 	// Save current attributes
-	vga_attr_t old_attr = vga_attr;
+	vga_attr_t old_attr = vga_state.attr;
 
 	while (*ptr) {
 		if (*ptr == '%') {
@@ -139,7 +137,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 				const char back = scan_uhex(*ptr);
 				ptr++;
 				const char fore = scan_uhex(*ptr);
-				vga_attr.vl.vl = (back << 8) | fore;
+				vga_state.attr.vl.vl = (back << 8) | fore;
 			}
 		} else {
 			putchar(*ptr, FALSE);
@@ -149,7 +147,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 	}
 
 	// Restore attributes
-	vga_attr = old_attr;
+	vga_state.attr = old_attr;
 	vga_update_cursor();
 
 	return size;
@@ -178,17 +176,17 @@ int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint
 }
 
 void vga_reset_colors(void) {
-	vga_attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
+	vga_state.attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
 }
 
 void vga_set_x(uint_16 x) {
 	kassert(x < vga_cols);
-	vga_x = x;
+	vga_state.x = x;
 }
 
 void vga_set_y(uint_16 y) {
 	kassert(y < vga_rows);
-	vga_y = y;
+	vga_state.y = y;
 }
 
 void vga_set_pos(uint_16 x, uint_16 y) {
@@ -197,21 +195,21 @@ void vga_set_pos(uint_16 x, uint_16 y) {
 }
 
 void vga_reset_pos(void) {
-	vga_x = 0;
-	vga_y = 0;
+	vga_state.x = 0;
+	vga_state.y = 0;
 	vga_update_cursor();
 }
 
 int vga_get_x() {
-	return vga_x;
+	return vga_state.x;
 }
 
 int vga_get_y() {
-	return vga_y;
+	return vga_state.y;
 }
 
 void vga_update_cursor(void) {
-	short location = vga_y * vga_cols + vga_x;
+	short location = vga_state.y * vga_cols + vga_state.x;
 	volatile short *pos = (short *) vga_addr + location;
 	*pos = WHITE_SPACE;
 
@@ -226,21 +224,22 @@ static void putchar(const char c, const char raw) {
 	if (c == '\n' && !raw) {
 		putln();
 	} else if (c == '\t' && !raw) {
-		vga_x += TAB_WIDTH;
+		vga_state.x += TAB_WIDTH;
 	} else if (c == '\b' && !raw) {
 		print_backspace();
 	} else {
 		volatile short *pos;
-		pos = (short *) vga_addr + (vga_y * vga_cols + vga_x);
-		*pos = c | (vga_attr.vl.vl << 8);
-		vga_x++;
+		pos = (short *) vga_addr + (vga_state.y * vga_cols + vga_state.x);
+		*pos = c | (vga_state.attr.vl.vl << 8);
+		vga_state.x++;
 	}
-	if (vga_x >= vga_cols) {
+	if (vga_state.x >= vga_cols) {
 		putln();
 	}
 }
 
 static void scroll(void) {
+	// TODO Use memcpy and memset
 	short *pos = (short *) vga_addr;
 	short *cur_pos = pos + vga_cols;
 	int row, col;
@@ -255,20 +254,20 @@ static void scroll(void) {
 }
 
 static void print_backspace(void) {
-	if (vga_x > 0) {
-		vga_x--;
-	} else if (vga_y > 0) {
-		vga_x = vga_cols - 1;
-		vga_y--;
+	if (vga_state.x > 0) {
+		vga_state.x--;
+	} else if (vga_state.y > 0) {
+		vga_state.x = vga_cols - 1;
+		vga_state.y--;
 	}
 }
 
 static void putln(void) {
-	vga_x = 0;
-	vga_y++;
-	if (vga_y == vga_rows) {
+	vga_state.x = 0;
+	vga_state.y++;
+	if (vga_state.y == vga_rows) {
 		scroll();
-		vga_y--;
+		vga_state.y--;
 	}
 	vga_update_cursor();
 }
@@ -334,6 +333,7 @@ static int print_uhex(const unsigned int number) {
 }
 
 static unsigned int scan_uhex(const char value) {
+	// TODO Define macros for the ascii characters used here
 	unsigned int tmp = (unsigned int) value;
 	if (tmp >= 48 && tmp <= 57) {
 		tmp -= 48;

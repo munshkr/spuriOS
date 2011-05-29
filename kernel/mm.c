@@ -254,8 +254,8 @@ inline void mm_init_kernel_pagetable() {
 void mm_print_map() {
 	int i = 0;
 	uint_8* cursor = mm_bitmap;
-	vga_attr.fld.forecolor = 0x3;
-	vga_attr.fld.backcolor = 0x3;
+	vga_state.attr.fld.forecolor = 0x3;
+	vga_state.attr.fld.backcolor = 0x3;
 	for (i=0 ; i<mm_bitmap_byte_len ; i++, cursor++) {
 		vga_putchar(*cursor);
 	}

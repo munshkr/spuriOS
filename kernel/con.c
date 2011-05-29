@@ -71,7 +71,7 @@ chardev* con_open(void) {
 			// Copy current display buffer if this is the first console
 			if (current == NULL) {
 				memcpy(vga_addr, c->buffer, PAGE_SIZE);
-				c->attr.vl.vl = vga_attr.vl.vl;
+				c->attr.vl.vl = vga_state.attr.vl.vl;
 				c->x = vga_get_x();
 				c->y = vga_get_y();
 			} else {
@@ -149,7 +149,7 @@ static inline void switch_console(con_device* new_con) {
 	if (current) {
 		// Save current state
 		memcpy(vga_addr, current->buffer, PAGE_SIZE);
-		current->attr = vga_attr;
+		current->attr = vga_state.attr;
 		current->x = vga_get_x();
 		current->y = vga_get_y();
 	}
@@ -159,7 +159,7 @@ static inline void switch_console(con_device* new_con) {
 
 	// Restore state for new console
 	memcpy(current->buffer, vga_addr, PAGE_SIZE);
-	vga_attr = current->attr;
+	vga_state.attr = current->attr;
 	vga_set_pos(current->x, current->y);
 	vga_update_cursor();
 }
