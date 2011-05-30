@@ -72,8 +72,8 @@ chardev* con_open(void) {
 			if (current == NULL) {
 				memcpy(vga_addr, c->buffer, PAGE_SIZE);
 				c->attr.vl.vl = vga_state.attr.vl.vl;
-				c->x = vga_get_x();
-				c->y = vga_get_y();
+				c->x = vga_state.x;
+				c->y = vga_state.y;
 			} else {
 				memset(c->buffer, 0, PAGE_SIZE);
 				c->attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
@@ -150,8 +150,8 @@ static inline void switch_console(con_device* new_con) {
 		// Save current state
 		memcpy(vga_addr, current->buffer, PAGE_SIZE);
 		current->attr = vga_state.attr;
-		current->x = vga_get_x();
-		current->y = vga_get_y();
+		current->x = vga_state.x;
+		current->y = vga_state.y;
 	}
 
 	// Set focus on new console
@@ -160,7 +160,8 @@ static inline void switch_console(con_device* new_con) {
 	// Restore state for new console
 	memcpy(current->buffer, vga_addr, PAGE_SIZE);
 	vga_state.attr = current->attr;
-	vga_set_pos(current->x, current->y);
+	vga_state.x = current->x;
+	vga_state.y = current->y;
 	vga_update_cursor();
 }
 

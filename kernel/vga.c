@@ -165,12 +165,14 @@ int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint
 	if (row > vga_rows || col > vga_cols) {
 		return 0;
 	}
-	int old_x = vga_get_x();
-	int old_y = vga_get_y();
+	int old_x = vga_state.x;
+	int old_y = vga_state.y;
 
-	vga_set_pos(col, row);
+	vga_state.x = col;
+	vga_state.y = row;
 	int ret = vga_printf_fixed_args(format, args);
-	vga_set_pos(old_x, old_y);
+	vga_state.x = old_x;
+	vga_state.y = old_y;
 
 	return ret;
 }
@@ -179,33 +181,10 @@ void vga_reset_colors(void) {
 	vga_state.attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
 }
 
-void vga_set_x(uint_16 x) {
-	kassert(x < vga_cols);
-	vga_state.x = x;
-}
-
-void vga_set_y(uint_16 y) {
-	kassert(y < vga_rows);
-	vga_state.y = y;
-}
-
-void vga_set_pos(uint_16 x, uint_16 y) {
-	vga_set_x(x);
-	vga_set_y(y);
-}
-
 void vga_reset_pos(void) {
 	vga_state.x = 0;
 	vga_state.y = 0;
 	vga_update_cursor();
-}
-
-int vga_get_x() {
-	return vga_state.x;
-}
-
-int vga_get_y() {
-	return vga_state.y;
 }
 
 void vga_update_cursor(void) {

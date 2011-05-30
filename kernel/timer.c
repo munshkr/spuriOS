@@ -28,26 +28,30 @@ void timer_init(uint_32 frequency) {
 }
 
 void timer_draw_clock() {
-	int old_x = vga_get_x();
-	int old_y = vga_get_y();
+	int old_x = vga_state.x;
+	int old_y = vga_state.y;
 
 	// Draw a clock in the lower right corner of the screen
-	vga_set_pos(vga_cols - 2, vga_rows - 1);
+	vga_state.x = vga_cols - 2;
+	vga_state.y = vga_cols - 1;
 	vga_printf("\\c09%c", clock_anim[tick % 4]);
 
 	// Restore cursor position
-	vga_set_pos(old_x, old_y);
+	vga_state.x = old_x;
+	vga_state.y = old_y;
 }
 
 void timer_digital_clock() {
 	uint_32 time = tick / 100;
-	int old_x = vga_get_x();
-	int old_y = vga_get_y();
+	int old_x = vga_state.x;
+	int old_y = vga_state.y;
 
 	// Draw a clock in the lower right corner of the screen
-	vga_set_pos(vga_cols - ulen(time/10, 10) - 4, 0);
+	vga_state.x = vga_cols - ulen(time/10, 10) - 4;
+	vga_state.y = 0;
 	vga_printf("\\c0B%u.%us", (time / 10), (time % 10));
 
 	// Restore cursor position
-	vga_set_pos(old_x, old_y);
+	vga_state.x = old_x;
+	vga_state.y = old_y;
 }

@@ -66,14 +66,6 @@ void vga_reset_colors(void);
 void vga_reset_pos(void);
 void vga_update_cursor(void);
 
-/* Set cursor location */
-// TODO Delete these. Deprecated
-void vga_set_x(uint_16 x);
-int vga_get_x(void);
-void vga_set_y(uint_16 y);
-int vga_get_y(void);
-void vga_set_pos(uint_16 x, uint_16 y);
-
 /* Color attributes */
 #define VGA_FC_BLACK   0x00
 #define VGA_FC_BLUE    0x01
