@@ -15,18 +15,6 @@ section .text
 
 bits 16
 
-%define GDT_COUNT 6 ; WARNING, must match value defined in gdt.h
-
-gdt_desc:
-	dw (GDT_COUNT * 8) - 1
-	dd gdt
-
-; FIXME E820 function can overwrite code if it overflows this buffer.
-%define MMAP_MAX_ENTRIES 10
-%define MMAP_ENTRY_SIZE 24
-
-mmap_buffer: times (MMAP_ENTRY_SIZE * MMAP_MAX_ENTRIES) db 0
-
 
 ; start MUST be at the very begining of this file
 start:
@@ -67,5 +55,19 @@ modo_protegido:
 	mov		eax, [mmap_entries]
 	push	eax
 	push	mmap_buffer
+
 	call 	kernel_init
 	jmp $
+
+
+%define GDT_COUNT 6 ; WARNING, must match value defined in gdt.h
+
+gdt_desc:
+	dw (GDT_COUNT * 8) - 1
+	dd gdt
+
+; FIXME E820 function can overwrite code if it overflows this buffer.
+%define MMAP_MAX_ENTRIES 10
+%define MMAP_ENTRY_SIZE 24
+
+mmap_buffer: times (MMAP_ENTRY_SIZE * MMAP_MAX_ENTRIES) db 0
