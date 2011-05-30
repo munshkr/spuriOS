@@ -7,33 +7,30 @@ static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
 #ifndef __KERNEL__	// TASK-ONLY
 
 #include <syscalls.h>
+#include <errors.h>
+#include <debug.h>
 
 #define FPRINTF_BUFFER_SIZE 4096
 char* __lib_fp_buffer = NULL;
 
+// TODO Support fprintf with strings larger than FPRINTF_BUFFER_SIZE
 sint_32 fprintf(fd_t file, const char* format, ...) {
-	sint_32 size = 0;
-	const char* str_p = format;
-	while (*str_p) { str_p++; size++; }
-
-	if (!size) { return size; }
+	if (!*format) { return 0; }
 
 	if (!__lib_fp_buffer) {
 		__lib_fp_buffer = (char*) palloc();
-		if (!__lib_fp_buffer) { return 0; }
+		if (!__lib_fp_buffer) { return -ENOMEM; }
 	}
 
 	va_list args;
 	va_start(args, format);
-	sint_32 ret = 0;
-	while (ret < size) {
-		sint_32 sz = vsnprintf(__lib_fp_buffer, FPRINTF_BUFFER_SIZE, &format, args);
-		write(file, __lib_fp_buffer, sz);
-		ret += sz;
-	}
+	sint_32 sz_printf = vsnprintf(__lib_fp_buffer, FPRINTF_BUFFER_SIZE, &format, args);
 	va_end(args);
 
-	return ret;
+	sint_32 sz_write = write(file, __lib_fp_buffer, sz_printf);
+	assert(sz_printf == sz_write);
+
+	return sz_write;
 }
 
 #endif
@@ -128,18 +125,25 @@ static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
 			case 's':;
 				char* s = *(char**) arg_ptr;
 				arg_ptr++;
-				while (*s) { *buffer = *s++; buffer++; sz++; }
+				while ((buff_size < 0 || sz < buff_size) && *s) {
+					*buffer = *s++;
+					buffer++;
+					sz++;
+				}
 				break;
 			case 'd':
+				// FIXME put_dec doesn't know if buffer is big enough to write!
 				sz += put_dec(&buffer, *(sint_32*) arg_ptr);
 				arg_ptr++;
 				break;
 			case 'u':
+				// FIXME put_udec doesn't know if buffer is big enough to write!
 				sz += print_udec(&buffer, *(uint_32*) arg_ptr);
 				arg_ptr++;
 				break;
 			case 'x':
 			case 'p':
+				// FIXME put_uhex doesn't know if buffer is big enough to write!
 				sz += put_uhex(&buffer, *(sint_32*) arg_ptr);
 				arg_ptr++;
 				break;
