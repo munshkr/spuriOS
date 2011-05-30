@@ -22,9 +22,7 @@ typedef struct str_con_device {
 	pid kbd_queue;
 
 	sint_8* buffer;
-	vga_attr_t attr;
-	uint_8 x;
-	uint_8 y;
+	vga_screen_state_t state;
 
 	void* prev;
 	void* next;
@@ -71,14 +69,12 @@ chardev* con_open(void) {
 			// Copy current display buffer if this is the first console
 			if (current == NULL) {
 				memcpy(vga_addr, c->buffer, PAGE_SIZE);
-				c->attr.vl.vl = vga_state.attr.vl.vl;
-				c->x = vga_state.x;
-				c->y = vga_state.y;
+				c->state = vga_state;
 			} else {
 				memset(c->buffer, 0, PAGE_SIZE);
-				c->attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
-				c->x = 0;
-				c->y = 0;
+				c->state.x = 0;
+				c->state.y = 0;
+				c->state.attr.vl.vl = VGA_BC_BLACK | VGA_FC_WHITE;
 			}
 
 			c->kbd_queue = FREE_QUEUE;
@@ -149,9 +145,7 @@ static inline void switch_console(con_device* new_con) {
 	if (current) {
 		// Save current state
 		memcpy(vga_addr, current->buffer, PAGE_SIZE);
-		current->attr = vga_state.attr;
-		current->x = vga_state.x;
-		current->y = vga_state.y;
+		current->state = vga_state;
 	}
 
 	// Set focus on new console
@@ -159,9 +153,7 @@ static inline void switch_console(con_device* new_con) {
 
 	// Restore state for new console
 	memcpy(current->buffer, vga_addr, PAGE_SIZE);
-	vga_state.attr = current->attr;
-	vga_state.x = current->x;
-	vga_state.y = current->y;
+	vga_state = current->state;
 	vga_update_cursor();
 }
 
