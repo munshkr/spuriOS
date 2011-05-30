@@ -13,6 +13,7 @@ sint_32 copy2user(void* src, void* dst_usr, size_t size) {
 	}
 }
 
+// TODO Move to lib.c (it can be reused in user tasks!)
 void memcpy(void* src, void* dst, size_t size) {
 	int i;
 	for (i = 0; i < size; i++) {
@@ -22,6 +23,7 @@ void memcpy(void* src, void* dst, size_t size) {
 	}
 }
 
+// TODO Move to lib.c (it can be reused in user tasks!)
 void memset(void* addr, int value, size_t size) {
 	int i;
 	for (i = 0; i < size; i++) {
