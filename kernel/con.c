@@ -99,13 +99,14 @@ chardev* con_open(void) {
 }
 
 sint_32 con_read(chardev* self, void* buf, uint_32 size) {
-	uint_32 sz;
-	for (sz = 0; sz < size; sz++) {
+	uint_32 sz = 0;
+	while (sz < size) {
 		loader_enqueue(&C(self)->kbd_queue);
 
 		if (kbd_char_buf) {
 			// FIXME A bit of an overkill for just one byte, isn't it?
 			copy2user(&kbd_char_buf, buf, 1);
+			sz++;
 		}
 	}
 	return sz;
