@@ -112,8 +112,13 @@ sint_32 con_read(chardev* self, void* buf, uint_32 size) {
 }
 
 sint_32 con_write(chardev* self, const void* buf, uint_32 size) {
-	int sz = vga_write_buffer(buf, size);
-	vga_update_cursor();
+	int sz = 0;
+	if (C(self) == current) {
+		sz = vga_writebuf(vga_addr, &vga_state, buf, size);
+		vga_update_cursor();
+	} else {
+		sz = vga_writebuf(C(self)->buffer, &C(self)->state, buf, size);
+	}
 	return sz;
 }
 

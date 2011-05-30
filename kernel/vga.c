@@ -24,13 +24,16 @@ vga_screen_state_t vga_state;
 
 
 /* Auxiliary functions */
-static void putchar(const char c, const char raw);
-static void scroll(void);
-static void putln(void);
-static void print_backspace(void);
+static void scroll(const void* buff_ptr);
+static void putchar(const void* buff_ptr, vga_screen_state_t* state,
+                    const char c, const char raw);
+static void putln(const void* buff_ptr, vga_screen_state_t* state);
+static void putbs(const void* buff_ptr, vga_screen_state_t* state);
+
 static int print_dec(const int number);
 static int print_udec(const unsigned int number);
 static int print_uhex(const unsigned int number);
+
 static unsigned int scan_uhex(const char value);
 
 
@@ -46,16 +49,18 @@ void vga_clear(void) {
 }
 
 int vga_putchar(const char c) {
-	putchar(c, TRUE);
+	putchar(vga_addr, &vga_state, c, TRUE);
 	vga_update_cursor();
 	return c;
 }
 
-int vga_write_buffer(const char* buf, const size_t size) {
+int vga_writebuf(const void* buff_ptr, vga_screen_state_t* state,
+                 const char* string, const size_t size)
+{
 	int sz;
-	const char* ptr = buf;
+	const char* ptr = string;
 
-	vga_attr_t old_attr = vga_state.attr;
+	vga_attr_t old_attr = state->attr;
 
 	for (sz = 0; sz < size; ptr++, sz++) {
 		if (*ptr == '\0') {
@@ -70,19 +75,19 @@ int vga_write_buffer(const char* buf, const size_t size) {
 				const char back = scan_uhex(*ptr);
 				ptr++;
 				const char fore = scan_uhex(*ptr);
-				vga_state.attr.vl.vl = (back << 8) | fore;
+				state->attr.vl.vl = (back << 8) | fore;
 				sz+=2;
 				break;
 			  default:
-				putchar('\\', FALSE);
+				putchar(buff_ptr, state, '\\', FALSE);
 				break;
 			}
 		} else {
-			putchar(*ptr, FALSE);
+			putchar(buff_ptr, state, *ptr, FALSE);
 		}
 	}
 
-	vga_state.attr = old_attr;
+	state->attr = old_attr;
 
 	return sz;
 }
@@ -100,7 +105,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 			ptr++;
 			switch (*ptr) {
 			  case 'c':
-				putchar(*(char*) args, FALSE);
+				putchar(vga_addr, &vga_state, *(char*) args, FALSE);
 				args++;
 				size++;
 				break;
@@ -108,7 +113,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 				str = *(char**) args;
 				args++;
 				while (*str) {
-					putchar(*str++, TRUE);
+					putchar(vga_addr, &vga_state, *str++, TRUE);
 					size++;
 				}
 				break;
@@ -126,7 +131,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 				args++;
 				break;
 			  case '%':
-				putchar('%', FALSE);
+				putchar(vga_addr, &vga_state, '%', FALSE);
 				size++;
 			}
 		} else if (*ptr == '\\') {
@@ -140,7 +145,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 				vga_state.attr.vl.vl = (back << 8) | fore;
 			}
 		} else {
-			putchar(*ptr, FALSE);
+			putchar(vga_addr, &vga_state, *ptr, FALSE);
 			size++;
 		}
 		ptr++;
@@ -199,27 +204,29 @@ void vga_update_cursor(void) {
 }
 
 
-static void putchar(const char c, const char raw) {
+static void putchar(const void* buff_ptr, vga_screen_state_t* state,
+                    const char c, const char raw)
+{
 	if (c == '\n' && !raw) {
-		putln();
+		putln(buff_ptr, state);
 	} else if (c == '\t' && !raw) {
-		vga_state.x += TAB_WIDTH;
+		state->x += TAB_WIDTH;
 	} else if (c == '\b' && !raw) {
-		print_backspace();
+		putbs(buff_ptr, state);
 	} else {
 		volatile short *pos;
-		pos = (short *) vga_addr + (vga_state.y * vga_cols + vga_state.x);
-		*pos = c | (vga_state.attr.vl.vl << 8);
-		vga_state.x++;
+		pos = (short *) buff_ptr + (state->y * vga_cols + state->x);
+		*pos = c | (state->attr.vl.vl << 8);
+		state->x++;
 	}
-	if (vga_state.x >= vga_cols) {
-		putln();
+	if (state->x >= vga_cols) {
+		putln(buff_ptr, state);
 	}
 }
 
-static void scroll(void) {
+static void scroll(const void* buff_ptr) {
 	// TODO Use memcpy and memset
-	short *pos = (short *) vga_addr;
+	short *pos = (short *) buff_ptr;
 	short *cur_pos = pos + vga_cols;
 	int row, col;
 	for (row=1; row < vga_rows; ++row) {
@@ -232,23 +239,25 @@ static void scroll(void) {
 	}
 }
 
-static void print_backspace(void) {
-	if (vga_state.x > 0) {
-		vga_state.x--;
-	} else if (vga_state.y > 0) {
-		vga_state.x = vga_cols - 1;
-		vga_state.y--;
+static void putbs(const void* buff_ptr, vga_screen_state_t* state) {
+	if (state->x > 0) {
+		state->x--;
+	} else if (state->y > 0) {
+		state->x = vga_cols - 1;
+		state->y--;
 	}
 }
 
-static void putln(void) {
-	vga_state.x = 0;
-	vga_state.y++;
-	if (vga_state.y == vga_rows) {
-		scroll();
-		vga_state.y--;
+static void putln(const void* buff_ptr, vga_screen_state_t* state) {
+	state->x = 0;
+	state->y++;
+	if (state->y == vga_rows) {
+		scroll(buff_ptr);
+		state->y--;
 	}
-	vga_update_cursor();
+	if (buff_ptr == vga_addr) {
+		vga_update_cursor();
+	}
 }
 
 
@@ -259,13 +268,13 @@ static int print_dec(int number) {
 	int mult = pow(10, ln - 1);
 
 	if (number < 0) {
-		putchar('-', FALSE);
+		putchar(vga_addr, &vga_state, '-', FALSE);
 		number = -number;
 		size++;
 	}
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 10;
-		putchar((char) digit + ASCII_0, FALSE);
+		putchar(vga_addr, &vga_state, (char) digit + ASCII_0, FALSE);
 		mult /= 10;
 		size++;
 	}
@@ -279,7 +288,7 @@ static int print_udec(const unsigned int number) {
 
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 10;
-		putchar((char) digit + ASCII_0, FALSE);
+		putchar(vga_addr, &vga_state, (char) digit + ASCII_0, FALSE);
 		mult /= 10;
 	}
 	return ln;
@@ -290,21 +299,21 @@ static int print_uhex(const unsigned int number) {
 	const unsigned int ln = ulen(number, 16);
 	unsigned int mult = pow(16, ln - 1);
 
-	putchar('0', FALSE);
-	putchar('x', FALSE);
+	putchar(vga_addr, &vga_state, '0', FALSE);
+	putchar(vga_addr, &vga_state, 'x', FALSE);
 
 	for (i = 0; i < 8 - ln; i++) {
-		putchar('0', FALSE);
+		putchar(vga_addr, &vga_state, '0', FALSE);
 	}
 
 	for (i = 0; i < ln; ++i) {
 		digit = (number / mult) % 16;
 		if (digit < 10) {
-			putchar((char) digit + ASCII_0, FALSE);
+			putchar(vga_addr, &vga_state, (char) digit + ASCII_0, FALSE);
 		} else if (digit < 16) {
-			putchar((char) (digit - 10) + ASCII_a, FALSE);
+			putchar(vga_addr, &vga_state, (char) (digit - 10) + ASCII_a, FALSE);
 		} else {
-			putchar('?', FALSE);
+			putchar(vga_addr, &vga_state, '?', FALSE);
 		}
 		mult /= 16;
 	}
