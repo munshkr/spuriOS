@@ -1,6 +1,7 @@
 #include <syscalls.h>
 #include <lib.h>
 #include <fs.h>
+#include <i386.h>
 
 const size_t LINE_BUFFER_SIZE = 80;
 
