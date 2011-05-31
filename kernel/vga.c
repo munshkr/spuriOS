@@ -240,6 +240,10 @@ static void scroll(const void* buff_ptr) {
 }
 
 static void putbs(const void* buff_ptr, vga_screen_state_t* state) {
+	short location = state->y * vga_cols + state->x;
+	volatile short *pos = (short *) buff_ptr + location;
+	*pos = 0x20 | (state->attr.vl.vl << 8);
+
 	if (state->x > 0) {
 		state->x--;
 	} else if (state->y > 0) {
