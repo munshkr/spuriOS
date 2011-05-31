@@ -20,12 +20,7 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 	if (!__lib_fp_buffer) {
 		__lib_fp_buffer = (char*) palloc();
 		if (!__lib_fp_buffer) { return -ENOMEM; }
-
-		// TODO Initialize with memset (once it's moved from common.c to lib.c)
-		char* tmp_p = __lib_fp_buffer; int i;
-		for (i = 0; i < FPRINTF_BUFFER_SIZE; i++, tmp_p++) {
-			*(char*) tmp_p = 0;
-		}
+		memset(__lib_fp_buffer, 0, FPRINTF_BUFFER_SIZE);
 	}
 
 	va_list args;
