@@ -1,5 +1,6 @@
 #include <syscalls.h>
 #include <fs.h>
+#include <i386.h>
 
 int main () {
 	int fd = open("/console", FS_OPEN_RDWR);

@@ -86,6 +86,7 @@ OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o 
 DISK_LABEL="KERNEL  PSO"
 IMG_BASE=$(DIROUT)base.img
 IMG_FLOPPY=$(DIROUT)floppy.img
+IMG_HDD=$(DIROUT)hdd.img
 
 # Documents
 DOC_FILES=$(DIRDOC)tp2-docs.pdf
@@ -93,7 +94,7 @@ DOC_FILES=$(DIRDOC)tp2-docs.pdf
 
 .PHONY: all clean
 
-all: $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN)
+all: $(IMG_HDD) $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN)
 
 # Bootloader - disk
 ### TODO ###
@@ -168,6 +169,10 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
 	for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
+$(IMG_HDD):
+	bximage -q -hd -mode=flat -size=10 $@ >/dev/null
+	mkfs.ext2 -F -L SpuriOS $@ > /dev/null
+
 # Documentation
 doc: $(DOC_FILES)
 
@@ -176,7 +181,7 @@ doc/%.pdf: doc/%.md
 
 # Otros
 clean:
-	rm -f $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(SYMBOLS_FILES) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf)
+	rm -f $(IMG_HDD) $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(SYMBOLS_FILES) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf)
 	#rm -f deps
 
 # Dependencias

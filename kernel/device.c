@@ -4,6 +4,8 @@
 #include <con.h>
 #include <debug.h>
 #include <serial.h>
+#include <hdd.h>
+#include <fs.h>
 
 extern pid cur_pid;
 
@@ -35,6 +37,7 @@ inline void init_dev_modules() {
 	proc_init();
 	con_init();
 	serial_init();
+	hdd_init();
 }
 
 void device_init(void) {
@@ -117,3 +120,4 @@ int seek(int fd, uint_32 size) {
 
 	return -ENOFUNC;
 }
+

@@ -10,6 +10,7 @@
 #define CLASS_DEV_PROC_CPUID	1
 #define CLASS_DEV_CONSOLE		2
 #define CLASS_DEV_SERIAL		3
+#define CLASS_DEV_HDD			4
 
 /* Devices */
 typedef struct str_dev device;
