@@ -46,8 +46,8 @@ const char* exp_name[] = {
 	"Alignment check"
 };
 
-extern void spurious_handler(void);
-
+extern void spurious_master_handler(void);
+extern void spurious_slave_handler(void);
 
 void debug_init(void) {
 	int i;
@@ -59,8 +59,8 @@ void debug_init(void) {
 	// because we're disabling handling of LPT1 interrupts or Secondary IDE.
 	// We should read the ISR register of the PIC to find out if it's a fake
 	// IRQ or a real one.  For now, we ignore them all.
-	idt_register_asm(ISR_IRQ7, spurious_handler, PL_KERNEL);
-	idt_register_asm(ISR_IRQ15, spurious_handler, PL_KERNEL);
+	idt_register_asm(ISR_IRQ7, spurious_master_handler, PL_KERNEL);
+	idt_register_asm(ISR_IRQ15, spurious_slave_handler, PL_KERNEL);
 }
 
 bool in_panic = FALSE;

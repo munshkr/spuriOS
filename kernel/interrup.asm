@@ -110,6 +110,14 @@ irq_common:
 	iret
 
 ; Spurious interrupts
-global spurious_handler
-spurious_handler:
+global spurious_slave_handler
+spurious_slave_handler:
+	; Send EOI to Master PIC (port 0x20)
+	mov dx, 0x20
+	mov al, 0x20
+	out dx, al
+	iret
+
+global spurious_master_handler
+spurious_master_handler:
 	iret
