@@ -235,6 +235,7 @@ static inline uint_8 read_scancode(void) {
 static inline void update_kbd_state(void) {
 	kbd_sc_buf = read_scancode();
 	//vga_printf("sc: %x\n", kbd_sc_buf);
+	kbd_char_buf = 0;
 
 	switch (kbd_sc_buf) {
 	case KBD_SC_ESCAPE:
@@ -280,8 +281,6 @@ static inline void update_kbd_state(void) {
 		if (!(kbd_sc_buf & 0x80)) {
 			kbd_char_buf = (KBD_SHIFT_ON ? KBD_UPPER_MAP :
 			                               KBD_LOWER_MAP)[kbd_sc_buf];
-		} else {
-			kbd_char_buf = 0;
 		}
 		break;
 	}
