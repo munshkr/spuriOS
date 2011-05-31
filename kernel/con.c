@@ -2,6 +2,7 @@
 #include <vga.h>
 #include <mm.h>
 #include <common.h>
+#include <lib.h>
 #include <debug.h>
 #include <kbd.h>
 #include <pic.h>

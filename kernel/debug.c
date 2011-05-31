@@ -5,7 +5,7 @@
 #include <sched.h>
 #include <i386.h>
 #include <idt.h>
-#include <common.h>
+#include <lib.h>
 
 #define HAS_CF(x) (x & 1)
 #define HAS_PF(x) (x & 4)

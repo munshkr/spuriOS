@@ -25,9 +25,6 @@
 
 sint_32 copy2user(void* src, void* dst_usr, size_t size);
 
-void memcpy(void* src, void* dst, size_t size);
-void memset(void* addr, int value, size_t size);
-
 // Use GCC built-in functionality for variable arguments
 #define va_start(v,l) __builtin_va_start(v,l)
 #define va_arg(v,l)   __builtin_va_arg(v,l)

@@ -1,6 +1,7 @@
 #include <idt.h>
 #include <sched.h>
 #include <loader.h>
+#include <lib.h>
 
 #define SCHED_QUANTUM_DEFAULT 10
 

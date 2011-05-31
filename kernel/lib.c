@@ -20,12 +20,7 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 	if (!__lib_fp_buffer) {
 		__lib_fp_buffer = (char*) palloc();
 		if (!__lib_fp_buffer) { return -ENOMEM; }
-
-		// TODO Initialize with memset (once it's moved from common.c to lib.c)
-		char* tmp_p = __lib_fp_buffer; int i;
-		for (i = 0; i < FPRINTF_BUFFER_SIZE; i++, tmp_p++) {
-			*(char*) tmp_p = 0;
-		}
+		memset(__lib_fp_buffer, 0, FPRINTF_BUFFER_SIZE);
 	}
 
 	va_list args;
@@ -106,6 +101,24 @@ uint_32 ulen(const uint_32 number, const char base) {
 	}
 	return length;
 }
+
+void memcpy(void* src, void* dst, size_t size) {
+	int i;
+	for (i = 0; i < size; i++) {
+		*(uint_8*)dst = *(uint_8*)src;
+		src++;
+		dst++;
+	}
+}
+
+void memset(void* addr, int value, size_t size) {
+	int i;
+	for (i = 0; i < size; i++) {
+		*(uint_8*)addr = value;
+		addr++;
+	}
+}
+
 
 static sint_32 put_dec(char** str, sint_32 number);
 static sint_32 put_uhex(char** str, const uint_32 number);

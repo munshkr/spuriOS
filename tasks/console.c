@@ -7,7 +7,6 @@ const size_t LINE_BUFFER_SIZE = 80;
 
 static void print_prompt(void);
 static void parse(char* line_buffer, uint_32 size);
-static void memset(void* addr, int value, size_t size);
 
 int con_fd;
 
@@ -80,13 +79,4 @@ static void parse(char* line_buffer, uint_32 size) {
 	fprintf(con_fd, "Huh? What does \"");
 	write(con_fd, line_buffer, size);
 	fprintf(con_fd, "\" mean?\n");
-}
-
-// FIXME Delete this and use memset from lib.c
-static void memset(void* addr, int value, size_t size) {
-	int i;
-	for (i = 0; i < size; i++) {
-		*(uint_8*)addr = value;
-		addr++;
-	}
 }
