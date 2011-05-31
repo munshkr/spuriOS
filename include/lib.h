@@ -17,6 +17,9 @@ sint_32 pow(const sint_32 base, const uint_32 exponent);
 uint_32 len(const sint_32 number, const char base);
 uint_32 ulen(const uint_32 number, const char base);
 
+void memcpy(void* src, void* dst, size_t size);
+void memset(void* addr, int value, size_t size);
+
 #ifndef __KERNEL__	// TASK-ONLY
 
 sint_32 fprintf(fd_t file, const char* format, ...);

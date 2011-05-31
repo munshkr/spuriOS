@@ -1,5 +1,6 @@
 #include <mm.h>
 #include <common.h>
+#include <lib.h>
 #include <i386.h>
 #include <debug.h>
 #include <vga.h>

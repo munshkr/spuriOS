@@ -5,6 +5,7 @@
 #include <idt.h>
 #include <pic.h>
 #include <common.h>
+#include <lib.h>
 #include <debug.h>
 #include <syscalls.h>
 
