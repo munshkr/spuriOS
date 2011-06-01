@@ -8,6 +8,8 @@
 #include <sched.h>
 #include <vga.h>
 #include <mm.h>
+#include <fs.h>
+#include <tipos.h>
 
 const char PSO_SIGNATURE[4] = "PSO";
 
@@ -21,6 +23,22 @@ pid tmp_pid;
 
 slept_task sleeping[MAX_PID];
 pid first_slept;
+
+sint_32 run(const char* filename) {
+	fd_t fd = open(filename, FS_OPEN_RD);
+	if (fd < 0) {
+		return fd;
+	}
+
+/*	uint_32 readed = 0;
+	while (readed < PSO_HEADER_SZ) {
+		uint_32 readed_now = read(fd, 
+
+	}*/
+
+	close(fd);
+	return 0;
+}
 
 mm_page* cur_pdt() {
 	return (mm_page*) processes[cur_pid].cr3;

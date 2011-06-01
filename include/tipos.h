@@ -16,7 +16,7 @@ typedef uint_32 size_t;
 
 typedef sint_32 pid;
 
-typedef uint_32 fd_t;
+typedef sint_32 fd_t;
 
 #define FALSE 0
 #define TRUE 1

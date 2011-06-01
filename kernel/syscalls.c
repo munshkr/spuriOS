@@ -16,7 +16,6 @@ static void syscalls_handler(registers_t*);
 
 uint_32 sys_getpid(void);
 void sys_exit(void);
-void* sys_palloc(void);
 void sys_print (registers_t* regs);
 void sys_loc_print (registers_t* regs);
 void sys_sleep (registers_t* regs);
@@ -32,7 +31,7 @@ static void syscalls_handler(registers_t* regs) {
 			regs->eax = sys_getpid();
 			break;
 		case SYS_PALLOC:
-			regs->eax = (uint_32) sys_palloc();
+			regs->eax = (uint_32) palloc();
 			break;
 		case SYS_EXIT:
 			sys_exit();
@@ -61,6 +60,9 @@ static void syscalls_handler(registers_t* regs) {
 		case SYS_SEEK:
 			regs->eax = seek((int) regs->ebx, regs->ecx);
 			break;
+		case SYS_RUN:
+			regs->eax = run((const char*) regs->ebx);
+			break;
 		default:
 			vga_printf("Invalid system call! Exited");
 			sys_exit();
@@ -75,21 +77,6 @@ uint_32 sys_getpid() {
 
 void sys_exit() {
 	loader_exit();
-}
-
-void* sys_palloc() {
-	void* frame = mm_mem_alloc();
-
-	if (!frame) { return NULL; }
-
-	void* page = (void*) processes[cur_pid].next_empty_page_addr;
-
-	mm_map_frame(frame, page, (mm_page*) processes[cur_pid].cr3,
-		processes[cur_pid].privilege_level);
-
-	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
-
-	return page;
 }
 
 void sys_sleep(registers_t* regs) {
@@ -179,6 +166,12 @@ int write(int fd, const void* buf, uint_32 size) {
 int seek(int fd, uint_32 size) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_SEEK), "b" (fd), "c" (size));
+	return ret;
+}
+
+sint_32 run(const char* filename) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_RUN), "b" (filename));
 	return ret;
 }
 

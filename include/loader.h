@@ -51,6 +51,7 @@ void loader_exit(void);
 #endif
 
 /* Syscalls */
+sint_32 run(const char* filename);
 // pid getpid(void);
 // void exit(pid pd);
 

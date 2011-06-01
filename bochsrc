@@ -700,7 +700,7 @@ private_colormap: enabled=0
 # Examples:
 #   keyboard_mapping: enabled=1, map=gui/keymaps/x11-pc-de.map
 #=======================================================================
-keyboard_mapping: enabled=0, map=
+keyboard_mapping: enabled=1, map=/usr/local/share/bochs/keymaps/x11-pc-es.map
 
 #=======================================================================
 # KEYBOARD_TYPE:
