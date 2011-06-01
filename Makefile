@@ -61,6 +61,7 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/taskswitch.o \
 	kernel/timer.o \
 	kernel/vga.o \
+	kernel/ext2.o \
 
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
@@ -78,6 +79,7 @@ TASKS=\
 	tasks/console.pso \
 	tasks/ut_con.pso \
 	tasks/serial.pso \
+	tasks/polly_test_task.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o

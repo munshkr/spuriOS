@@ -38,12 +38,13 @@ inline void init_dev_modules() {
 	con_init();
 	serial_init();
 	hdd_init();
+	fs_init();
 }
 
 void device_init(void) {
 	debug_log("initializing device drivers");
 	init_fd_association();
-	init_dev_modules();		
+	init_dev_modules();
 }
 
 /* Syscalls */

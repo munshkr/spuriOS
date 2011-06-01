@@ -23,3 +23,4 @@ include_task ut_con, "tasks/ut_con.pso"
 include_task serial, "tasks/serial.pso"
 
 include_task console, "tasks/console.pso"
+include_task polly_test_task, "tasks/polly_test_task.pso"

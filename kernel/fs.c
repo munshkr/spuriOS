@@ -14,6 +14,7 @@
 // Sistemas de archivos
 #include <fat12.h>
 #include <fat16.h>
+#include <ext2.h>
 
 // Dispositivos
 #include <serial.h>
@@ -24,13 +25,13 @@
 
 /*
  * Disco 1;
- */ 
-fat12 disk;
+ */
+ext2 disk;
 
 /*
  * Se pueden agregar más discos así:
  */
- //~ fat16 disk2; 
+ //~ fat16 disk2;
  //~ fat32 disk3;
  //~ ext2 disk4;
  //~ resiserfs disk5;
@@ -40,6 +41,9 @@ void fs_init(void) {
 	/* Inicializar los dispositivos (ojo con las llamadas bloqueantes) */
 	// Ejemplo: fat12_create(&disk, fdd_open(0));
 	// Ejemplo: fat16_create(&disk2, hdd_open(0));
+
+	debug_log("initializing file system");
+	ext2_create(&disk, hdd_open(0));;
 }
 
 chardev* fs_open(const char* filename, uint_32 flags) {
@@ -52,11 +56,9 @@ chardev* fs_open(const char* filename, uint_32 flags) {
 
 	if (!strcmp(filename, "/proc/cpuid")) return proc_cpuid_open();
 
-	/*
-	 * Pedido para el disco 1: Usamos fat12 para abrirlo
-	 */ 
-	if (!strncmp(filename, "/disk/", 6)) return fat12_open(&disk, filename+5, flags);
-	
+	if (!strcmp(filename, "/disk/")) ext2_read_root(&disk, flags);
+	if (!strncmp(filename, "/disk/", 6)) return ext2_open(&disk, filename+5, flags);
+
 	return NULL;
 }
 
