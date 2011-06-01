@@ -5,6 +5,7 @@
 #include <debug.h>
 #include <vga.h>
 #include <mmap.h>
+#include <loader.h>
 
 #define PAGE_SIZE 4096
 #define HIMEM_BEGIN 0x100000
@@ -26,6 +27,21 @@ int mm_bitmap_byte_len;
 // --
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
+
+void* palloc() {
+	void* frame = mm_mem_alloc();
+
+	if (!frame) { return NULL; }
+
+	void* page = (void*) processes[cur_pid].next_empty_page_addr;
+
+	mm_map_frame(frame, page, (mm_page*) processes[cur_pid].cr3,
+		processes[cur_pid].privilege_level);
+
+	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
+
+	return page;
+}
 
 uint_32 mm_free_page_count(char request_type) {
 	uint_32 free_pg_count = 0;

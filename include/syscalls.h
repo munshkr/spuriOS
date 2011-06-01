@@ -11,6 +11,7 @@
 #define SYS_PRINT		3
 #define SYS_SLEEP		5
 #define SYS_LOCPRINT	6
+#define SYS_RUN			7
 
 /* Device */
 #define SYS_OPEN	8
@@ -34,6 +35,8 @@ void sleep(uint_32 time);
 uint_32 getpid(void);
 void exit(void);
 void* palloc(void);
+
+sint_32 run(const char* filename);
 
 /* Deprecated */
 int loc_printf(uint_32 row, uint_32 col, const char* format, ...);// __attribute__ ((format (printf, 3, 4)));

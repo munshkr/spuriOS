@@ -3,6 +3,8 @@
 #include <fs.h>
 #include <i386.h>
 
+#define EXEC_CHAR ':'
+
 const size_t LINE_BUFFER_SIZE = 80;
 
 static void print_prompt(void);
@@ -75,8 +77,20 @@ static void print_prompt(void) {
 }
 
 static void parse(char* line_buffer, uint_32 size) {
-	// FIXME Use fprintf %s specifier, once bug is fixed
-	fprintf(con_fd, "Huh? What does \"");
-	write(con_fd, line_buffer, size);
-	fprintf(con_fd, "\" mean?\n");
+	if (*line_buffer == ':') {
+		if (size == 1) {
+			fprintf(con_fd, "Spursh: Expected filename after ':'\n");
+		} else {
+			sint_32 error = run(&(line_buffer[1]));
+			fprintf(con_fd, "error = %d\n", error);
+			if (error) {
+				fprintf(con_fd, "Spursh: Error loading task\n");
+			}
+		}
+	} else {
+		// FIXME Use fprintf %s specifier, once bug is fixed
+		fprintf(con_fd, "Spursh: Huh? What does \"");
+		write(con_fd, line_buffer, size);
+		fprintf(con_fd, "\" mean?\n");
+	}
 }
