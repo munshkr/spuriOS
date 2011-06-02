@@ -64,7 +64,7 @@ sint_32 hdd_block_read(blockdev* self, uint_32 pos, void* buf, uint_32 size) {
 		for (times = 0; times < 5; times++) {
 			status = inb(ctrl_port + P_CTRL_NIEN);
 		}
-		
+
 		outb(port + P_DRIVE, C(self)->channel | ((pos >> 24) & 0xF));
 		outb(port + P_SECTOR_COUNT, 1);
 		outb(port + P_LBA_LO, (uint_8) pos);
@@ -75,7 +75,7 @@ sint_32 hdd_block_read(blockdev* self, uint_32 pos, void* buf, uint_32 size) {
 		loader_enqueue(&(C(self)->read_queue));
 
 		// READ
-		breakpoint();
+		//breakpoint();
 
 		status = inb(port + P_CMD_ST);
 		if (status & ST_ERR) {

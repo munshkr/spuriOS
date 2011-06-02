@@ -59,7 +59,10 @@ typedef struct str_ext2_bgd {
 	uint_16	bg_used_dirs_count;     // Number of directories in group
 	uint_16	bg_pad;                 // 16bit value used for padding the structure on a 32bit boundary
 	char bg_reserved[12];			// (Unused)
-} ext2_bgd;
+} __attribute__((__packed__)) ext2_bgd;
+
+
+#define EXT2_S_IFDIR 0x4000
 
 typedef struct str_ext2_inode {
 	uint_16 i_mode;				// Type and Permissions (see below)
@@ -80,15 +83,20 @@ typedef struct str_ext2_inode {
 	uint_32 i_dir_acl;			// In Ext2 version 0, this field is reserved. In version >= 1, Upper 32 bits of file size (if feature bit set) if it's a file, Directory ACL if it's a directory
 	uint_32 i_faddr;			// Block address of fragment
 	char i_osd2[12];			// Operating System Specific Value #2
-} ext2_inode;
+} __attribute__((__packed__)) ext2_inode;
 
-typedef struct str_ext2_dir {
+
+#define EXT2_FT_REG_FILE 1
+#define EXT2_FT_DIR 2
+
+typedef struct str_ext2_dir_entry {
 	uint_32 inode;
 	uint_16 rec_len;
 	uint_8 name_len;
 	uint_8 file_type;
 	char name[];
-} ext2_dir;
+} __attribute__((__packed__)) ext2_dir_entry;
+
 
 typedef struct str_ext2 {
 	bool loaded;
@@ -96,23 +104,20 @@ typedef struct str_ext2 {
 	ext2_superblock* sb;
 	ext2_bgd* bgdt;
 	uint_32 bgd_count;
-} ext2;
+} __attribute__((__packed__)) ext2;
 
-#define FILENAME_MAX_LENGTH 50
-#define MAX_FILES_PER_DIR 50
-#define MAX_FILES_PER_FS 200
-#define FS_TYPE_FILE 0
-#define FS_TYPE_DIR 1
+void ext2_init(void);
 
-/*
-typedef struct str_tree_node {
-	char name[FILENAME_MAX_LENGTH];
-	uint_8 type;
-	tree_node* parent;
-	tree_node* childs[MAX_FILES_PER_DIR];
-} tree_node;
-*/
+void ext2_create(ext2* this, blockdev* dev);
 
+void ext2_read_root(ext2* this, uint_32 flags);
+
+chardev* ext2_open(ext2* this, const char* filename, uint_32 flags);
+
+// --->
+
+
+// Ext2 File Section
 struct str_ext2_file {
 	uint_32 klass;
 	uint_32 refcount;
@@ -121,27 +126,27 @@ struct str_ext2_file {
 	chardev_write_t* write;
 	chardev_seek_t* seek;
 
-	pid read_queue;
+	ext2* fs;
+	ext2_inode inode;
+	uint_32 file_size;
+	uint_32 stream_pos;
+	void* buffer;
+	uint_32 buf_pos;
+	uint_32 buf_len;
 
-	bool buffer_free;
-	char buffer;
+	bool buffer_empty;
 
-	//pid write_queue;
 } __attribute__((packed));
 
 typedef struct str_ext2_file ext2_file;
 
-#define MAX_FILES 32
-ext2_file ext2_files[MAX_FILES];
+uint_32 ext2_file_flush(chardev* self);
+sint_32 ext2_file_read(chardev* self, void* buf, uint_32 size);
+sint_32 ext2_file_seek(chardev* self, uint_32 position);
 
-
-
-void ext2_init(void);
-
-void ext2_read_root(ext2* this, uint_32 flags);
-chardev* ext2_open(ext2* this, const char* filename, uint_32 flags);
-
-void ext2_create(ext2* this, blockdev* dev);
+#define MAX_EXT2_FILES 32
+ext2_file ext2_files[MAX_EXT2_FILES];
+// --->
 
 #endif
 

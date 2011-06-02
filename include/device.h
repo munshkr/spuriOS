@@ -11,6 +11,7 @@
 #define CLASS_DEV_CONSOLE		2
 #define CLASS_DEV_SERIAL		3
 #define CLASS_DEV_HDD			4
+#define CLASS_DEV_EXT2_FILE		5
 
 /* Devices */
 typedef struct str_dev device;
