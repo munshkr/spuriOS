@@ -387,9 +387,9 @@ void loader_exit(void) {
 		processes[task->prev].next = FREE_PCB_PID;
 	}
 
-	mm_dir_free((mm_page*) processes[local_tmp_pid].cr3);
+	mm_dir_free((mm_page*) processes[cur_pid].cr3);
 
-	processes[local_tmp_pid].id = FREE_PCB_PID;
+	processes[cur_pid].id = FREE_PCB_PID;
 	tmp_pid = local_tmp_pid;
 	task_switch();
 }

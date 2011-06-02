@@ -56,7 +56,7 @@ chardev* fs_open(const char* filename, uint_32 flags) {
 
 	if (!strcmp(filename, "/proc/cpuid")) return proc_cpuid_open();
 
-	if (!strcmp(filename, "/disk/")) ext2_read_root(&disk, flags);
+	if (!strcmp(filename, "/disk/")) { ext2_read_root(&disk, flags); return 0; }
 	if (!strncmp(filename, "/disk/", 6)) return ext2_open(&disk, filename+5, flags);
 
 	return NULL;
