@@ -4,8 +4,29 @@
 Documentación
 =============
 
-Sección
--------
+Char Devices
+------------
 
-### Subsección
+### `device` - Devices
+
+### `con` - Driver de consola
+
+### `serial` - Driver del puerto serie
+
+Block Devices
+-------------
+
+### `fdd` - Floppy Disk Driver
+
+### `hdd` - Hard Disk Driver
+
+File System
+-----------
+
+### `fs` - Sistema de archivos
+
+### Implementación del sistema de archivos
+
+Tareas
+------
 
