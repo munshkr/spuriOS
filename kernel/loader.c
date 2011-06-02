@@ -373,7 +373,7 @@ void loader_exit(void) {
 	pid local_tmp_pid = sched_exit();
 
 	// TODO Refactor this shit
-	pcb_t* task = &processes[local_tmp_pid];
+	pcb_t* task = &processes[cur_pid];
 	if (task->prev == FREE_PCB_PID && task->next == FREE_PCB_PID) {
 		// nothing
 	} else if (task->prev == FREE_PCB_PID && task->next != FREE_PCB_PID) {
