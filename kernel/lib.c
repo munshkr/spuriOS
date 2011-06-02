@@ -66,6 +66,37 @@ sint_32 strncmp(const char* p, const char* q, uint_32 n) {
 	return n?(*p?(*q?(sint_32)*p-(sint_32)*q:1):*q?-1:0):0;
 }
 
+// Devuelve la próxima posición de character en string, empezando por from.
+// OJO: cuando no encuentra el caracter devuelve FALSE, que es 0, con lo cual
+// el valor de posición que devuelve esta función empieza en 1, no en 0.
+uint_32 char_pos(const char* string, const char character, uint_32 from) {
+	uint_32 i = from;
+	bool found = FALSE;
+	while(string[i] != 0) {
+		if (string[i] == character) {
+			found = TRUE;
+			break;
+		}
+		i++;
+	}
+	if (found) {
+		return ++i;
+	} else {
+		return 0;
+	}
+}
+
+// Devuelve la posición del último caracter válido antes de un \0
+// OJO: usar sólo cuando esten seguros de que hay un \0 en el string
+// de modo contrario podés irte de tu memoria y morir por PF
+uint_32 str_end_pos(const char* string, uint_32 from) {
+	uint_32 i = from;
+	while(string[i] != 0) {
+		i++;
+	}
+	return i;
+}
+
 sint_32 pow(const sint_32 base, const uint_32 exponent) {
 	uint_32 i;
 	uint_32 res = 1;
@@ -102,7 +133,7 @@ uint_32 ulen(const uint_32 number, const char base) {
 	return length;
 }
 
-void memcpy(void* src, void* dst, size_t size) {
+void memcpy(const void* src, void* dst, size_t size) {
 	int i;
 	for (i = 0; i < size; i++) {
 		*(uint_8*)dst = *(uint_8*)src;
@@ -118,7 +149,6 @@ void memset(void* addr, int value, size_t size) {
 		addr++;
 	}
 }
-
 
 static sint_32 put_dec(char** str, sint_32 number);
 static sint_32 put_uhex(char** str, const uint_32 number);
