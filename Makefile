@@ -96,7 +96,7 @@ DOC_FILES=$(DIRDOC)tp2-docs.pdf
 
 .PHONY: all clean
 
-all: $(IMG_HDD) $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN)
+all: $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN) $(IMG_HDD)
 
 # Bootloader - disk
 ### TODO ###
@@ -171,9 +171,15 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
 	for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
-$(IMG_HDD):
+$(IMG_HDD): $(TASKS)
 	bximage -q -hd -mode=flat -size=10 $@ >/dev/null
 	mkfs.ext2 -F -L SpuriOS $@ > /dev/null
+	sudo mkdir -p /tmp/spurios-hdd
+	sudo mount -o loop bin/hdd.img /tmp/spurios-hdd
+	sudo mkdir -p /tmp/spurios-hdd/bin
+	sudo cp -f tasks/*.pso /tmp/spurios-hdd/bin
+	for T in $(TASKS); do sudo cp -f $$T /tmp/spurios-hdd/bin; done;
+	sudo umount /tmp/spurios-hdd
 
 # Documentation
 doc: $(DOC_FILES)
