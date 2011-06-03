@@ -28,6 +28,16 @@ int mm_bitmap_byte_len;
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
+void* vaddr_for_free_pdt_entry(mm_page* pdt) {
+	uint_32 entry ;
+	for (entry = 0; entry < 1024; entry++) {
+		if (!(pdt[entry].attr && MM_ATTR_P)) {
+			return (void*)(entry << 24);
+		}
+	}
+	return 0;
+}
+
 void* palloc() {
 	void* frame = mm_mem_alloc();
 

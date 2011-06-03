@@ -78,6 +78,17 @@ void debug_kernelpanic(registers_t* regs) {
 		vga_printf("\\c0Cwith no error code\n");
 	}
 
+	if (regs->int_no == 0xE) { // #PF
+		vga_printf("\\c0FAt vaddr %x, CR3 is %x, code = %s %s %s %s %s\n",
+			rcr2(), rcr3(),
+			(regs->u.err_code & 1 ? "P" : "N/P"),
+			(regs->u.err_code & 2 ? "W" : "R"),
+			(regs->u.err_code & 4 ? "U" : "S"),
+			(regs->u.err_code & 8 ? "R" : "N/R"),
+			(regs->u.err_code & 16? "F" : "N/F")
+		);
+	}
+
 	show_cs_eip(regs->cs, regs->eip);
 	show_eflags(regs->eflags);
 
@@ -90,8 +101,8 @@ void debug_kernelpanic(registers_t* regs) {
 	show_stack(esp);
 	show_backtrace((uint_32*) regs->ebp);
 
-	vga_printf("\nRegisters\n\tEAX = %x (%d), EBX = %x (%d), ECX = %x (%d)"\
-		"\n\tEDX = %x (%d), ESI = %x (%d), EDI = %x (%d)\n",
+	vga_printf("\nRegisters\n  EAX = %x (%d), EBX = %x (%d), ECX = %x (%d)"\
+		"\n  EDX = %x (%d), ESI = %x (%d), EDI = %x (%d)\n",
 		regs->eax, regs->eax, regs->ebx, regs->ebx, regs->ecx, regs->ecx,
 		regs->edx, regs->edx, regs->esi, regs->esi, regs->edi, regs->edi);
 

@@ -56,6 +56,8 @@ typedef struct str_mm_page {
 #define MM_REQUEST_KERNEL 0
 #define MM_REQUEST_USER 1
 
+void* vaddr_for_free_pdt_entry(mm_page* pdt);
+
 mm_page* mm_pt_entry_for(void* vaddr, mm_page* pdt); 
 uint_32 mm_pl_of_vaddr(void* vaddr, mm_page* pdt);
  

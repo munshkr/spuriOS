@@ -24,21 +24,10 @@ pid tmp_pid;
 slept_task sleeping[MAX_PID];
 pid first_slept;
 
-sint_32 run(const char* filename) {
-	fd_t fd = open(filename, FS_OPEN_RD);
-	if (fd < 0) {
-		return fd;
-	}
-
-/*	uint_32 readed = 0;
-	while (readed < PSO_HEADER_SZ) {
-		uint_32 readed_now = read(fd, 
-
-	}*/
-
-	close(fd);
-	return 0;
-}
+#define ERROR_READING		1
+#define INVALID_EXECUTABLE	2
+#define ERROR_OPENING		3
+#define UNAVAILABLE_MEMORY	4
 
 mm_page* cur_pdt() {
 	return (mm_page*) processes[cur_pid].cr3;
@@ -61,9 +50,19 @@ inline void initialize_sleeping_list() {
 	first_slept = FREE_PCB_PID;
 }
 
+#define PF_PRESENT	1
+#define PF_WRITE	2
+#define PF_USER		4
+#define PF_RSVD		8
+#define PF_FETCH	16
 static void page_fault_handler(registers_t* regs) {
-	if (processes[cur_pid].privilege_level == PL_USER) {
-		vga_printf("Page fault! Killed %u\n", cur_pid);
+	if (regs->u.err_code & PF_USER) {
+		vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
+			(regs->u.err_code & PF_WRITE ? "write" :
+			(regs->u.err_code & PF_FETCH ? "fetch" : "read")),
+			rcr2(),
+			(regs->u.err_code & PF_PRESENT ? "present" : "non present"),
+			cur_pid);
 		loader_exit();
 	} else {
 		debug_kernelpanic(regs);
@@ -107,7 +106,7 @@ static inline int get_new_pid() {
 	return pid;
 }
 
-inline uint_32 data_pages_needed_for(pso_file* f) {
+uint_32 data_pages_needed_for(pso_file* f) {
 	uint_32 pages = (f->mem_end - f->mem_start) / PAGE_SIZE;
 	if ((f->mem_end - f->mem_start) % PAGE_SIZE) pages++;
 	return pages;
@@ -194,6 +193,8 @@ inline void create_temp_mapping_on(void** temp_page, void** old_frame,
 		// We should store f->mem_start in the PCB to know where
 		// the first page is, to avoid a possible page table alloc.
 		*(uint_32**)temp_page = (uint_32*) USER_MEMORY_START;
+
+		vga_printf("vaddr = %p\n", temp_page);	
 		*(uint_32**)old_frame = mm_frame_from_page(temp_page, current_pdt);
 	}
 }
@@ -393,3 +394,80 @@ void loader_exit(void) {
 	tmp_pid = local_tmp_pid;
 	task_switch();
 }
+
+sint_32 run(const char* filename) {
+	fd_t fd = open(filename, FS_OPEN_RD);
+	if (fd < 0) {
+		return -ERROR_OPENING;
+	}
+
+	void* start_vaddr = vaddr_for_free_pdt_entry(cur_pdt());
+	void* frame = mm_mem_alloc();
+	if (!frame) {
+		close(fd);
+		return -UNAVAILABLE_MEMORY;
+	}
+
+	mm_map_frame(frame, start_vaddr, cur_pdt(), PL_USER);
+	void* copy_pointer = start_vaddr;
+
+	uint_32 readed = 0;
+	while (readed < sizeof(pso_file)) {
+		uint_32 actually_readed = read(fd, copy_pointer, sizeof(pso_file) - readed);
+ 
+		if (actually_readed > 0) {
+			copy_pointer += actually_readed;
+			readed += actually_readed;
+		} else {
+			return -ERROR_READING;
+		}
+	}
+
+	if (strncmp((const char*) ((pso_file*) start_vaddr)->signature, PSO_SIGNATURE, 4)) {
+		return -INVALID_EXECUTABLE;
+	}
+
+	void* cur_vaddr = start_vaddr;
+
+	uint_32 effective_bytes = ((pso_file*) start_vaddr)->mem_end_disk - ((pso_file*) start_vaddr)->mem_start;
+
+	uint_32 needed_pages = effective_bytes / PAGE_SIZE;
+	if (effective_bytes % PAGE_SIZE) needed_pages++;
+
+	needed_pages--; // We already request one page
+
+	uint_32 i;
+	for (i = 0; i < needed_pages; i++) {
+		frame = mm_mem_alloc();
+		cur_vaddr += PAGE_SIZE;
+		if (!frame) {
+			// FREE
+		}
+
+		mm_map_frame(frame, cur_vaddr, cur_pdt(), PL_USER);
+	}
+
+	// READ
+	while (readed < effective_bytes) {
+		uint_32 actually_readed = read(fd, copy_pointer, effective_bytes - readed);
+ 
+		if (actually_readed > 0) {
+			copy_pointer += actually_readed;
+			readed += actually_readed;
+		} else {
+			// FIXME FREE PAGES
+			return -ERROR_READING;
+		}
+	}
+
+	vga_printf("addr = %p\n", start_vaddr);
+
+	breakpoint();
+	uint_32 pid = loader_load((pso_file*) start_vaddr, PL_USER);
+
+	// FIXME FREE PAGES
+
+	close(fd);
+	return pid;
+}
+

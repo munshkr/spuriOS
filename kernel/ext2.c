@@ -6,6 +6,7 @@
 #include <lib.h>
 #include <fs.h>
 #include <errors.h>
+#include <common.h>
 
 #define SUPERBLOCK_START 1024
 #define SUPERBLOCK_MAX_LENGTH 1024
@@ -462,15 +463,23 @@ sint_32 ext2_file_read(chardev* self, void* buf, uint_32 size) {
 
 	uint_32 remaining_size = size;
 
+	uint_32 total_copied_bytes = 0;
 	uint_32 bytes_copiados;
 	while(remaining_size > 0) {
 		// Leo lo que puedo del buffer
 		bytes_copiados = (remaining_size < file->buf_len - file->buf_pos ? remaining_size : file->buf_len - file->buf_pos);
-		memcpy(file->buffer + file->buf_pos, buf, bytes_copiados);
-		file->buf_pos += bytes_copiados;
-		buf += bytes_copiados;
-		file->stream_pos += bytes_copiados;
-		remaining_size -= bytes_copiados;
+		
+		uint_32 effective = copy2user(file->buffer + file->buf_pos, buf, bytes_copiados);
+		if (effective < 0 || effective != bytes_copiados) {
+			return -1;
+		} else {
+			total_copied_bytes += effective;
+		}
+
+		file->buf_pos += effective;
+		buf += effective;
+		file->stream_pos += effective;
+		remaining_size -= effective;
 		// --->
 
 		// Si aún queda lectura pendiente
@@ -479,7 +488,9 @@ sint_32 ext2_file_read(chardev* self, void* buf, uint_32 size) {
 		}
 	}
 
-	return 0;
+	kassert(total_copied_bytes == size);
+
+	return total_copied_bytes;
 }
 
 sint_32 ext2_file_seek(chardev* self, uint_32 position) {
