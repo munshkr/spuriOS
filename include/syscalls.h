@@ -12,6 +12,7 @@
 #define SYS_SLEEP		5
 #define SYS_LOCPRINT	6
 #define SYS_RUN			7
+#define SYS_LOCPRINTALPHA	50
 
 /* Device */
 #define SYS_OPEN	8
@@ -40,6 +41,7 @@ sint_32 run(const char* filename);
 
 /* Deprecated */
 int loc_printf(uint_32 row, uint_32 col, const char* format, ...);// __attribute__ ((format (printf, 3, 4)));
+int loc_alpha_printf(uint_32 row, uint_32 col, const char* format, ...);// __attribute__ ((format (printf, 3, 4)));
 int printf(const char* format, ...) __attribute__ ((format (printf, 1, 2)));
 
 /* Device */

@@ -24,3 +24,5 @@ include_task serial, "tasks/serial.pso"
 
 include_task console, "tasks/console.pso"
 include_task polly_test_task, "tasks/polly_test_task.pso"
+
+include_task screen_saver_task, "tasks/screen_saver.pso"

@@ -79,6 +79,7 @@ TASKS=\
 	tasks/console.pso \
 	tasks/ut_con.pso \
 	tasks/serial.pso \
+	tasks/screen_saver.pso \
 	tasks/polly_test_task.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
@@ -97,6 +98,8 @@ DOC_FILES=$(DIRDOC)tp2-docs.pdf
 .PHONY: all clean
 
 all: $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN) $(IMG_HDD)
+
+no_disk: $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN)
 
 # Bootloader - disk
 ### TODO ###

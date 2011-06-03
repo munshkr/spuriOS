@@ -142,8 +142,88 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 				const char back = scan_uhex(*ptr);
 				ptr++;
 				const char fore = scan_uhex(*ptr);
-				vga_state.attr.vl.vl = (back << 8) | fore;
+				vga_state.attr.vl.vl = (back << 4) | fore;
+				break;
+				default:
+					putchar(vga_addr, &vga_state, '\\', FALSE);
+					ptr--;
+				break;
 			}
+		} else {
+			putchar(vga_addr, &vga_state, *ptr, FALSE);
+			size++;
+		}
+		ptr++;
+	}
+
+	// Restore attributes
+	vga_state.attr = old_attr;
+	vga_update_cursor();
+
+	return size;
+}
+
+
+int vga_alpha_printf_fixed_args(const char* format, uint_32* args) {
+	int size = 0;
+	const char* ptr = format;
+	char* str;
+
+	// Save current attributes
+	vga_attr_t old_attr = vga_state.attr;
+
+	while (*ptr) {
+		if (*ptr == '%') {
+			ptr++;
+			switch (*ptr) {
+			  case 'c':
+				putchar(vga_addr, &vga_state, *(char*) args, FALSE);
+				args++;
+				size++;
+				break;
+			  case 's':
+				str = *(char**) args;
+				args++;
+				while (*str) {
+					putchar(vga_addr, &vga_state, *str++, TRUE);
+					size++;
+				}
+				break;
+			  case 'd':
+				size += print_dec(*(int*)args);
+				args++;
+				break;
+			  case 'u':
+				size += print_udec(*(unsigned int*)args);
+				args++;
+				break;
+			  case 'x':
+			  case 'p':
+				size += print_uhex(*(int*)args);
+				args++;
+				break;
+			  case '%':
+				putchar(vga_addr, &vga_state, '%', FALSE);
+				size++;
+			}
+		} else if (*ptr == '\\') {
+			ptr++;
+			switch (*ptr) {
+			  case 'c':
+				ptr++;
+				const char back = scan_uhex(*ptr);
+				ptr++;
+				const char fore = scan_uhex(*ptr);
+				vga_state.attr.vl.vl = (back << 4) | fore;
+				break;
+				default:
+					putchar(vga_addr, &vga_state, '\\', FALSE);
+					ptr--;
+				break;
+			}
+		} else if (*ptr == ' ') {
+			size++;
+			vga_state.x++;
 		} else {
 			putchar(vga_addr, &vga_state, *ptr, FALSE);
 			size++;
@@ -178,6 +258,24 @@ int vga_loc_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint
 	int ret = vga_printf_fixed_args(format, args);
 	vga_state.x = old_x;
 	vga_state.y = old_y;
+	vga_update_cursor();
+
+	return ret;
+}
+
+int vga_loc_alpha_printf_fixed_args(uint_32 row, uint_32 col, const char* format, uint_32* args) {
+	if (row > vga_rows || col > vga_cols) {
+		return 0;
+	}
+	int old_x = vga_state.x;
+	int old_y = vga_state.y;
+
+	vga_state.x = col;
+	vga_state.y = row;
+	int ret = vga_alpha_printf_fixed_args(format, args);
+	vga_state.x = old_x;
+	vga_state.y = old_y;
+	vga_update_cursor();
 
 	return ret;
 }

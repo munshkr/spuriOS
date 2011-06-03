@@ -18,6 +18,7 @@ uint_32 sys_getpid(void);
 void sys_exit(void);
 void sys_print (registers_t* regs);
 void sys_loc_print (registers_t* regs);
+void sys_loc_print_alpha (registers_t* regs);
 void sys_sleep (registers_t* regs);
 
 void syscalls_init() {
@@ -41,6 +42,9 @@ static void syscalls_handler(registers_t* regs) {
 			break;
 		case SYS_LOCPRINT:
 			sys_loc_print(regs);
+			break;
+		case SYS_LOCPRINTALPHA:
+			sys_loc_print_alpha(regs);
 			break;
 		case SYS_SLEEP:
 			sys_sleep(regs);
@@ -102,6 +106,16 @@ void sys_loc_print(registers_t* regs) {
 	regs->eax = ret;
 }
 
+void sys_loc_print_alpha(registers_t* regs) {
+	//breakpoint();
+	// EBP (+0), EIP (+4), row (+8), col (+12), format (+16), ... args (+20)
+	uint_32 row = *(uint_32*)(regs->user_esp + 8);
+	uint_32 col = *(uint_32*)(regs->user_esp + 12);
+	char* format = *(char**)(regs->user_esp + 16);
+	uint_32 ret = vga_loc_alpha_printf_fixed_args(row, col, format, (uint_32*)(regs->user_esp + 12));
+	regs->eax = ret;
+}
+
 #else // __TASK__
 
 extern void* syscall_int(int number);
@@ -131,6 +145,12 @@ int printf(const char* format, ...) {
 int loc_printf(uint_32 row, uint_32 col, const char* format, ...) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_LOCPRINT));
+	return ret;
+}
+
+int loc_alpha_printf(uint_32 row, uint_32 col, const char* format, ...) {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_LOCPRINTALPHA));
 	return ret;
 }
 
