@@ -24,11 +24,6 @@ pid tmp_pid;
 slept_task sleeping[MAX_PID];
 pid first_slept;
 
-#define ERROR_READING		1
-#define INVALID_EXECUTABLE	2
-#define ERROR_OPENING		3
-#define UNAVAILABLE_MEMORY	4
-
 mm_page* cur_pdt() {
 	return (mm_page*) processes[cur_pid].cr3;
 }
@@ -194,8 +189,7 @@ inline void create_temp_mapping_on(void** temp_page, void** old_frame,
 		// the first page is, to avoid a possible page table alloc.
 		*(uint_32**)temp_page = (uint_32*) USER_MEMORY_START;
 
-		vga_printf("vaddr = %p\n", temp_page);	
-		*(uint_32**)old_frame = mm_frame_from_page(temp_page, current_pdt);
+		*(uint_32**)old_frame = mm_frame_from_page(*temp_page, current_pdt);
 	}
 }
 
@@ -395,17 +389,34 @@ void loader_exit(void) {
 	task_switch();
 }
 
+void free_run_resources(void* start_vaddr, uint_32 page_count, fd_t fd) {
+	mm_page* pdt = cur_pdt();
+
+	uint_32 i = 0;
+	void* cur_vaddr = start_vaddr;
+
+	for (i = 0; i < page_count; i++) {
+		void* frame = mm_frame_from_page(cur_vaddr, pdt);	
+		mm_unmap_page(cur_vaddr, pdt);
+		mm_mem_free(frame);
+		cur_vaddr += PAGE_SIZE;
+	}
+	mm_free_page_table_for(start_vaddr, pdt);
+	close(fd);
+}
+
 sint_32 run(const char* filename) {
 	fd_t fd = open(filename, FS_OPEN_RD);
 	if (fd < 0) {
-		return -ERROR_OPENING;
+		return -RUN_ERROR_OPENING;
 	}
 
-	void* start_vaddr = vaddr_for_free_pdt_entry(cur_pdt());
+	void* start_vaddr = mm_vaddr_for_free_pdt_entry(cur_pdt());
+
 	void* frame = mm_mem_alloc();
 	if (!frame) {
-		close(fd);
-		return -UNAVAILABLE_MEMORY;
+		free_run_resources(0, 0, fd);
+		return -RUN_UNAVAILABLE_MEMORY;
 	}
 
 	mm_map_frame(frame, start_vaddr, cur_pdt(), PL_USER);
@@ -419,12 +430,14 @@ sint_32 run(const char* filename) {
 			copy_pointer += actually_readed;
 			readed += actually_readed;
 		} else {
-			return -ERROR_READING;
+			free_run_resources(start_vaddr, 1, fd);
+			return -RUN_ERROR_READING;
 		}
 	}
 
 	if (strncmp((const char*) ((pso_file*) start_vaddr)->signature, PSO_SIGNATURE, 4)) {
-		return -INVALID_EXECUTABLE;
+		free_run_resources(start_vaddr, 1, fd);
+		return -RUN_INVALID_EXECUTABLE;
 	}
 
 	void* cur_vaddr = start_vaddr;
@@ -441,7 +454,8 @@ sint_32 run(const char* filename) {
 		frame = mm_mem_alloc();
 		cur_vaddr += PAGE_SIZE;
 		if (!frame) {
-			// FREE
+			free_run_resources(start_vaddr, i + 1, fd);
+			return -RUN_UNAVAILABLE_MEMORY;
 		}
 
 		mm_map_frame(frame, cur_vaddr, cur_pdt(), PL_USER);
@@ -455,19 +469,14 @@ sint_32 run(const char* filename) {
 			copy_pointer += actually_readed;
 			readed += actually_readed;
 		} else {
-			// FIXME FREE PAGES
-			return -ERROR_READING;
+			free_run_resources(start_vaddr, needed_pages + 1, fd);
+			return -RUN_ERROR_READING;
 		}
 	}
 
-	vga_printf("addr = %p\n", start_vaddr);
-
-	breakpoint();
 	uint_32 pid = loader_load((pso_file*) start_vaddr, PL_USER);
+	free_run_resources(start_vaddr, needed_pages + 1, fd);
 
-	// FIXME FREE PAGES
-
-	close(fd);
 	return pid;
 }
 

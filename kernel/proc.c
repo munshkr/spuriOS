@@ -24,9 +24,9 @@ chardev* proc_cpuid_open() {
 			proc_cpuid_devs[dev].write = 0;
 			proc_cpuid_devs[dev].seek = 0;
 			proc_cpuid_devs[dev].stream_position = 0;
-			
+		
 			sint_32 sz = sprintf((char*) &proc_cpuid_devs[dev].buffer,
-				"free kernel mem = %dKB, user = %dKB",
+				"free kernel mem = %uKB, user = %uKB\n",
 				mm_free_page_count(MM_REQUEST_KERNEL) * PAGE_SIZE / 1024,
 				mm_free_page_count(MM_REQUEST_USER) * PAGE_SIZE / 1024);
 			proc_cpuid_devs[dev].stream_length = sz;

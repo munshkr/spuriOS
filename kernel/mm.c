@@ -28,11 +28,20 @@ int mm_bitmap_byte_len;
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
-void* vaddr_for_free_pdt_entry(mm_page* pdt) {
+void mm_free_page_table_for(void* vaddr, mm_page* pdt) {
+	kassert((((uint_32) vaddr) & 0xFFF) == 0);
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(vaddr)];
+
+	void* frame = (void*) (pd_entry->base << 12);
+	mm_mem_free(frame);
+	*((uint_32*) pd_entry) = 0;
+}
+
+void* mm_vaddr_for_free_pdt_entry(mm_page* pdt) {
 	uint_32 entry ;
 	for (entry = 0; entry < 1024; entry++) {
 		if (!(pdt[entry].attr && MM_ATTR_P)) {
-			return (void*)(entry << 24);
+			return (void*)(entry << 22);
 		}
 	}
 	return 0;
@@ -182,6 +191,7 @@ void* mm_mem_seek(char request_type) {
 	}
 
 	kassert((dir & 0xfff) == 0);
+//	vga_printf("seek, dir %x\n", dir);
 
 	return (void*)dir;
 }
@@ -194,8 +204,9 @@ void* mm_mem_alloc() {
 	return mm_mem_seek(MM_REQUEST_USER);
 }
 
-void mm_mem_free(void* page) {
-	int posicion = ((int)page - HIMEM_BEGIN) / PAGE_SIZE;
+void mm_mem_free(void* frame) {
+//	vga_printf("mem_free frame %p\n", frame);
+	int posicion = ((int)frame - HIMEM_BEGIN) / PAGE_SIZE;
 	clear_bit(posicion);
 }
 

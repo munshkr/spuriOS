@@ -7,13 +7,19 @@
 #include <isr.h>
 #include <mm.h>
 
-#define MAX_PID 32
+// run() syscall error codes
+#define RUN_ERROR_READING		1
+#define RUN_INVALID_EXECUTABLE	2
+#define RUN_ERROR_OPENING		3
+#define RUN_UNAVAILABLE_MEMORY	4
+
+#ifdef __KERNEL__
 
 #define FREE_PCB_PID 0xFFFFFFFF
 #define FREE_QUEUE 0xFFFFFFFF
 #define USER_MEMORY_START 0x400000
 
-#ifdef __KERNEL__
+#define MAX_PID 32
 
 typedef struct str_pcb {
 	pid id;

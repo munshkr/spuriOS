@@ -175,6 +175,7 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
 $(IMG_HDD): $(TASKS)
+	rm -f $(IMG_HDD)
 	bximage -q -hd -mode=flat -size=10 $@ >/dev/null
 	mkfs.ext2 -F -L SpuriOS $@ > /dev/null
 	sudo mkdir -p /tmp/spurios-hdd

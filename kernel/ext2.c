@@ -370,8 +370,8 @@ uint_32 read_dir(ext2* this, ext2_inode* inode, void* buffer) {
 		tmp_size += tmp_entry->rec_len;
 		tmp_page_ptr += tmp_entry->rec_len;
 	}
-	memcpy("\0", buffer + local_buffer_offset, 1);
-	local_buffer_offset++;
+	memcpy("\n\0", buffer + local_buffer_offset, 2);
+	local_buffer_offset += 2;
 
 	return local_buffer_offset;
 }

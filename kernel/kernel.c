@@ -92,8 +92,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	print_logo();
 
-	//loader_load(&task_console_pso, PL_USER);
-	loader_load(&task_screen_saver_task_pso, PL_USER);
+	loader_load(&task_console_pso, PL_USER);
+	//loader_load(&task_screen_saver_task_pso, PL_USER);
 
 	#ifdef __UNIT_TESTING__
 	debug_log("running unitary tests");
