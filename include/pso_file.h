@@ -3,8 +3,6 @@
 
 #include <tipos.h>
 
-#define PSO_HEADER_SZ	20
-
 typedef int(func_main)(void);
 
 typedef struct str_pso_file {

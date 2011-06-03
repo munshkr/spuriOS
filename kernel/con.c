@@ -187,7 +187,6 @@ static inline void draw_empty_frame(void) {
 	vga_clear();
 	vga_reset_pos();
 	vga_reset_colors();
-	vga_printf("[empty]\n\n");
 }
 
 static inline void init_keyboard(void) {

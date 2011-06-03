@@ -47,7 +47,6 @@ void loader_print_raw_sleeping();
 void loader_print_sleeping();
 
 void loader_exit(void);
-
 #endif
 
 /* Syscalls */
