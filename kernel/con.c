@@ -196,7 +196,6 @@ static inline void init_keyboard(void) {
 }
 
 static void keyboard_handler(registers_t* regs) {
-	// FIXME Do this only if there are more than 1 console
 	if (current) {
 		// TODO Check if a 1-byte buffer is alright with keyboard
 		// Maybe we need a bigger buffer?

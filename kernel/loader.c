@@ -91,7 +91,7 @@ static inline void print_pso_file(pso_file* f) {
 	vga_printf("\tdata: %x\n", (unsigned int) f->data);
 }
 
-static inline int get_new_pid() {
+static inline pid get_new_pid() {
 	int pid;
 	for (pid = 0; pid < MAX_PID; pid++) {
 		if (processes[pid].id == FREE_PCB_PID) break;
@@ -210,7 +210,7 @@ inline void check_signature_of(pso_file* f) {
 
 pid loader_load(pso_file* f, uint_32 pl) {
 	check_signature_of(f);
-	uint_32 pid = get_new_pid();
+	pid pid = get_new_pid();
 
 	processes[pid].id = pid;
 	processes[pid].privilege_level = pl;
@@ -474,7 +474,7 @@ sint_32 run(const char* filename) {
 		}
 	}
 
-	uint_32 pid = loader_load((pso_file*) start_vaddr, PL_USER);
+	pid pid = loader_load((pso_file*) start_vaddr, PL_USER);
 	free_run_resources(start_vaddr, needed_pages + 1, fd);
 
 	return pid;

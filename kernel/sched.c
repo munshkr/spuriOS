@@ -26,31 +26,31 @@ void print_queue(unsigned int max) {
 		vga_printf("\tpd = %u\n", tasks[i].pd);
 		vga_printf("\tquantum = %u\n", tasks[i].quantum);
 		if (tasks[i].prev != NULL) {
-			vga_printf("\tprev_id = %u\n", tasks[i].prev->pd);
+			vga_printf("\tprev_pid = %u\n", tasks[i].prev->pd);
 		} else {
-			vga_printf("\tprev_id = NULL\n");
+			vga_printf("\tprev_pid = NULL\n");
 		}
 		if (tasks[i].next != NULL) {
-			vga_printf("\tnext_id = %u\n", tasks[i].next->pd);
+			vga_printf("\tnext_pid = %u\n", tasks[i].next->pd);
 		} else {
-			vga_printf("\tnext_id = NULL\n");
+			vga_printf("\tnext_pid = NULL\n");
 		}
 		breakpoint();
 	}
 	if (actual != NULL) {
-		vga_printf("actual_id = %u\t", actual->pd);
+		vga_printf("actual_pid = %u\t", actual->pd);
 	} else {
-		vga_printf("actual_id = NULL\t");
+		vga_printf("actual_pid = NULL\t");
 	}
 	if (first != NULL) {
-		vga_printf("first_id = %u\t", first->pd);
+		vga_printf("first_pid = %u\t", first->pd);
 	} else {
-		vga_printf("first_id = NULL\t");
+		vga_printf("first_pid = NULL\t");
 	}
 	if (last != NULL) {
-		vga_printf("last_id = %u\n", last->pd);
+		vga_printf("last_pid = %u\n", last->pd);
 	} else {
-		vga_printf("last_id = NULL\n");
+		vga_printf("last_pid = NULL\n");
 	}
 	breakpoint();
 }
@@ -147,7 +147,7 @@ int sched_tick() {
 			pd = actual->pd;
 		} else {
 			actual->quantum = SCHED_QUANTUM_DEFAULT;
-			kassert(actual->next != 0);
+			kassert(actual->next != NULL);
 			actual = actual->next;
 			pd = actual->pd;
 		}
