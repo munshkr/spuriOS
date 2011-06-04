@@ -181,7 +181,7 @@ $(IMG_HDD): $(TASKS)
 	sudo mkdir -p /tmp/spurios-hdd
 	sudo mount -o loop bin/hdd.img /tmp/spurios-hdd
 	sudo mkdir -p /tmp/spurios-hdd/bin
-	sudo cp -f tasks/*.pso /tmp/spurios-hdd/bin
+	sudo cp README.md /tmp/spurios-hdd/
 	for T in $(TASKS); do sudo cp -f $$T /tmp/spurios-hdd/bin; done;
 	sudo umount /tmp/spurios-hdd
 
