@@ -90,7 +90,7 @@ static void cmd_execute(char* file, uint_32 size) {
 	} else {
 		sint_32 throwed_pid = run(file);
 		if (throwed_pid > 0) {
-			fprintf(con_fd, "Spursh: Throwed [%d]\n", throwed_pid);
+			fprintf(con_fd, "Spursh: pid [%d]\n", throwed_pid);
 		} else if (throwed_pid == -RUN_ERROR_OPENING) {
 			fprintf(con_fd, "Spursh: Error opening %s\n", file);
 		} else if (throwed_pid == -RUN_INVALID_EXECUTABLE) {
@@ -106,12 +106,13 @@ static void cmd_execute(char* file, uint_32 size) {
 static void cmd_cat(char* file, uint_32 size) {
 	if (!size) {
 		fprintf(con_fd, "Spursh: Expected filename after '@'\n");
-		return ;
+		return;
 	}
 
 	int fd = open(file, FS_OPEN_RD);
 	if (fd < 0) {
-		fprintf(con_fd, "Spursh : Error opening %s\n", file);
+		fprintf(con_fd, "Spursh: Error opening %s\n", file);
+		return;
 	}
 
 	char buf[513];
@@ -120,7 +121,7 @@ static void cmd_cat(char* file, uint_32 size) {
 		int readed = read(fd, &buf, 512);
 		if (readed < 1) {
 			close(fd);
-			return ;
+			return;
 		} else {
 			buf[readed] = 0;
 			fprintf(con_fd, "%s", &buf);
