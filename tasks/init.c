@@ -16,9 +16,7 @@ int main(void) {
 		fprintf(con_fd, "Failed to load Spursh at /disk/bin/console.pso!\n");
 	}
 
-	//run_unit_tests();
-
-	while (1) {};
+	run_unit_tests();
 
 	return 0;
 }
