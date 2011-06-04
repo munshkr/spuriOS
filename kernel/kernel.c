@@ -22,20 +22,7 @@ const char* fancy_logo[5] = {
 	"((___ / / //       ((___( ( //      / / ((___/ / ((___ / /   ",
 };
 
-extern pso_file task_ut_cp2user_pso;
-extern pso_file task_ut_getpid_pso;
-extern pso_file task_ut_dummy_pso;
-extern pso_file task_task_sin_pso;
-extern pso_file task_task_pf_pso;
-extern pso_file task_task_funky_pso;
-extern pso_file task_ut_cpuid_pso;
-extern pso_file task_ut_palloc_pso;
-extern pso_file task_ut_con_pso;
-extern pso_file task_serial_pso;
-extern pso_file task_polly_test_task_pso;
-extern pso_file task_screen_saver_task_pso;
-
-extern pso_file task_console_pso;
+extern pso_file task_init_pso;
 
 inline void enable_paging() {
 	mm_page* kernel_page_dir = mm_dir_new();
@@ -92,19 +79,7 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 
 	print_logo();
 
-	loader_load(&task_console_pso, PL_USER);
-	//loader_load(&task_screen_saver_task_pso, PL_USER);
-
-	#ifdef __UNIT_TESTING__
-	debug_log("running unitary tests");
-	loader_load(&task_ut_dummy_pso, PL_KERNEL);
-	loader_load(&task_ut_getpid_pso, PL_USER);
-	loader_load(&task_ut_palloc_pso, PL_USER);
-	loader_load(&task_ut_cpuid_pso, PL_USER);
-	loader_load(&task_ut_cp2user_pso, PL_USER);
-	loader_load(&task_ut_con_pso, PL_USER);
-	//loader_load(&task_ut_serial_pso, PL_USER);	// TODO
-	#endif
+	loader_load(&task_init_pso, PL_USER);
 
 	go_idle();
 	return;

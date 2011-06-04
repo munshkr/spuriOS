@@ -71,6 +71,7 @@ SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 
 # Tareas
 TASKS=\
+	tasks/init.pso \
 	tasks/cp2user.pso \
 	tasks/cpuid.pso \
 	tasks/palloc.pso \
@@ -172,7 +173,7 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	dd if=$< of=$@ bs=1 count=3 conv=notrunc 2>/dev/null
 	dd if=$< of=$@ bs=1 count=450 seek=62 skip=62 conv=notrunc 2>/dev/null
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
-	for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
+	#for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
 $(IMG_HDD): $(TASKS)
 	rm -f $(IMG_HDD)
