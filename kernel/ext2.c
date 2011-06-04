@@ -373,6 +373,7 @@ uint_32 read_dir(ext2* this, ext2_inode* inode, void* buffer) {
 	memcpy("\n\0", buffer + local_buffer_offset, 2);
 	local_buffer_offset += 2;
 
+	mm_mem_free(tmp_page);
 	return local_buffer_offset;
 }
 
