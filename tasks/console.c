@@ -7,6 +7,7 @@
 #define EXEC_CHAR ':'
 #define CAT_CHAR '@'
 #define EXIT_CMD "exit"
+#define HELP_CMD "help"
 
 #define SPURSH_EXIT 1
 
@@ -23,7 +24,8 @@ int main() {
 	bool eof;
 
 	con_fd = open("/console", FS_OPEN_RDWR);
-	fprintf(con_fd, "Spursh v0.1\n\n");
+	fprintf(con_fd, "Spursh v0.1\n");
+	fprintf(con_fd, "Type 'help' when you're lost\n\n");
 
 	int parse_code = 0;
 	while (!parse_code) {
@@ -135,6 +137,13 @@ static int parse(char* line_buffer, uint_32 size) {
 		fprintf(con_fd, "Bye.\n");
 		close(con_fd);
 		return -SPURSH_EXIT;
+	} else if (!strcmp(line_buffer, HELP_CMD)) {
+		fprintf(con_fd, "Available commands:\n");
+		fprintf(con_fd, "\thelp\tShow this message\n");
+		fprintf(con_fd, "\texit\tTerminate this console\n");
+		fprintf(con_fd, "\t:PATH\tRun a .PSO task at PATH\n");
+		fprintf(con_fd, "\t@PATH\tRead and print at PATH\n");
+		fprintf(con_fd, "\n");
 	} else {
 		fprintf(con_fd, "Spursh: Huh? What does \"");
 		write(con_fd, line_buffer, size);
