@@ -4,6 +4,7 @@
 #include <lib.h>
 
 #define SCHED_QUANTUM_DEFAULT 10
+#define FREE_PID -1
 
 typedef struct str_sched_task {
 	pid pd;
@@ -23,32 +24,32 @@ void print_queue(unsigned int max) {
 	int i;
 	for (i = 0; i < max; i++) {
 		vga_printf("index %u\n", i);
-		vga_printf("\tpd = %u\n", tasks[i].pd);
+		vga_printf("\tpd = %d\n", tasks[i].pd);
 		vga_printf("\tquantum = %u\n", tasks[i].quantum);
 		if (tasks[i].prev != NULL) {
-			vga_printf("\tprev_pid = %u\n", tasks[i].prev->pd);
+			vga_printf("\tprev_pid = %d\n", tasks[i].prev->pd);
 		} else {
 			vga_printf("\tprev_pid = NULL\n");
 		}
 		if (tasks[i].next != NULL) {
-			vga_printf("\tnext_pid = %u\n", tasks[i].next->pd);
+			vga_printf("\tnext_pid = %d\n", tasks[i].next->pd);
 		} else {
 			vga_printf("\tnext_pid = NULL\n");
 		}
 		breakpoint();
 	}
 	if (actual != NULL) {
-		vga_printf("actual_pid = %u\t", actual->pd);
+		vga_printf("actual_pid = %d\t", actual->pd);
 	} else {
 		vga_printf("actual_pid = NULL\t");
 	}
 	if (first != NULL) {
-		vga_printf("first_pid = %u\t", first->pd);
+		vga_printf("first_pid = %d\t", first->pd);
 	} else {
 		vga_printf("first_pid = NULL\t");
 	}
 	if (last != NULL) {
-		vga_printf("last_pid = %u\n", last->pd);
+		vga_printf("last_pid = %d\n", last->pd);
 	} else {
 		vga_printf("last_pid = NULL\n");
 	}
@@ -61,12 +62,19 @@ void sched_init(void) {
 	first = NULL;
 	last = NULL;
 	running_tasks = 0;
+
+	int i;
+	for (i = 0; i < MAX_PID; i++) {
+		tasks[i].pd = FREE_PID;
+	}
 }
 
 void sched_load(pid pd) {
+	kassert(pd >= 0 && pd < MAX_PID);
+
 	int i;
 	for (i = 0 ; i < MAX_PID ; i++) {
-		if (tasks[i].pd == 0) {
+		if (tasks[i].pd == FREE_PID) {
 			break;
 		}
 	}
@@ -113,10 +121,13 @@ int sched_exit() {
 		(actual->prev)->next = actual->next;
 		(actual->next)->prev = actual->prev;
 		memset(actual, 0, sizeof(sched_task));
+		sched_task* old = actual;
 		actual = tmp_next;
 		pd = actual->pd;
+		old->pd = FREE_PID;
 	} else {
 		memset(actual, 0, sizeof(sched_task));
+		actual->pd = FREE_PID;
 		first = NULL;
 		last = NULL;
 		actual = NULL;
