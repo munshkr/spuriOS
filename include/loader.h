@@ -53,11 +53,13 @@ void loader_print_raw_sleeping();
 void loader_print_sleeping();
 
 void loader_exit(void);
-#endif
 
 /* Syscalls */
-sint_32 run(const char* filename);
-// pid getpid(void);
-// void exit(pid pd);
+pid run(const char* filename);
+pid getpid(void);
+void exit(void);
+void sleep(registers_t* regs);
+
+#endif // __KERNEL__
 
 #endif

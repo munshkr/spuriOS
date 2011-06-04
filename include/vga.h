@@ -90,5 +90,11 @@ void vga_update_cursor(void);
 #define VGA_BC_BROWN   0x60
 #define VGA_BC_WHITE   0x70
 
+// Syscalls
+// TODO We should provide a simpler interface to VGA for user tasks (a `vga` driver?)
+
+void print(registers_t* regs);
+void loc_print(registers_t* regs);
+void loc_print_alpha(registers_t* regs);
 
 #endif

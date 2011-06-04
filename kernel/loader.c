@@ -405,7 +405,7 @@ void free_run_resources(void* start_vaddr, uint_32 page_count, fd_t fd) {
 	close(fd);
 }
 
-sint_32 run(const char* filename) {
+pid run(const char* filename) {
 	fd_t fd = open(filename, FS_OPEN_RD);
 	if (fd < 0) {
 		return -RUN_ERROR_OPENING;
@@ -480,3 +480,16 @@ sint_32 run(const char* filename) {
 	return pid;
 }
 
+pid getpid() {
+	return cur_pid;
+}
+
+void exit() {
+	loader_exit();
+}
+
+void sleep(registers_t* regs) {
+	// EBP (+0), EIP (+4), time (+8)
+	uint_32 time = *(uint_32*)(regs->user_esp + 8);
+	loader_sleep(time);
+}
