@@ -2,7 +2,7 @@
 #include <common.h>
 
 static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
-                         const char** format, va_list arg_ptr);
+                         const char** format, uint_32* arg_ptr);
 
 #ifndef __KERNEL__	// TASK-ONLY
 
@@ -25,7 +25,7 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 
 	va_list args;
 	va_start(args, format);
-	sint_32 sz_printf = vsnprintf(__lib_fp_buffer, FPRINTF_BUFFER_SIZE, &format, args);
+	sint_32 sz_printf = vsnprintf(__lib_fp_buffer, FPRINTF_BUFFER_SIZE, &format, (uint_32*) args);
 	va_end(args);
 
 	sint_32 sz_write = write(file, __lib_fp_buffer, sz_printf);
@@ -40,7 +40,7 @@ sint_32 sprintf(char* buffer, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	int ret = vsnprintf(buffer, -1, &format, args);
+	int ret = vsnprintf(buffer, -1, &format, (uint_32*) args);
 
 	va_end(args);
 	return ret;
@@ -50,7 +50,7 @@ sint_32 snprintf(char* buffer, sint_32 buff_size, const char* format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	int ret = vsnprintf(buffer, buff_size, &format, args);
+	int ret = vsnprintf(buffer, buff_size, &format, (uint_32*) args);
 
 	va_end(args);
 	return ret;
@@ -155,7 +155,7 @@ static sint_32 put_uhex(char** str, const uint_32 number);
 static sint_32 print_udec(char** str, const uint_32 number);
 
 static sint_32 vsnprintf(char* buffer, sint_32 buff_size,
-                         const char** format, va_list arg_ptr)
+                         const char** format, uint_32* arg_ptr)
 {
 	uint_32 sz;
 
