@@ -47,7 +47,7 @@ inline void go_idle() {
 	be_task();
 
 	sti();
-	while (1) hlt();
+	while (1) ;//hlt();
 }
 
 void print_logo(void) {

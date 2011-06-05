@@ -68,7 +68,7 @@ void loader_init(void) {
 	debug_log("initializing loader");
 
 	idt_register_asm(ISR_IRQ0, timer_handler, PL_KERNEL);
-	timer_init(1000);
+	timer_init(1193);
 
 	initialize_process_list();
 
