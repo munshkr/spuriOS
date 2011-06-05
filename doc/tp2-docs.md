@@ -9,6 +9,10 @@ Char Devices
 
 ### `device` - Devices
 
+La mayor parte del diseño del módulo `device` se centró en cómo almacenar los descriptores de archivos y en como debían ser implementadas las llamadas al systema. Respecto al primer punto, decidimos almacenar los FDs (file descriptors) en una matriz de PID por FD, acotada por el máximo process id y máximo file descriptor (ambos con valor actual 32). Dicha matriz contiene punteros a descriptores de dispositivos y se considera una entrada disponible aquella con valor 0 (puntero nulo). Entonces, la cantidad de memoria empleada por dicha estructura es 32 * 32 * 4 bytes = 4KB. Fue fundamental que recordásemos la necesidad de cerrar los descriptores de archivo que el usuario pudiese dejar abiertos al llamar a `loader_exit` pues de lo contrario, ciertos dispositivos como el puerto serie (de apertura exclusiva) jamás hubiesen podido ser reabiertos por ningún otro proceso.
+
+Es importante mencionar la implementación de una función `copy2user` (acompañada de otras, por ejemplo, para brindar el nivel de privilegio de cierta dirección virtual) utilizada en todos los char devices. Aún así, sabemos que dicha función no es perfecta y no está libre de bugs de seguridad, pero es un primer intento (aprovechamos por ejemplo el hecho de que el kernel se encuentra en direcciones inferiores a cualquiera de usuario para evitar validar todas las direcciones en cierto rango).
+
 ### `con` - Driver de consola
 
 El driver de consola administra un anillo de multiples **consolas**. Cada una de
@@ -66,10 +70,24 @@ no ambos al mismo tiempo.
 
 ### `serial` - Driver del puerto serie
 
+El controlador del puerto serie es extremadamente sencillo y de hecho no hace uso de todas las funcionalidades que el dispositivo ofrece. Las lecturas de este dispositivo son de a byte, es decir, no importa el tamaño especificado a leer, en caso de éxito se devolverá un byte al usuario por cada llamada `read`. Esta decisión libera al driver de la responsabilidad de tener un buffer interno y un puntero al mismo.
+
+El descriptor de dispositivo cuenta con una cola de espera de lectura y otra de escritura. El estado de estas colas es siempre vacío o bien con un proceso encolado. Esto se debe a que tomamos la decisión de que la apertura del puerto serie fuese exclusiva: dos procesos no pueden tener al mismo tiempo un descriptor a éste. Dicho esto, nos queda la duda si quizás una cola hubiese bastado, pues al ser bloqueantes las lecturas y escrituras, una para cada operación se torna innecesario.
+
+Respecto a las funcionalidades del dispositivo, no utilizamos el sistema de colas presente en el mismo, lo cual simplifica el manejo de interrupciones por parte del driver. A su vez, configuramos los parametros de conexión (baudios, paridad, tamaño del caracter, etc.) al momento de la inicialización de los dispositivos y permanecen configurados de esta forma a lo largo de la ejecución. Estos parametros son: 8 bits de tamaño del caracter, sin paridad, un bit de parada y 9600 baudios. Cabe mencionar que la dirección del puerto de E/S es almacenada en el descriptor de dispositivo en un intento de proveer mayor flexibilidad al controlador.
+
+Durante el desarrollo afrontamos un problema que permanece sin solución: no logramos recibir una interrupción desde los puertos 3 y 4. Consultando con los docentes concluimos que es probable que bochs no tuviese implementada dicha funcionalidad.
+
 Block Devices
 -------------
 
 ### `hdd` - Hard Disk Driver
+
+Nos limitamos a implementar sólo la la funcionalidad de lectura del disco rígido, para el canal primario del mismo (primary master, primary slave). Cualquier lectura fuera del tamaño de bloque del dispositivo da como resultado un error.
+
+El controlador de dispositivo efectúa PIO (entrada/salida programada) utilizando LBA de 28 bits y con lectura sencilla (no múltiple, es decir, un comando de lectura efectúa la lectura de un sólo sector de disco). Durante el desarrollo nos encontramos con ciertas dudas acerca de los retardos necesarios antes del envío de cada comando al dispositivo (teóricamente de 400ms), pues si bien en bochs el controlador funciona, parece no funcionar en otros entornos como VirtualBox con un chipset y controladores idénticos.
+
+El descriptor de dispositivo alberga el puerto de E/S primario y el puerto auxiliar de control, así como el canal (maestro, esclavo) y una cola de espera por lecturas. En dicha cola podría haber cero o más procesos. Cabe destacar que no es necesario un puntero para la cantidad de bytes copiados así como tampoco se utiliza la función `copy2user` pues se asume que dicho controlador es utilizado por el kernel y no directamente por el usuario.
 
 File System
 -----------
@@ -80,4 +98,12 @@ File System
 
 Tareas
 ------
+
+### `run` syscall
+
+Durante la implementación de dicha llamada al sistema nos topamos con una limitación: `loader_load` esperaba el puntero a un archivo PSO que eventualmente podría tener un tamaño mayor al de una página. Esto se traduce en la necesidad de direcciones virtuales contiguas y debimos implementar funciones en el módulo de manejo de memoria para tal fin. Lo que finalmente hicimos fue buscar una entrada vacía en el directorio de páginas del proceso actual, lo cual nos brindaba un espacio de direccionamiento virtual contiguo de hasta 4MB. De aquí se deduce la limitación actual para utilizar dicha llamada al sistema: el ejecutable más grande no puede exceder los 4MB. Una vez ejecutada la carga del archivo se liberan los recursos previamente reservados.
+
+### tarea `init`
+
+### tarea `console`
 
