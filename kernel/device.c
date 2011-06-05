@@ -9,6 +9,15 @@
 
 extern pid cur_pid;
 
+void device_close_fds_for(pid id) {
+	fd_t fd = 0;
+	for (fd = 0; fd < MAX_FD; fd++) {
+		if (devices[id][fd]) {
+			close(fd);
+		}
+	}
+}
+
 fd_t device_descriptor(chardev* dev) {
 	kassert(dev != NULL);
 

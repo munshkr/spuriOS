@@ -60,6 +60,7 @@ struct str_blockdev {
 	uint_32 size;
 } __attribute__((packed));
 
+void device_close_fds_for(pid id);
 void device_init(void);
 
 fd_t device_descriptor(chardev* dev);

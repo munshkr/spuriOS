@@ -10,6 +10,7 @@
 #include <mm.h>
 #include <fs.h>
 #include <tipos.h>
+#include <device.h>
 
 const char PSO_SIGNATURE[4] = "PSO";
 
@@ -366,6 +367,8 @@ void loader_tick() {
 
 void loader_exit(void) {
 	pid local_tmp_pid = sched_exit();
+
+	device_close_fds_for(cur_pid);
 
 	// TODO Refactor this shit
 	pcb_t* task = &processes[cur_pid];
