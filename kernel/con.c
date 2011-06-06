@@ -11,6 +11,8 @@
 #define C(x) ((con_device*) x)
 #define MAX_CONSOLES 8
 
+extern pso_file task_init_pso;
+
 
 typedef struct str_con_device {
 	uint_32 klass;
@@ -31,12 +33,13 @@ typedef struct str_con_device {
 
 static con_device consoles[MAX_CONSOLES];
 static con_device* current;
+static const char* screen_saver_path;
 
 
 static inline void switch_console(con_device* new_con);
 static inline void add_console_after_current(con_device* new_con);
 static inline void remove_console(con_device* con);
-static inline void draw_empty_frame(void);
+static inline void run_screen_saver(void);
 static inline void init_keyboard(void);
 static inline void wait_byte(void);
 static inline uint_8 read_scancode(void);
@@ -45,7 +48,7 @@ static void keyboard_handler(registers_t* regs);
 //static void print_ring(void);
 
 
-void con_init(void) {
+void con_init(const char* path) {
 	debug_log("initializing console");
 
 	uint_32 i;
@@ -53,6 +56,8 @@ void con_init(void) {
 		consoles[i].klass = CLASS_DEV_NONE;
 	}
 	current = NULL;
+
+	screen_saver_path = path;
 
 	init_keyboard();
 }
@@ -131,7 +136,7 @@ uint_32 con_flush(chardev* self) {
 	if (C(self) == current) {
 		current = NULL;
 		if (C(self)->prev == C(self) && C(self)->next == C(self)) {
-			draw_empty_frame();
+			run_screen_saver();
 		} else {
 			switch_console(C(self)->prev);
 		}
@@ -183,10 +188,12 @@ static inline void remove_console(con_device* con) {
 	}
 }
 
-static inline void draw_empty_frame(void) {
+static inline void run_screen_saver(void) {
 	vga_clear();
 	vga_reset_pos();
 	vga_reset_colors();
+
+	run(screen_saver_path);
 }
 
 static inline void init_keyboard(void) {

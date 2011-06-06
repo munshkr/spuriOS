@@ -44,7 +44,7 @@ inline void init_fd_association() {
 
 inline void init_dev_modules() {
 	proc_init();
-	con_init();
+	con_init("/disk/bin/screen_saver.pso");
 	serial_init();
 	hdd_init();
 	fs_init();
