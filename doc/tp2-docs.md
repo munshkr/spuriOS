@@ -75,7 +75,10 @@ Cuando una tarea abre una nueva consola, se crea e inicializa un nuevo
 dispositivo, se la agrega al anillo justo después de la consola que tiene foco
 en ese momento, y finalmente se cambia el foco a la nueva. Cuando se cierra la
 consola, luego de eliminar el buffer dinamico y corregir los punteros de la
-lista enlazada, se le da foco a la anterior consola.
+lista enlazada, se le da foco a la anterior consola. Cuando no hay más
+consolas, se limpia la pantalla y se ejecuta una tarea de usuario llamada
+`screen_saver`^[Creemos que cada tanto es necesario ventilar nuestra
+creatividad de alguna manera :-)].
 
 En el momento del cambio de foco, se copia el contenido del buffer VGA en
 0xB8000 al buffer de la consola, guardando el estado, y se restaura el
@@ -182,4 +185,16 @@ ejecución del sistema.
 
 ### Tarea `console`
 
-**...**
+Para poder demostrar el uso del filesystem virtual y el acceso a los
+dispositivos que el kernel ahora soporta, implementamos un shell con
+funcionalidad limitada, *tab completion* y *reverse search*^[(mentira)]. La
+tarea abre una consola e imprime por pantalla un *prompt* para que el usuario
+pueda ingresar comandos con el teclado.
+
+Los comandos que implementamos dentro del shell son los siguientes:
+
+   * `:PATH` lee y ejecuta un archivo .PSO ubicado en `PATH`, e imprime en
+     pantalla su PID.
+   * `@PATH` abre el archivo o dispositivo en `PATH`, y lee e imprime en
+     pantalla (similar a `cat` en UNIX).
+   * `exit` cierra la consola y termina la tarea.
