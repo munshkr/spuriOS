@@ -103,7 +103,11 @@ Tareas
 
 Durante la implementación de dicha llamada al sistema nos topamos con una limitación: `loader_load` esperaba el puntero a un archivo PSO que eventualmente podría tener un tamaño mayor al de una página. Esto se traduce en la necesidad de direcciones virtuales contiguas y debimos implementar funciones en el módulo de manejo de memoria para tal fin. Lo que finalmente hicimos fue buscar una entrada vacía en el directorio de páginas del proceso actual, lo cual nos brindaba un espacio de direccionamiento virtual contiguo de hasta 4MB. De aquí se deduce la limitación actual para utilizar dicha llamada al sistema: el ejecutable más grande no puede exceder los 4MB. Una vez ejecutada la carga del archivo se liberan los recursos previamente reservados.
 
-### tarea `init`
-
 ### tarea `console`
 
+Dicha tarea implementa un intérprete de comandos conocido como Spurious Shell o Spursh en el contexto de nuestro sistema operativo. Dada la imposibilidad (momentánea) de lanzar un proceso pasándole argumentos de línea de comandos, decidimos implementar ciertos comandos como funciones internas del shell (como es el caso de la función arroba). He aquí una breve referencia de los comandos del mismo:
+
+* `:<ruta>` (ej. `:/disk/bin/console.pso`) encola dicho proceso para su posterior ejecución mediante la llamada al sistema `run`. 
+* `@<ruta>` (ej. `@/proc/cpuid`) lee el archivo indicado y lo muestra por consola.
+* `exit` finaliza el shell
+* `help` muestra estas opciones
