@@ -203,12 +203,12 @@ static inline void init_keyboard(void) {
 }
 
 static void keyboard_handler(registers_t* regs) {
-	// TODO Check if a 1-byte buffer is alright with keyboard
-	// Maybe we need a bigger buffer?
-	wait_byte();
-	update_kbd_state();
-
 	if (current) {
+		// TODO Check if a 1-byte buffer is alright with keyboard
+		// Maybe we need a bigger buffer?
+		wait_byte();
+		update_kbd_state();
+
 		if (KBD_ALT_ON && KBD_SHIFT_ON && KBD_LEFT_PRESS) {
 			//vga_printf("switching to left...\n");
 			switch_console(C(current->prev));
@@ -225,17 +225,6 @@ static void keyboard_handler(registers_t* regs) {
 		// on a `read` from the current console, wake her up.
 		if (current->kbd_queue != FREE_QUEUE) {
 			loader_unqueue(&current->kbd_queue);
-		}
-	} else {
-		if (kbd_char_buf == '\n') {
-			vga_clear();
-			vga_reset_pos();
-			vga_reset_colors();
-
-			loader_load(&task_init_pso, PL_USER);
-			// XXX This is BROKEN and UNSAFE. We need a `kill` function, to
-			// exit a specific task, not the current one.
-			//loader_exit();
 		}
 	}
 }
