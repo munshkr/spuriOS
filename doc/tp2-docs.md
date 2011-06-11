@@ -147,10 +147,6 @@ utilizado por el kernel y no directamente por el usuario.
 File System
 -----------
 
-### `fs` - Sistema de archivos
-
-**...**
-
 ### `ext2` - Driver de *ext2*
 
 **...**
