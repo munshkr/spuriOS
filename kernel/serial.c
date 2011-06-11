@@ -26,7 +26,7 @@
 #define PORT_DL_MSB 1 /* Divisor latch - MSB (need DLAB=1)  */
 
 /*** REMEMBER: Don't use drugs while designing a chip:
- * 
+ *
  * 8.10 SCRATCHPAD REGISTER
  * This 8-bit Read Write Register does not control the UART
  * in anyway It is intended as a scratchpad register to be used
@@ -84,19 +84,33 @@
 #define C(x) ((dev_serial*) x)
 
 void read_from_serial(uint_32 index) {
-	uint_32 port = serial_devs[index].io_port;
+	dev_serial* device = &serial_devs[index];
+	uint_32 port = device->io_port;
 //	breakpoint();
 	uint_8 intid = inb(port + PORT_IIR);
 	if (intid & II_ID_RDA) {
 		char data = inb(port);
-		serial_devs[index].buffer = data;
-		serial_devs[index].buffer_free = FALSE;
-	
-		if (serial_devs[index].read_queue != FREE_QUEUE) {
-			loader_unqueue(&(serial_devs[index].read_queue));
+
+		/*
+		// Versión buffer circular - NO ANDA BIEN FIXME
+		device->buffer[device->ptr_to] = data;
+		device->ptr_to = (device->ptr_to + 1) % SERIAL_BUFFER_LENGTH;
+		device->buffer_free = FALSE;
+		*/
+
+		// Versión buffer acotado
+		if (device->ptr_to < SERIAL_BUFFER_LENGTH) {
+			device->buffer[device->ptr_to] = data;
+			device->ptr_to++;
+			device->buffer_free = FALSE;
+		}
+
+
+		if (device->read_queue != FREE_QUEUE) {
+			loader_unqueue(&(device->read_queue));
 		}
 	} else if (intid & II_ID_THRE) {
-		loader_unqueue(&(serial_devs[index].write_queue));
+		loader_unqueue(&(device->write_queue));
 	}
 }
 
@@ -113,14 +127,51 @@ sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
 		if (C(self)->buffer_free) {
 			loader_enqueue(&(C(self)->read_queue));
 		}
-		
-		sint_32 copied = copy2user(&(C(self)->buffer), buf, 1);
-	
-		if (copied > 0) {
+
+/*
+		// Versión buffer circular - NO ANDA BIEN FIXME
+		uint_32 bytes_copied;
+		if (C(self)->ptr_to > C(self)->ptr_from) {
+			bytes_copied = (size < C(self)->ptr_to - C(self)->ptr_from ? size : C(self)->ptr_to - C(self)->ptr_from);
+		} else {
+			bytes_copied = (size < SERIAL_BUFFER_LENGTH - C(self)->ptr_from + C(self)->ptr_to ? size : SERIAL_BUFFER_LENGTH - C(self)->ptr_from + C(self)->ptr_to);
+		}
+
+		sint_32 copied;
+		uint_32 total_copy = 0;
+		uint_32 remain = bytes_copied;
+		while (remain > 0) {
+			if (C(self)->ptr_from + remain > SERIAL_BUFFER_LENGTH) {
+				copied = SERIAL_BUFFER_LENGTH - C(self)->ptr_from;
+				copy2user(&(C(self)->buffer) + C(self)->ptr_from, buf + (bytes_copied - remain), SERIAL_BUFFER_LENGTH - C(self)->ptr_from);
+			} else {
+				copied = remain;
+				copy2user(&(C(self)->buffer) + C(self)->ptr_from, buf + (bytes_copied - remain), remain);
+			}
+			C(self)->ptr_from = (C(self)->ptr_from + copied) % SERIAL_BUFFER_LENGTH;
+			remain -= copied;
+			total_copy += copied;
+		}
+
+		if (C(self)->ptr_from == C(self)->ptr_to) {
 			C(self)->buffer_free = TRUE;
 		}
-		
-		return copied;
+*/
+
+		// Versión buffer acotado
+		uint_32 bytes_copied;
+		uint_32 total_copy = 0;
+
+		bytes_copied = (size < C(self)->ptr_to ? size : C(self)->ptr_to);
+
+		copy2user(&(C(self)->buffer), buf, bytes_copied);
+		C(self)->ptr_to = 0;
+		C(self)->buffer_free = TRUE;
+
+		total_copy = bytes_copied;
+
+
+		return total_copy;
 	} else {
 		return size;
 	}
@@ -141,7 +192,7 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 				buf++;
 			}
 		}
-	
+
 		return writed;
 	} else {
 		return -1;
@@ -151,7 +202,7 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 uint_32 serial_flush(chardev* self) {
 	C(self)->klass = CLASS_DEV_NONE;
 	C(self)->read = 0;
-	C(self)->write = 0;	
+	C(self)->write = 0;
 
 	return 0;
 }
@@ -173,6 +224,8 @@ chardev* serial_open(sint_32 index, uint_32 flags) { /* 0 for COM1, 1 for COM2 a
 		serial_devs[index].read_queue = FREE_QUEUE;
 		serial_devs[index].write_queue = FREE_QUEUE;
 		serial_devs[index].buffer_free = TRUE;
+		//serial_devs[index].ptr_from = 0;
+		serial_devs[index].ptr_to = 0;
 
 		return (chardev*) &serial_devs[index];
 	}
@@ -186,6 +239,10 @@ inline void init_serial_dev(uint_32 index, uint_32 io_port) {
 	serial_devs[index].read = 0;
 	serial_devs[index].write = 0;
 	serial_devs[index].seek = 0;
+
+	//serial_devs[index].ptr_from = 0;
+	serial_devs[index].ptr_to = 0;
+
 
 	serial_devs[index].io_port = io_port;
 
@@ -213,6 +270,6 @@ void serial_init() {
 	pic_clear_irq_mask(3);
 
 	init_serial_dev(0, PORT_1);
-	init_serial_dev(1, PORT_2);	
+	init_serial_dev(1, PORT_2);
 }
 

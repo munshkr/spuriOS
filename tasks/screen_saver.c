@@ -145,14 +145,14 @@ int main(void) {
 	uint_32 logo_starting_col = SCREEN_COLS / 2 - LOGO_COLS / 2;
 
 	// Start
-	while(i_s < 80) {
-		sleep(150);
+	while(i_s < LOGO_ROWS + 5) {
+		sleep(200);
 
 		if (i_s < LOGO_ROWS) {
 			loc_printf(i_s + 5, logo_starting_col, spurios_logo_shine[i_s]);
 		}
-		if (i_s > 1 && i_s < LOGO_ROWS + 2) {
-			loc_printf(i_s - 2 + 5, logo_starting_col, spurios_logo_compact[i_s - 2]);
+		if (i_s > 0 && i_s < LOGO_ROWS + 1) {
+			loc_printf(i_s - 1 + 5, logo_starting_col, spurios_logo_compact[i_s - 1]);
 		}
 
 		i_s++;
