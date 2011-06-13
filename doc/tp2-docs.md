@@ -90,12 +90,24 @@ no ambos al mismo tiempo.
 
 ### `serial` - Driver del puerto serie
 
-El controlador del puerto serie es extremadamente sencillo y de hecho no hace
-uso de todas las funcionalidades que el dispositivo ofrece. Las lecturas de
-este dispositivo son de a byte, es decir, no importa el tamaño especificado a
-leer, en caso de éxito se devolverá un byte al usuario por cada llamada `read`.
-Esta decisión libera al driver de la responsabilidad de tener un buffer interno
-y un puntero al mismo.
+El controlador del puerto serie está conformado por los siguientes componentes:
+ * Un handler de interrupción que lee de la placa UART el byte recibido y lo
+escribe en un buffer local.
+ * Un buffer circular en el cual se almacenan los bytes recibidos, esperando a
+ser leidos por el usuario.
+ * Un puntero que indica la primera posición válida del buffer.
+ * Un puntero que indica la última posición válida del buffer.
+
+El controlador configura al dispositivo para trabajar por interrupciones y
+declara los handlers para atenderlas. Es la manera que consideramos más
+eficiente, ya que trabajar con polling contra un dispositivo tan lento sería
+contraproducente. Al recibir la interrupción, la atiende rápidamente tomando el
+byte leido y agregándolo en el buffer. Cuando el usuario llama a la función
+`read` con el parámetro `size`, el driver copia al usuario una cantidad de
+bytes equivalente al menor valor entre `size` y la cantidad de bytes
+almacenados en el buffer. Luego de la copia, ajusta los punteros de modo tal
+que si queda información en el buffer, la lectura seguirá leyendo desde donde
+quedó y la escritura se efectuará a continuación del último byte válido.
 
 El descriptor de dispositivo cuenta con una cola de espera de lectura y otra de
 escritura. El estado de estas colas es siempre vacío o bien con un proceso
@@ -105,15 +117,12 @@ descriptor a éste. Dicho esto, nos queda la duda si quizás una cola hubiese
 bastado, pues al ser bloqueantes las lecturas y escrituras, una para cada
 operación se torna innecesario.
 
-Respecto a las funcionalidades del dispositivo, no utilizamos el sistema de
-colas presente en el mismo, lo cual simplifica el manejo de interrupciones por
-parte del driver. A su vez, configuramos los parametros de conexión (baudios,
-paridad, tamaño del caracter, etc.) al momento de la inicialización de los
-dispositivos y permanecen configurados de esta forma a lo largo de la
-ejecución. Estos parametros son: 8 bits de tamaño del caracter, sin paridad, un
-bit de parada y 9600 baudios. Cabe mencionar que la dirección del puerto de E/S
-es almacenada en el descriptor de dispositivo en un intento de proveer mayor
-flexibilidad al controlador.
+Configuramos los parametros de conexión (baudios, paridad, tamaño del caracter,
+etc.) al momento de la inicialización de los dispositivos y permanecen
+configurados de esta forma a lo largo de la ejecución. Estos parametros son: 8
+bits de tamaño del caracter, sin paridad, un bit de parada y 9600 baudios. Cabe
+mencionar que la dirección del puerto de E/S es almacenada en el descriptor de
+dispositivo en un intento de proveer mayor flexibilidad al controlador.
 
 Durante el desarrollo afrontamos un problema que permanece sin solución: no
 logramos recibir una interrupción desde los puertos 3 y 4. Consultando con los
@@ -149,7 +158,48 @@ File System
 
 ### `ext2` - Driver de *ext2*
 
-**...**
+Decidimos implementar una versión limitada del sistema de archivos `Second
+Extended Filesystem (ext2)` que únicamente lee directorios y archivos,
+ignorando los permisos.
+
+En el driver del block device decidimos almacenar el superbloque y la tabla de
+descriptores de grupos de bloques, ya que para abrir cualquier archivo es
+necesario acceder a esa información y por el espacio que ocupa es ridículo
+pedírselo al disco cada vez.
+
+Vale la pena aclarar que la inicialización del filesystem es `lazy`, es decir,
+simula una inicialización incompleta y la completa cuando recibe la primera
+solicitud de apertura de archivo.  Esto se debe a que la función de lectura del
+driver de disco es bloqueante y pretende encolar a la tarea que lo llama en
+caso de no tener la información disponible de inmediato. El problema es que aún
+no tenemos una tarea que se encargue de la inicialización, sino que son
+llamadas a funciones previas a la carga de tareas. En caso de solicitar una
+lectura de disco sin una tarea activa, el disco intenta bloquear a la IDLE_TASK
+y resulta en un error.
+
+Los pasos internos a seguir para abrir un archivo fueron los siguientes:
+ * Se recibe la ruta absoluta del archivo en el filesystem.
+ * Se parsea la ruta de a una barra (`/`) por vez, empezando por root.
+ * Cada paso recorrido resulta en un nombre de archivo que se busca en el
+ último directorio abierto y en caso de estar presente se continúa con el
+ proceso.
+ * Si se termina la cadena y se confirma la existencia del archivo buscado, se
+ obtiene el inodo de dicho archivo y se lo almacena junto con otra información
+ en un nuevo objeto del tipo `ext2_file` que es una extensión del tipo
+ `chardev`.
+
+El objeto `ext2_file` tiene una particularidad. Implementa un buffer del tamaño
+de una página de memoria que se va llenando desde el dispositivo de bloque a
+medida que se va leyendo el archivo. Pero distingue entre tipos de archivo
+`regular` y `directorio`. Cuando se abre para lectura un archivo del tipo
+`directorio`, dentro del proceso de creación del `ext2_file`, se lee el
+contenido del directorio y se lo escribe en el buffer. Asumimos para esto que
+nunca el contenido de un directorio superará el tamaño de página.
+
+También implementa la función `seek` que en caso de posicionar el puntero en
+una sección no cargada dentro del buffer, se encarga de hacer el prefetch de
+información desde el block device. Es decir, si bien la función seek no lee del
+`chardev`, es posible que dispare una lectura al dispositivo de bloque.
 
 Tareas
 ------
