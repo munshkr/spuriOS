@@ -86,25 +86,17 @@
 void read_from_serial(uint_32 index) {
 	dev_serial* device = &serial_devs[index];
 	uint_32 port = device->io_port;
-//	breakpoint();
 	uint_8 intid = inb(port + PORT_IIR);
 	if (intid & II_ID_RDA) {
 		char data = inb(port);
 
-		/*
-		// Versión buffer circular - NO ANDA BIEN FIXME
+		// Versión buffer circular
 		device->buffer[device->ptr_to] = data;
+		if (device->ptr_to == device->ptr_from && !device->buffer_free) {
+			device->ptr_from = (device->ptr_from + 1) % SERIAL_BUFFER_LENGTH;
+		}
 		device->ptr_to = (device->ptr_to + 1) % SERIAL_BUFFER_LENGTH;
 		device->buffer_free = FALSE;
-		*/
-
-		// Versión buffer acotado
-		if (device->ptr_to < SERIAL_BUFFER_LENGTH) {
-			device->buffer[device->ptr_to] = data;
-			device->ptr_to++;
-			device->buffer_free = FALSE;
-		}
-
 
 		if (device->read_queue != FREE_QUEUE) {
 			loader_unqueue(&(device->read_queue));
@@ -128,50 +120,28 @@ sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
 			loader_enqueue(&(C(self)->read_queue));
 		}
 
-/*
-		// Versión buffer circular - NO ANDA BIEN FIXME
-		uint_32 bytes_copied;
+		// Versión buffer circular
+		uint_32 total_bytes;
+		uint_32 tmp_val;
 		if (C(self)->ptr_to > C(self)->ptr_from) {
-			bytes_copied = (size < C(self)->ptr_to - C(self)->ptr_from ? size : C(self)->ptr_to - C(self)->ptr_from);
+			total_bytes = (size < C(self)->ptr_to - C(self)->ptr_from ? size : C(self)->ptr_to - C(self)->ptr_from);
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, total_bytes);
+			C(self)->ptr_from += total_bytes;
 		} else {
-			bytes_copied = (size < SERIAL_BUFFER_LENGTH - C(self)->ptr_from + C(self)->ptr_to ? size : SERIAL_BUFFER_LENGTH - C(self)->ptr_from + C(self)->ptr_to);
-		}
-
-		sint_32 copied;
-		uint_32 total_copy = 0;
-		uint_32 remain = bytes_copied;
-		while (remain > 0) {
-			if (C(self)->ptr_from + remain > SERIAL_BUFFER_LENGTH) {
-				copied = SERIAL_BUFFER_LENGTH - C(self)->ptr_from;
-				copy2user(&(C(self)->buffer) + C(self)->ptr_from, buf + (bytes_copied - remain), SERIAL_BUFFER_LENGTH - C(self)->ptr_from);
-			} else {
-				copied = remain;
-				copy2user(&(C(self)->buffer) + C(self)->ptr_from, buf + (bytes_copied - remain), remain);
-			}
-			C(self)->ptr_from = (C(self)->ptr_from + copied) % SERIAL_BUFFER_LENGTH;
-			remain -= copied;
-			total_copy += copied;
+			tmp_val = SERIAL_BUFFER_LENGTH - C(self)->ptr_from;
+			total_bytes = (size < tmp_val + C(self)->ptr_to + 1 ? size : tmp_val + C(self)->ptr_to + 1);
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, tmp_val);
+			C(self)->ptr_from = 0;
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf + tmp_val, C(self)->ptr_to);
+			C(self)->ptr_from += C(self)->ptr_to;
 		}
 
 		if (C(self)->ptr_from == C(self)->ptr_to) {
 			C(self)->buffer_free = TRUE;
 		}
-*/
 
-		// Versión buffer acotado
-		uint_32 bytes_copied;
-		uint_32 total_copy = 0;
+		return total_bytes;
 
-		bytes_copied = (size < C(self)->ptr_to ? size : C(self)->ptr_to);
-
-		copy2user(&(C(self)->buffer), buf, bytes_copied);
-		C(self)->ptr_to = 0;
-		C(self)->buffer_free = TRUE;
-
-		total_copy = bytes_copied;
-
-
-		return total_copy;
 	} else {
 		return size;
 	}
