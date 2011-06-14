@@ -168,14 +168,13 @@ necesario acceder a esa información y por el espacio que ocupa es ridículo
 pedírselo al disco cada vez.
 
 Vale la pena aclarar que la inicialización del filesystem es `lazy`, es decir,
-simula una inicialización incompleta y la completa cuando recibe la primera
-solicitud de apertura de archivo.  Esto se debe a que la función de lectura del
+realiza una inicialización incompleta y la completa cuando recibe la primera
+solicitud de apertura de archivo. Esto se debe a que la función de lectura del
 driver de disco es bloqueante y pretende encolar a la tarea que lo llama en
-caso de no tener la información disponible de inmediato. El problema es que aún
-no tenemos una tarea que se encargue de la inicialización, sino que son
-llamadas a funciones previas a la carga de tareas. En caso de solicitar una
-lectura de disco sin una tarea activa, el disco intenta bloquear a la IDLE_TASK
-y resulta en un error.
+caso de no tener la información disponible de inmediato. En el momento que
+llamamos a la función de inicialización del filesystem, aún no hay tareas
+cargadas en el sistema y de no hacer la inicialización `lazy` el driver de
+disco intentaría bloquear a la IDLE_TASK, resultando en un error.
 
 Los pasos internos a seguir para abrir un archivo fueron los siguientes:
  * Se recibe la ruta absoluta del archivo en el filesystem.
