@@ -12,11 +12,11 @@ int main(void) {
 }
 
 static void run_unit_tests(void) {
-	run_task("/disk/bin/getpid.pso");
-	run_task("/disk/bin/palloc.pso");
-	run_task("/disk/bin/cpuid.pso");
-	run_task("/disk/bin/cp2user.pso");
-	run_task("/disk/bin/ut_con.pso");
+	run_task("/disk/tests/getpid.pso");
+	run_task("/disk/tests/palloc.pso");
+	run_task("/disk/tests/cpuid.pso");
+	run_task("/disk/tests/cp2user.pso");
+	run_task("/disk/tests/ut_con.pso");
 }
 
 static void run_task(const char* file) {

@@ -72,19 +72,23 @@ SYMBOLS_FILES=$(SYMBOLS).asm $(SYMBOLS)_null.asm $(SYMBOLS).o $(SYMBOLS)_null.o
 # Tareas
 TASKS=\
 	tasks/init.pso \
-	tasks/cp2user.pso \
-	tasks/cpuid.pso \
-	tasks/palloc.pso \
-	tasks/getpid.pso \
-	tasks/dummy.pso \
 	tasks/console.pso \
-	tasks/ut_con.pso \
 	tasks/serial.pso \
 	tasks/screen_saver.pso \
-	tasks/polly_test_task.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o
+
+# Tests
+TESTS=\
+	tasks/palloc.pso \
+	tasks/getpid.pso \
+	tasks/ut_con.pso \
+	tasks/cpuid.pso \
+	tasks/cp2user.pso \
+
+TESTS_ELF:=$(TESTS:.pso=.elf)
+OBJS_TESTS:=$(TESTS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o
 
 # Imagenes
 DISK_LABEL="KERNEL  PSO"
@@ -109,7 +113,7 @@ no_disk: $(IMG_FLOPPY) $(DUMP_KERN) $(SYM_KERN)
 kernel/%.o: kernel/%.asm
 	nasm $(NASMFLAGS) -felf32 -I $(DIRKERN) -o $@ $<
 
-kernel/tasks.o: kernel/tasks.asm $(TASKS) $(TASKS_ELF)
+kernel/tasks.o: kernel/tasks.asm $(TASKS) $(TASKS_ELF) $(TESTS) $(TESTS_ELF)
 	nasm $(NASMFLAGS) -felf32 -I $(DIRKERN) -o $@ $<
 
 tasks/pso_head.o: tasks/pso_head.asm
@@ -175,15 +179,19 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
 	#for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
-$(IMG_HDD): $(TASKS)
+$(IMG_HDD): $(TASKS) $(TESTS)
 	rm -f $(IMG_HDD)
 	bximage -q -hd -mode=flat -size=10 $@ >/dev/null
 	mkfs.ext2 -F -L SpuriOS $@ > /dev/null
 	sudo mkdir -p /tmp/spurios-hdd
 	sudo mount -o loop bin/hdd.img /tmp/spurios-hdd
 	sudo mkdir -p /tmp/spurios-hdd/bin
+	sudo mkdir -p /tmp/spurios-hdd/tests
+	sudo mkdir -p /tmp/spurios-hdd/doc
 	sudo cp README.md /tmp/spurios-hdd/
+	sudo cp doc/tp2-docs.md /tmp/spurios-hdd/doc/
 	for T in $(TASKS); do sudo cp -f $$T /tmp/spurios-hdd/bin; done;
+	for T in $(TESTS); do sudo cp -f $$T /tmp/spurios-hdd/tests; done;
 	sudo umount /tmp/spurios-hdd
 
 # Documentation
