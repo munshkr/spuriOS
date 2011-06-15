@@ -55,6 +55,7 @@ void loader_print_sleeping();
 void loader_exit(void);
 
 /* Syscalls */
+pid fork();
 pid run(const char* filename);
 pid getpid(void);
 void exit(void);

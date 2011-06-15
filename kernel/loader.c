@@ -279,18 +279,12 @@ void loader_sleep(uint_32 time) {
 		return;
 	}
 
-	//loader_print_raw_sleeping();
-	//loader_print_sleeping();
-	//breakpoint();
-
 	if (first_slept == FREE_PCB_PID) {
-//		breakpoint();
 		first_slept = cur_pid;
 		sleeping[cur_pid].id = cur_pid;
 		sleeping[cur_pid].time = time;
 		sleeping[cur_pid].next = FREE_PCB_PID;
 	} else {
-//		breakpoint();
 		tmp_slept = first_slept;
 		while (tmp_slept != FREE_PCB_PID) {
 			if (sleeping[tmp_slept].time < time) {
@@ -298,26 +292,20 @@ void loader_sleep(uint_32 time) {
 			} else {
 				break;
 			}
-//			breakpoint();
 			prev_slept = tmp_slept;
 			tmp_slept = sleeping[tmp_slept].next;
 		}
 		if (tmp_slept == FREE_PCB_PID) {
-//			breakpoint();
 			sleeping[prev_slept].next = cur_pid;
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = FREE_PCB_PID;
 		} else {
-//			breakpoint();
 			if (prev_slept == FREE_PCB_PID) {
-//				breakpoint();
 				first_slept = cur_pid;
 			} else {
-//				breakpoint();
 				sleeping[prev_slept].next = cur_pid;
 			}
-//			breakpoint();
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = tmp_slept;
@@ -481,6 +469,50 @@ pid run(const char* filename) {
 	free_run_resources(start_vaddr, needed_pages + 1, fd);
 
 	return pid;
+}
+
+// TODO MM Function (?)
+static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
+	uint_32 pd_entry, pt_entry;
+	for (pd_entry = 1; pd_entry < 1024; pd_entry++) { // Starts at 4MB
+		if (father_pdt[pd_entry].attr & MM_ATTR_P) {
+
+			mm_page* table = (mm_page*)(father_pdt[pd_entry].base << 12);
+			for (pt_entry = 0; pt_entry < 1024; pt_entry++) {
+				if (table[pt_entry].attr & MM_ATTR_P) {
+					// Do temporal mapping, request new frame and copy,
+					// then map into child_pdt with the same virtual address
+					// and undo temporal mapping.
+				}
+			}
+		}
+	}
+
+}
+
+pid fork() {
+	// Current process cannot be in any waiting queue
+	kassert(processes[cur_pid].prev == FREE_QUEUE &&
+		processes[cur_pid].next == FREE_QUEUE);
+
+	pid child = get_new_pid();
+	mm_page* child_pdt = mm_dir_new();
+
+	processes[child] = (pcb_t) {
+		.id = child,
+		.cr3 = (uint_32) child_pdt,
+
+		.prev = FREE_QUEUE,
+		.next = FREE_QUEUE,
+
+		.privilege_level = processes[cur_pid].privilege_level,
+		.esp = processes[cur_pid].esp,
+		.next_empty_page_addr = processes[cur_pid].next_empty_page_addr
+	};
+
+	copy_nonkernel_pages(cur_pdt(), child_pdt);
+
+	return 0;
 }
 
 pid getpid() {
