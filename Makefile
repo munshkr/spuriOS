@@ -62,6 +62,7 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/timer.o \
 	kernel/vga.o \
 	kernel/ext2.o \
+	kernel/pipe.o \
 
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
