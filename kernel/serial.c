@@ -26,7 +26,7 @@
 #define PORT_DL_MSB 1 /* Divisor latch - MSB (need DLAB=1)  */
 
 /*** REMEMBER: Don't use drugs while designing a chip:
- * 
+ *
  * 8.10 SCRATCHPAD REGISTER
  * This 8-bit Read Write Register does not control the UART
  * in anyway It is intended as a scratchpad register to be used
@@ -84,19 +84,25 @@
 #define C(x) ((dev_serial*) x)
 
 void read_from_serial(uint_32 index) {
-	uint_32 port = serial_devs[index].io_port;
-//	breakpoint();
+	dev_serial* device = &serial_devs[index];
+	uint_32 port = device->io_port;
 	uint_8 intid = inb(port + PORT_IIR);
 	if (intid & II_ID_RDA) {
 		char data = inb(port);
-		serial_devs[index].buffer = data;
-		serial_devs[index].buffer_free = FALSE;
-	
-		if (serial_devs[index].read_queue != FREE_QUEUE) {
-			loader_unqueue(&(serial_devs[index].read_queue));
+
+		// Versión buffer circular
+		device->buffer[device->ptr_to] = data;
+		if (device->ptr_to == device->ptr_from && !device->buffer_free) {
+			device->ptr_from = (device->ptr_from + 1) % SERIAL_BUFFER_LENGTH;
+		}
+		device->ptr_to = (device->ptr_to + 1) % SERIAL_BUFFER_LENGTH;
+		device->buffer_free = FALSE;
+
+		if (device->read_queue != FREE_QUEUE) {
+			loader_unqueue(&(device->read_queue));
 		}
 	} else if (intid & II_ID_THRE) {
-		loader_unqueue(&(serial_devs[index].write_queue));
+		loader_unqueue(&(device->write_queue));
 	}
 }
 
@@ -113,14 +119,29 @@ sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
 		if (C(self)->buffer_free) {
 			loader_enqueue(&(C(self)->read_queue));
 		}
-		
-		sint_32 copied = copy2user(&(C(self)->buffer), buf, 1);
-	
-		if (copied > 0) {
+
+		// Versión buffer circular
+		uint_32 total_bytes;
+		uint_32 tmp_val;
+		if (C(self)->ptr_to > C(self)->ptr_from) {
+			total_bytes = (size < C(self)->ptr_to - C(self)->ptr_from ? size : C(self)->ptr_to - C(self)->ptr_from);
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, total_bytes);
+			C(self)->ptr_from += total_bytes;
+		} else {
+			tmp_val = SERIAL_BUFFER_LENGTH - C(self)->ptr_from;
+			total_bytes = (size < tmp_val + C(self)->ptr_to + 1 ? size : tmp_val + C(self)->ptr_to + 1);
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, tmp_val);
+			C(self)->ptr_from = 0;
+			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf + tmp_val, C(self)->ptr_to);
+			C(self)->ptr_from += C(self)->ptr_to;
+		}
+
+		if (C(self)->ptr_from == C(self)->ptr_to) {
 			C(self)->buffer_free = TRUE;
 		}
-		
-		return copied;
+
+		return total_bytes;
+
 	} else {
 		return size;
 	}
@@ -141,7 +162,7 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 				buf++;
 			}
 		}
-	
+
 		return writed;
 	} else {
 		return -1;
@@ -151,7 +172,7 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 uint_32 serial_flush(chardev* self) {
 	C(self)->klass = CLASS_DEV_NONE;
 	C(self)->read = 0;
-	C(self)->write = 0;	
+	C(self)->write = 0;
 
 	return 0;
 }
@@ -173,6 +194,8 @@ chardev* serial_open(sint_32 index, uint_32 flags) { /* 0 for COM1, 1 for COM2 a
 		serial_devs[index].read_queue = FREE_QUEUE;
 		serial_devs[index].write_queue = FREE_QUEUE;
 		serial_devs[index].buffer_free = TRUE;
+		//serial_devs[index].ptr_from = 0;
+		serial_devs[index].ptr_to = 0;
 
 		return (chardev*) &serial_devs[index];
 	}
@@ -186,6 +209,10 @@ inline void init_serial_dev(uint_32 index, uint_32 io_port) {
 	serial_devs[index].read = 0;
 	serial_devs[index].write = 0;
 	serial_devs[index].seek = 0;
+
+	//serial_devs[index].ptr_from = 0;
+	serial_devs[index].ptr_to = 0;
+
 
 	serial_devs[index].io_port = io_port;
 
@@ -213,6 +240,6 @@ void serial_init() {
 	pic_clear_irq_mask(3);
 
 	init_serial_dev(0, PORT_1);
-	init_serial_dev(1, PORT_2);	
+	init_serial_dev(1, PORT_2);
 }
 

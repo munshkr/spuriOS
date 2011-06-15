@@ -144,10 +144,9 @@ int main(void) {
 
 	uint_32 logo_starting_col = SCREEN_COLS / 2 - LOGO_COLS / 2;
 
-/*
 	// Start
-	while(i_s < 100) {
-		sleep(150);
+	while(i_s < LOGO_ROWS + 5) {
+		sleep(200);
 
 		if (i_s < LOGO_ROWS) {
 			loc_printf(i_s + 5, logo_starting_col, spurios_logo_shine[i_s]);
@@ -158,7 +157,6 @@ int main(void) {
 
 		i_s++;
 	}
-*/
 
 	i_s = 0;
 

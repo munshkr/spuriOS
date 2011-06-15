@@ -158,80 +158,7 @@ void ext2_finally_create(ext2* this) {
 
 	// Listo, el ext2 está cargado
 	this->loaded = TRUE;
-
-	/*
-	ext2_bgd* tmp_bgd = this->bgdt;
-	vga_printf("\n");
-	vga_printf("\\c0FBGDT\n");
-	vga_printf("\\c0F----\n");
-	for (i = 0; i < b_group_count; i++) {
-		print_bgd_entry(tmp_bgd, i);
-		tmp_bgd = (ext2_bgd*)((uint_32)tmp_bgd + sizeof(ext2_bgd));
-	}
-	vga_printf("\n");
-	breakpoint();
-	*/
 }
-
-/*
-void ext2_read_root(ext2* this, uint_32 flags) {
-	if (!this->loaded) {
-		ext2_finally_create(this);
-	}
-	if (flags & FS_OPEN_WR) {
-		return;
-	}
-
-	uint_32 block_size = 1024 << this->sb->s_log_block_size;
-	uint_32 b_group = (ROOT_DIR_INODE - 1) / this->sb->s_inodes_per_group;
-	uint_32 index = (ROOT_DIR_INODE - 1) % this->sb->s_inodes_per_group;
-	uint_32 inode_table = bgdt_entry(this->bgdt, b_group)->bg_inode_table;
-
-	uint_32 inode_starting_byte = inode_table * block_size + index * sizeof(ext2_inode);
-	ext2_inode mi_inodo;
-
-	hdd_enhanced_read(this->dev, inode_starting_byte, &mi_inodo, sizeof(ext2_inode));
-	//print_inode(&mi_inodo, ROOT_DIR_INODE);
-
-	kassert(mi_inodo.i_size <= PAGE_SIZE); // Esto es una prueba, no quiero nada que ocupe más que PAGE_SIZE
-	void* tmp_page = mm_mem_kalloc();
-	memset(tmp_page, 0, mi_inodo.i_size);
-	void* tmp_page_ptr = tmp_page;
-
-
-	uint_32 tmp_size = mi_inodo.i_size;
-	uint_32 bytes_leidos;
-	uint_32 inode_block = 0;
-	while (tmp_size > 0) {
-		bytes_leidos = (tmp_size < block_size ? tmp_size : block_size);
-		hdd_enhanced_read(this->dev, mi_inodo.i_block[inode_block] * block_size, tmp_page_ptr, bytes_leidos);
-		inode_block++;
-		tmp_size -= bytes_leidos;
-		tmp_page_ptr += bytes_leidos;
-	}
-
-	char tmp_name[50];
-	ext2_dir_entry* tmp_entry;
-	tmp_size = 0;
-	tmp_page_ptr = tmp_page;
-	vga_printf("\n");
-	while (tmp_size < mi_inodo.i_size) {
-		tmp_entry = (ext2_dir_entry*)tmp_page_ptr;
-		//print_dir_entry(tmp_entry);
-		memset(tmp_name, 0, 50);
-		memcpy(tmp_entry->name, tmp_name, tmp_entry->name_len);
-		if (tmp_entry->file_type == EXT2_FT_DIR) {
-			vga_printf("\\c0A%s\t", tmp_name);
-		} else {
-			vga_printf("%s\t", tmp_name);
-		}
-		tmp_size += tmp_entry->rec_len;
-		tmp_page_ptr += tmp_entry->rec_len;
-	}
-	vga_printf("\n");
-
-}
-*/
 
 uint_32 str_get_inode(ext2* this, const char* str, uint_32 str_len, uint_32 dir_inode) {
 	if (!this->loaded) {
@@ -469,7 +396,7 @@ sint_32 ext2_file_read(chardev* self, void* buf, uint_32 size) {
 	while(remaining_size > 0) {
 		// Leo lo que puedo del buffer
 		bytes_copiados = (remaining_size < file->buf_len - file->buf_pos ? remaining_size : file->buf_len - file->buf_pos);
-		
+
 		uint_32 effective = copy2user(file->buffer + file->buf_pos, buf, bytes_copiados);
 		if (effective < 0 || effective != bytes_copiados) {
 			return -1;
