@@ -23,7 +23,7 @@ dispositivos como el puerto serie (de apertura exclusiva) jamás hubiesen podido
 ser reabiertos por ningún otro proceso.
 
 Es importante mencionar la implementación de una función `copy2user`
-(acompañada de otras, por ejemplo, para brindar el nivel de privilegio de
+(acompanada de otras, por ejemplo, para brindar el nivel de privilegio de
 cierta dirección virtual) utilizada en todos los char devices. Aún así, sabemos
 que dicha función no es perfecta y no está libre de bugs de seguridad, pero es
 un primer intento (aprovechamos por ejemplo el hecho de que el kernel se
@@ -91,12 +91,13 @@ no ambos al mismo tiempo.
 ### `serial` - Driver del puerto serie
 
 El controlador del puerto serie está conformado por los siguientes componentes:
- * Un handler de interrupción que lee de la placa UART el byte recibido y lo
-escribe en un buffer local.
- * Un buffer circular en el cual se almacenan los bytes recibidos, esperando a
-ser leidos por el usuario.
- * Un puntero que indica la primera posición válida del buffer.
- * Un puntero que indica la última posición válida del buffer.
+
+  * Un handler de interrupción que lee de la placa UART el byte recibido y lo
+    escribe en un buffer local.
+  * Un buffer circular en el cual se almacenan los bytes recibidos, esperando a
+    ser leidos por el usuario.
+  * Un puntero que indica la primera posición válida del buffer.
+  * Un puntero que indica la última posición válida del buffer.
 
 El controlador configura al dispositivo para trabajar por interrupciones y
 declara los handlers para atenderlas. Es la manera que consideramos más
@@ -158,9 +159,9 @@ File System
 
 ### `ext2` - Driver de *ext2*
 
-Decidimos implementar una versión limitada del sistema de archivos `Second
-Extended Filesystem (ext2)` que únicamente lee directorios y archivos,
-ignorando los permisos.
+Decidimos implementar una versión limitada del sistema de archivos *Second
+Extended Filesystem (ext2)* que únicamente lee directorios y archivos, ignorando
+los permisos.
 
 En el driver del block device decidimos almacenar el superbloque y la tabla de
 descriptores de grupos de bloques, ya que para abrir cualquier archivo es
@@ -170,22 +171,23 @@ pedírselo al disco cada vez.
 Vale la pena aclarar que la inicialización del filesystem es `lazy`, es decir,
 realiza una inicialización incompleta y la completa cuando recibe la primera
 solicitud de apertura de archivo. Esto se debe a que la función de lectura del
-driver de disco es bloqueante y pretende encolar a la tarea que lo llama en
-caso de no tener la información disponible de inmediato. En el momento que
-llamamos a la función de inicialización del filesystem, aún no hay tareas
-cargadas en el sistema y de no hacer la inicialización `lazy` el driver de
-disco intentaría bloquear a la IDLE_TASK, resultando en un error.
+driver de disco es bloqueante y pretende encolar a la tarea que lo llama en caso
+de no tener la información disponible de inmediato. En el momento que llamamos a
+la función de inicialización del filesystem, aún no hay tareas cargadas en el
+sistema y de no hacer la inicialización `lazy` el driver de disco intentaría
+bloquear a la IDLE_TASK, resultando en un error.
 
 Los pasos internos a seguir para abrir un archivo fueron los siguientes:
- * Se recibe la ruta absoluta del archivo en el filesystem.
- * Se parsea la ruta de a una barra (`/`) por vez, empezando por root.
- * Cada paso recorrido resulta en un nombre de archivo que se busca en el
- último directorio abierto y en caso de estar presente se continúa con el
- proceso.
- * Si se termina la cadena y se confirma la existencia del archivo buscado, se
- obtiene el inodo de dicho archivo y se lo almacena junto con otra información
- en un nuevo objeto del tipo `ext2_file` que es una extensión del tipo
- `chardev`.
+
+  * Se recibe la ruta absoluta del archivo en el filesystem.
+  * Se parsea la ruta de a una barra (`/`) por vez, empezando por root.
+  * Cada paso recorrido resulta en un nombre de archivo que se busca en el
+    último directorio abierto y en caso de estar presente se continúa con el
+    proceso.
+  * Si se termina la cadena y se confirma la existencia del archivo buscado, se
+    obtiene el inodo de dicho archivo y se lo almacena junto con otra
+    información en un nuevo objeto del tipo `ext2_file` que es una extensión del
+    tipo `chardev`.
 
 El objeto `ext2_file` tiene una particularidad. Implementa un buffer del tamaño
 de una página de memoria que se va llenando desde el dispositivo de bloque a
@@ -195,8 +197,8 @@ medida que se va leyendo el archivo. Pero distingue entre tipos de archivo
 contenido del directorio y se lo escribe en el buffer. Asumimos para esto que
 nunca el contenido de un directorio superará el tamaño de página.
 
-También implementa la función `seek` que en caso de posicionar el puntero en
-una sección no cargada dentro del buffer, se encarga de hacer el prefetch de
+También implementa la función `seek` que en caso de posicionar el puntero en una
+sección no cargada dentro del buffer, se encarga de hacer el prefetch de
 información desde el block device. Es decir, si bien la función seek no lee del
 `chardev`, es posible que dispare una lectura al dispositivo de bloque.
 
