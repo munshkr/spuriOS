@@ -49,8 +49,8 @@ int main() {
 				break;
 			case '\b':
 				if (size > 0) {
-					line_buffer[size] = 0;
 					size--;
+					line_buffer[size] = 0;
 					write(con_fd, &sc, 1);
 				}
 				break;
