@@ -98,7 +98,7 @@ IMG_FLOPPY=$(DIROUT)floppy.img
 IMG_HDD=$(DIROUT)hdd.img
 
 # Documents
-DOC_FILES=$(DIRDOC)tp2-docs.pdf
+DOC_FILES=$(DIRDOC)tp3-docs.pdf
 
 
 .PHONY: all clean
@@ -190,7 +190,7 @@ $(IMG_HDD): $(TASKS) $(TESTS)
 	sudo mkdir -p /tmp/spurios-hdd/tests
 	sudo mkdir -p /tmp/spurios-hdd/doc
 	sudo cp README.md /tmp/spurios-hdd/
-	sudo cp doc/tp2-docs.md /tmp/spurios-hdd/doc/
+	sudo cp doc/*.md /tmp/spurios-hdd/doc/
 	for T in $(TASKS); do sudo cp -f $$T /tmp/spurios-hdd/bin; done;
 	for T in $(TESTS); do sudo cp -f $$T /tmp/spurios-hdd/tests; done;
 	sudo umount /tmp/spurios-hdd
