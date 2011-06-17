@@ -472,6 +472,7 @@ pid run(const char* filename) {
 }
 
 // TODO MM Function (?)
+#define LOADER_TMP_PAGE ((void*) 0xFF800000)
 static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 	uint_32 pd_entry, pt_entry;
 	for (pd_entry = 1; pd_entry < 1024; pd_entry++) { // Starts at 4MB
@@ -480,9 +481,15 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 			mm_page* table = (mm_page*)(father_pdt[pd_entry].base << 12);
 			for (pt_entry = 0; pt_entry < 1024; pt_entry++) {
 				if (table[pt_entry].attr & MM_ATTR_P) {
-					// Do temporal mapping, request new frame and copy,
-					// then map into child_pdt with the same virtual address
-					// and undo temporal mapping.
+					void* frame = mm_mem_alloc();
+					void* virtual = (void*)((pd_entry << 22) + (pt_entry << 12));
+
+					mm_map_frame(frame, virtual, child_pdt,
+						(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+
+					mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
+					memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
+					mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
 				}
 			}
 		}
@@ -510,9 +517,15 @@ pid fork() {
 		.next_empty_page_addr = processes[cur_pid].next_empty_page_addr
 	};
 
-	copy_nonkernel_pages(cur_pdt(), child_pdt);
+//	uint_32* pushed_eax = ((uint_32*) processes[cur_pid].esp) + 6;
+//	*pushed_eax = 55;
 
-	return 0;
+	copy_nonkernel_pages(cur_pdt(), child_pdt);
+	sched_load(child);
+
+	breakpoint();
+
+	return child;
 }
 
 pid getpid() {

@@ -24,7 +24,7 @@ extern loader_tick
 %define SS_U_DATA 0x23
 %define SS_K_DATA 0x10
 
-%define K_STACK_TOP 0xffc00000
+%define K_STACK_TOP 0xff800000
 
 ; == Debug ==
 extern timer_draw_clock

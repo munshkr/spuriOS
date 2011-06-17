@@ -76,6 +76,7 @@ TASKS=\
 	tasks/console.pso \
 	tasks/serial.pso \
 	tasks/screen_saver.pso \
+	tasks/fork.pso \
 
 TASKS_ELF:=$(TASKS:.pso=.elf)
 OBJS_TASKS:=$(TASKS:.pso=.o) tasks/pso_head.o tasks/pso_tail.o tasks/syscalls.o tasks/lib.o

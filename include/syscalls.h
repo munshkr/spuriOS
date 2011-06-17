@@ -12,14 +12,15 @@
 #define SYS_SLEEP		5
 #define SYS_LOCPRINT	6
 #define SYS_RUN			7
+#define SYS_FORK		8
 #define SYS_LOCPRINTALPHA	50
 
 /* Device */
-#define SYS_OPEN	8
-#define SYS_CLOSE	9
-#define SYS_READ	10
-#define SYS_WRITE	11
-#define SYS_SEEK	12
+#define SYS_OPEN	30
+#define SYS_CLOSE	31
+#define SYS_READ	32
+#define SYS_WRITE	33
+#define SYS_SEEK	34
 
 #ifdef __KERNEL__
 
@@ -38,6 +39,7 @@ void exit(void);
 void* palloc(void);
 
 sint_32 run(const char* filename);
+sint_32 fork();
 
 /* Deprecated */
 int loc_printf(uint_32 row, uint_32 col, const char* format, ...);// __attribute__ ((format (printf, 3, 4)));
