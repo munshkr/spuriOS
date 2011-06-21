@@ -6,6 +6,7 @@
 #include <serial.h>
 #include <hdd.h>
 #include <fs.h>
+#include <pipe.h>
 
 extern pid cur_pid;
 
@@ -55,6 +56,7 @@ inline void init_dev_modules() {
 	serial_init();
 	hdd_init();
 	fs_init();
+	pipe_init();
 }
 
 void device_init(void) {
