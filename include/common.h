@@ -18,8 +18,8 @@
 #define IDLE_PID 0
 
 #define TASK_DEFAULT_EFLAGS 0x202	// IF flag set
-#define TASK_U_STACK_ADDRESS 0xffbfe000
-#define TASK_K_STACK_ADDRESS 0xffbff000
+#define TASK_U_STACK_ADDRESS 0xff7fe000
+#define TASK_K_STACK_ADDRESS 0xff7ff000
 
 #include <tipos.h>
 

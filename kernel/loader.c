@@ -108,6 +108,30 @@ uint_32 data_pages_needed_for(pso_file* f) {
 	return pages;
 }
 
+#define STACK_TOP 1023
+inline void create_kernel_stack(uint_32* stack, uint_32 eflags, uint_32 eip) {
+	stack[STACK_TOP] = eflags;
+	stack[STACK_TOP - 1] = SS_K_CODE; // CS
+	stack[STACK_TOP - 2] = eip;
+	stack[STACK_TOP - 3] = (uint_32) task_init; // task_swith ret EIP
+	stack[STACK_TOP - 8] = (uint_32)(TASK_K_STACK_ADDRESS + (STACK_TOP - 4)  * 4); // ESP
+	stack[STACK_TOP - 9] = (uint_32)(TASK_K_STACK_ADDRESS + (STACK_TOP - 1) * 4); // EBP
+}
+
+inline void create_user_stack(uint_32* stack, uint_32 eflags, uint_32 eip, uint_32 user_esp) {
+	stack[STACK_TOP] = SS_U_DATA | PL_USER; // SS (USER)
+	stack[STACK_TOP - 1] = user_esp;
+	stack[STACK_TOP - 2] = eflags;
+	stack[STACK_TOP - 3] = SS_U_CODE | PL_USER; // CS (USER)
+	stack[STACK_TOP - 4] = eip;
+	stack[STACK_TOP - 5] = (uint_32) task_init; // task_swith ret EIP
+	stack[STACK_TOP - 10] = (uint_32)(TASK_K_STACK_ADDRESS + 1017 * 4); // ESP
+	stack[STACK_TOP - 11] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
+}
+
+#define K_IN_SWITCH_ESP ((uint_32)(TASK_K_STACK_ADDRESS + 1012 * 4))
+#define U_IN_SWITCH_ESP ((uint_32)(TASK_K_STACK_ADDRESS + 1010 * 4))
+#define U_STACK_BOTTOM ((uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4))
 inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pdt,
 	uint_32 pl, void* temp_page, pcb_t* new_proc) {
 
@@ -118,31 +142,13 @@ inline void create_stacks_for(pso_file* f, mm_page* current_pdt, mm_page* new_pd
 	memset(temp_page, 0, PAGE_SIZE);
 
 	if (pl == PL_KERNEL) {
-		((uint_32*) temp_page)[1023] = TASK_DEFAULT_EFLAGS; // EFLAGS
-		((uint_32*) temp_page)[1022] = SS_K_CODE; // CS
-		((uint_32*) temp_page)[1021] = (uint_32) f->_main; // EIP
-		((uint_32*) temp_page)[1020] = (uint_32) task_init; // task_swith ret EIP
-
-		((uint_32*) temp_page)[1015] = (uint_32)(TASK_K_STACK_ADDRESS + 1019 * 4); // ESP
-		((uint_32*) temp_page)[1014] = (uint_32)(TASK_K_STACK_ADDRESS + 1022 * 4); // EBP
-
-		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1012 * 4); // "In switch" ESP
+		create_kernel_stack((uint_32*) temp_page, TASK_DEFAULT_EFLAGS, (uint_32) f->_main);
+		new_proc->esp = K_IN_SWITCH_ESP;
 	} else {
 		void* user_stack_frame = mm_mem_alloc();
 		mm_map_frame(user_stack_frame, (void*) TASK_U_STACK_ADDRESS, new_pdt, PL_USER);
-
-		((uint_32*) temp_page)[1023] = SS_U_DATA | PL_USER; // SS (USER)
-		((uint_32*) temp_page)[1022] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // USER ESP
-
-		((uint_32*) temp_page)[1021] = TASK_DEFAULT_EFLAGS; // EFLAGS
-		((uint_32*) temp_page)[1020] = SS_U_CODE | PL_USER; // CS (USER)
-		((uint_32*) temp_page)[1019] = (uint_32) f->_main; // EIP
-		((uint_32*) temp_page)[1018] = (uint_32) task_init; // task_swith ret EIP
-
-		((uint_32*) temp_page)[1013] = (uint_32)(TASK_K_STACK_ADDRESS + 1017 * 4); // ESP
-		((uint_32*) temp_page)[1012] = (uint_32)(TASK_U_STACK_ADDRESS + 1024 * 4); // EBP (USER)
-
-		new_proc->esp = (uint_32)(TASK_K_STACK_ADDRESS + 1010 * 4); // "In switch" ESP
+		create_user_stack((uint_32*) temp_page, TASK_DEFAULT_EFLAGS, (uint_32) f->_main, U_STACK_BOTTOM);
+		new_proc->esp = U_IN_SWITCH_ESP;
 	}
 
 }
@@ -279,18 +285,12 @@ void loader_sleep(uint_32 time) {
 		return;
 	}
 
-	//loader_print_raw_sleeping();
-	//loader_print_sleeping();
-	//breakpoint();
-
 	if (first_slept == FREE_PCB_PID) {
-//		breakpoint();
 		first_slept = cur_pid;
 		sleeping[cur_pid].id = cur_pid;
 		sleeping[cur_pid].time = time;
 		sleeping[cur_pid].next = FREE_PCB_PID;
 	} else {
-//		breakpoint();
 		tmp_slept = first_slept;
 		while (tmp_slept != FREE_PCB_PID) {
 			if (sleeping[tmp_slept].time < time) {
@@ -298,26 +298,20 @@ void loader_sleep(uint_32 time) {
 			} else {
 				break;
 			}
-//			breakpoint();
 			prev_slept = tmp_slept;
 			tmp_slept = sleeping[tmp_slept].next;
 		}
 		if (tmp_slept == FREE_PCB_PID) {
-//			breakpoint();
 			sleeping[prev_slept].next = cur_pid;
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = FREE_PCB_PID;
 		} else {
-//			breakpoint();
 			if (prev_slept == FREE_PCB_PID) {
-//				breakpoint();
 				first_slept = cur_pid;
 			} else {
-//				breakpoint();
 				sleeping[prev_slept].next = cur_pid;
 			}
-//			breakpoint();
 			sleeping[cur_pid].id = cur_pid;
 			sleeping[cur_pid].time = time;
 			sleeping[cur_pid].next = tmp_slept;
@@ -481,6 +475,84 @@ pid run(const char* filename) {
 	free_run_resources(start_vaddr, needed_pages + 1, fd);
 
 	return pid;
+}
+
+// TODO MM Function (?)
+#define LOADER_TMP_PAGE ((void*) 0xFF800000)
+static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
+	uint_32 pd_entry, pt_entry;
+	for (pd_entry = 1; pd_entry < 1024; pd_entry++) { // Starts at 4MB
+		if (father_pdt[pd_entry].attr & MM_ATTR_P) {
+
+			mm_page* table = (mm_page*)(father_pdt[pd_entry].base << 12);
+			for (pt_entry = 0; pt_entry < 1024; pt_entry++) {
+				if (table[pt_entry].attr & MM_ATTR_P) {
+					void* virtual = (void*)((pd_entry << 22) + (pt_entry << 12));
+
+					// We do not copy this page here
+					if (virtual == (void*) TASK_K_STACK_ADDRESS) continue;
+
+					void* frame = mm_mem_alloc();
+					mm_map_frame(frame, virtual, child_pdt,
+						(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+
+					mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
+					memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
+					mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+				}
+			}
+		}
+	}
+
+}
+
+static void create_child_kernel_stack(mm_page* father_pdt, mm_page* child_pdt) {
+	void* frame = mm_mem_alloc();
+	mm_map_frame(frame, (void*) TASK_K_STACK_ADDRESS, child_pdt, PL_KERNEL);
+
+	uint_32* stack = (uint_32*) TASK_K_STACK_ADDRESS;
+	uint_32 eip, eflags, user_esp;
+
+	eip = stack[STACK_TOP - 4];
+	eflags = stack[STACK_TOP - 2];
+	user_esp = stack[STACK_TOP - 1];
+
+	mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
+	create_user_stack((uint_32*) LOADER_TMP_PAGE, eflags, eip, user_esp);
+	mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+}
+
+pid fork() {
+	// Current process cannot be in any waiting queue
+	kassert(processes[cur_pid].prev == FREE_QUEUE &&
+		processes[cur_pid].next == FREE_QUEUE);
+
+	// Current process cannot be a kernel process
+	kassert(processes[cur_pid].privilege_level == PL_USER);
+
+	pid child = get_new_pid();
+	mm_page* child_pdt = mm_dir_new();
+
+	processes[child] = (pcb_t) {
+		.id = child,
+		.cr3 = (uint_32) child_pdt,
+
+		.prev = FREE_QUEUE,
+		.next = FREE_QUEUE,
+
+		.privilege_level = processes[cur_pid].privilege_level,
+		.esp = (processes[cur_pid].privilege_level == PL_KERNEL ?
+			K_IN_SWITCH_ESP : U_IN_SWITCH_ESP),
+		.next_empty_page_addr = processes[cur_pid].next_empty_page_addr
+	};
+
+	copy_nonkernel_pages(cur_pdt(), child_pdt);
+	create_child_kernel_stack(cur_pdt(), child_pdt);
+	device_copy_fds(cur_pid, child);
+
+	sched_load(child);
+
+	return child;
 }
 
 pid getpid() {

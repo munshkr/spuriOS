@@ -60,6 +60,9 @@ static void syscalls_handler(registers_t* regs) {
 		case SYS_RUN:
 			regs->eax = run((const char*) regs->ebx);
 			break;
+		case SYS_FORK:
+			regs->eax = fork();
+			break;
 		default:
 			vga_printf("Invalid system call! Exited");
 			exit();
@@ -144,6 +147,12 @@ int seek(int fd, uint_32 size) {
 sint_32 run(const char* filename) {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_RUN), "b" (filename));
+	return ret;
+}
+
+sint_32 fork() {
+	uint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_FORK));
 	return ret;
 }
 
