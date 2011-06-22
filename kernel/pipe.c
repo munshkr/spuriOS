@@ -2,12 +2,18 @@
 #include <errors.h>
 #include <debug.h>
 #include <common.h>
-
-#define C(x) ((pipe_device*) x)
-#define MAX_PIPES MAX_FD
+#include <lib.h>
 
 #define BUFFER_SIZE 4096
+#define MAX_PIPES MAX_FD
 #define MAX_ENDPOINTS (MAX_PIPES * 2)
+
+#define C(x) ((pipe_device*) x)
+#define PAIR(x) (C(&C(x)->pair))
+#define IS_READABLE(x) (C(x)->read != NULL)
+#define IS_WRITABLE(x) (C(x)->write != NULL)
+#define IS_EMPTY(x) (C(self)->bytes_available == 0)
+#define IS_FULL(x) (C(self)->bytes_available == BUFFER_SIZE)
 
 
 typedef struct str_pipe {
@@ -18,20 +24,20 @@ typedef struct str_pipe {
 	chardev_write_t* write;
 	chardev_seek_t* seek;
 
-	sint_8* buffer;
-	uint_32 read_pos;
-	uint_32 write_pos;
-	pid read_queue;
-	pid write_queue;
-
 	void* pair;
+	sint_8* buffer;
+
+	// XXX `bytes_available` must always be updated on both endpoints
+	uint_32 bytes_available;
+
+	uint_32 pos;
+	pid queue;
 } __attribute__((packed)) pipe_device;
 
 pipe_device endpoints[MAX_ENDPOINTS];
 
 
 static inline void init_endpoint(pipe_device* p);
-static inline uint_32 bytes_available(pipe_device* p);
 
 
 void pipe_init(void) {
@@ -84,29 +90,32 @@ sint_32 pipe_open(chardev* pipes[2]) {
 
 sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 	uint_32 sz = 0;
-	uint_32 available;
 
 	while (sz < size) {
-		available = bytes_available(C(self));
-		if (!available) {
-			loader_enqueue(&(C(self)->read_queue));
+		if (PAIR(self)->klass == CLASS_DEV_NONE) {
+			return 0;  // Broken pipe!
+		}
 
-			if (C(C(self)->pair)->klass == CLASS_DEV_NONE) {
-				return 0;  // Broken pipe!
-			}
+		if (IS_EMPTY(self)) {
+			loader_enqueue(&(C(self)->queue));
 			continue;
 		}
 
-		uint_32 eff_size = MIN(available, size - sz);
+		uint_32 eff_size = MIN(C(self)->bytes_available, size - sz);
 
-		if (C(self)->read_pos + eff_size > BUFFER_SIZE) {
-			uint_32 tmp = BUFFER_SIZE - C(self)->read_pos;
-			copy2user(&(C(self)->buffer[C(self)->read_pos]), buf, tmp);
+		if (C(self)->pos + eff_size > BUFFER_SIZE) {
+			uint_32 tmp = BUFFER_SIZE - C(self)->pos;
+			copy2user(&(C(self)->buffer[C(self)->pos]), buf, tmp);
 			copy2user(&(C(self)->buffer[0]), buf, eff_size - tmp);
 		} else {
-			copy2user(&(C(self)->buffer[C(self)->read_pos]), buf, eff_size);
+			copy2user(&(C(self)->buffer[C(self)->pos]), buf, eff_size);
 		}
-		C(self)->read_pos = (C(self)->read_pos + eff_size) % BUFFER_SIZE;
+
+		C(self)->pos = (C(self)->pos + eff_size) % BUFFER_SIZE;
+
+		C(self)->bytes_available -= eff_size;
+		PAIR(self)->bytes_available -= eff_size;
+
 		sz += eff_size;
 	}
 
@@ -121,13 +130,13 @@ uint_32 pipe_flush(chardev* self) {
 	C(self)->klass = CLASS_DEV_NONE;
 
 	// Unblock all processes waiting on the other endpoint
-	pid queue = (!C(self)->write) ? C(self)->write_queue : C(self)->read_queue;
+	pid queue = PAIR(self)->queue;
 	while (queue != FREE_QUEUE) {
 		loader_unqueue(&queue);
 	}
 
 	// Free buffer if both endpoints are gone now
-	if (C(&C(self)->pair)->klass == CLASS_DEV_NONE) {
+	if (PAIR(self)->klass == CLASS_DEV_NONE) {
 		mm_mem_free(C(self)->buffer);
 	}
 
@@ -145,21 +154,8 @@ static inline void init_endpoint(pipe_device* p) {
 	p->seek = NULL;
 
 	p->buffer = NULL;
-	p->read_pos = 0;
-	p->write_pos = 0;
-	p->read_queue = FREE_QUEUE;
-	p->write_queue = FREE_QUEUE;
+	p->bytes_available = 0;
+	p->pos = 0;
+	p->queue = FREE_QUEUE;
 	p->pair = NULL;
-}
-
-static inline uint_32 bytes_available(pipe_device* p) {
-	kassert(p->read_pos < BUFFER_SIZE);
-	kassert(p->write_pos < BUFFER_SIZE);
-
-	uint_32 bytes = p->write_pos - p->read_pos;
-	if (p->read_pos > p->write_pos) {
-		bytes += BUFFER_SIZE - 1;
-	}
-
-	return bytes;
 }
