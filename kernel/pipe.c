@@ -91,7 +91,7 @@ sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 		if (!available) {
 			loader_enqueue(&(C(self)->read_queue));
 
-			if (self->klass == CLASS_DEV_NONE) {
+			if (C(C(self)->pair)->klass == CLASS_DEV_NONE) {
 				return 0;  // Broken pipe!
 			}
 			continue;
@@ -118,6 +118,8 @@ sint_32 pipe_write(chardev* self, const void* buf, uint_32 size) {
 }
 
 uint_32 pipe_flush(chardev* self) {
+	C(self)->klass = CLASS_DEV_NONE;
+
 	// Unblock all processes waiting on the other endpoint
 	pid queue = (!C(self)->write) ? C(self)->write_queue : C(self)->read_queue;
 	while (queue != FREE_QUEUE) {
@@ -129,7 +131,6 @@ uint_32 pipe_flush(chardev* self) {
 		mm_mem_free(C(self)->buffer);
 	}
 
-	C(self)->klass = CLASS_DEV_NONE;
 	return 0;
 }
 
