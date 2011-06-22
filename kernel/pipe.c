@@ -123,7 +123,37 @@ sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 }
 
 sint_32 pipe_write(chardev* self, const void* buf, uint_32 size) {
-	return 0;
+	uint_32 sz = 0;
+
+	while (sz < size) {
+		if (PAIR(self)->klass == CLASS_DEV_NONE) {
+			return 0;  // Broken pipe!
+		}
+
+		if (IS_FULL(self)) {
+			loader_enqueue(&(C(self)->queue));
+			continue;
+		}
+
+		uint_32 eff_size = MIN(C(self)->bytes_available, size - sz);
+
+		if (C(self)->pos + eff_size > BUFFER_SIZE) {
+			uint_32 tmp = BUFFER_SIZE - C(self)->pos;
+			memcpy(buf, &(C(self)->buffer[C(self)->pos]), tmp);
+			memcpy(buf, &(C(self)->buffer[0]), eff_size - tmp);
+		} else {
+			memcpy(buf, &(C(self)->buffer[C(self)->pos]), eff_size);
+		}
+
+		C(self)->pos = (C(self)->pos + eff_size) % BUFFER_SIZE;
+
+		C(self)->bytes_available += eff_size;
+		PAIR(self)->bytes_available += eff_size;
+
+		sz += eff_size;
+	}
+
+	return sz;
 }
 
 uint_32 pipe_flush(chardev* self) {
