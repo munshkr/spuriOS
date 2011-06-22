@@ -21,7 +21,8 @@ typedef struct str_pipe {
 	sint_8* buffer;
 	uint_32 read_pos;
 	uint_32 write_pos;
-	pid queue;
+	pid read_queue;
+	pid write_queue;
 } __attribute__((packed)) pipe_device;
 
 pipe_device endpoints[MAX_ENDPOINTS];
@@ -82,7 +83,7 @@ sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 	while (sz < size) {
 		available = bytes_available(C(self));
 		if (!available) {
-			loader_enqueue(&(C(self)->queue));
+			loader_enqueue(&(C(self)->read_queue));
 
 			if (self->klass == CLASS_DEV_NONE) {
 				return 0;  // Broken pipe!
@@ -127,7 +128,8 @@ static inline void init_endpoint(pipe_device* p) {
 	p->buffer = NULL;
 	p->read_pos = 0;
 	p->write_pos = 0;
-	p->queue = FREE_QUEUE;
+	p->read_queue = FREE_QUEUE;
+	p->write_queue = FREE_QUEUE;
 }
 
 static inline uint_32 bytes_available(pipe_device* p) {
