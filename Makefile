@@ -204,7 +204,7 @@ doc/%.pdf: doc/%.md
 
 # Otros
 clean:
-	rm -f $(IMG_HDD) $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(SYMBOLS_FILES) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf)
+	rm -f $(IMG_HDD) $(BIN_KERN) $(IMG_FLOPPY) $(IMG_BASE) $(OBJS_KERN) $(DUMP_KERN) $(SYM_KERN) $(SYMBOLS_FILES) $(OBJS_TASKS) $(TASKS) $(TASKS:.pso=.elf) $(OBJS_TESTS) $(TESTS) $(TESTS:.pso=.elf)
 	#rm -f deps
 
 # Dependencias
