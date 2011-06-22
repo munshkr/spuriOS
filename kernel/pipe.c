@@ -118,6 +118,18 @@ sint_32 pipe_write(chardev* self, const void* buf, uint_32 size) {
 }
 
 uint_32 pipe_flush(chardev* self) {
+	// Unblock all processes waiting on the other endpoint
+	pid queue = (!C(self)->write) ? C(self)->write_queue : C(self)->read_queue;
+	while (queue != FREE_QUEUE) {
+		loader_unqueue(&queue);
+	}
+
+	// Free buffer if both endpoints are gone now
+	if (C(&C(self)->pair)->klass == CLASS_DEV_NONE) {
+		mm_mem_free(C(self)->buffer);
+	}
+
+	C(self)->klass = CLASS_DEV_NONE;
 	return 0;
 }
 
