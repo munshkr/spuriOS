@@ -11,8 +11,6 @@ sint_32 pipe_write(chardev* self, const void* buf, uint_32 size);
 uint_32 pipe_flush(chardev* self);
 
 // Syscalls
-/*
-int pipe(int pipes[2]);
-*/
+sint_32 pipe(sint_32 pipes[2]);
 
 #endif

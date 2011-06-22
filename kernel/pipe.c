@@ -173,6 +173,20 @@ uint_32 pipe_flush(chardev* self) {
 	return 0;
 }
 
+sint_32 pipe(sint_32 pipes[2]) {
+	chardev* pipe_devs[2];
+	sint_32 res = pipe_open(pipe_devs);
+
+	if (res) {
+		return res;
+	} else {
+		pipes[0] = device_descriptor(pipe_devs[0]);
+		pipes[1] = device_descriptor(pipe_devs[1]);
+		return 0;
+	}
+}
+
+
 static inline void init_endpoint(pipe_device* p) {
 	kassert(p->klass == CLASS_DEV_NONE);
 

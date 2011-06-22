@@ -11,6 +11,7 @@
 #include <debug.h>
 #include <fs.h>
 #include <device.h>
+#include <pipe.h>
 
 static void syscalls_handler(registers_t*);
 
@@ -62,6 +63,9 @@ static void syscalls_handler(registers_t* regs) {
 			break;
 		case SYS_FORK:
 			regs->eax = fork();
+			break;
+		case SYS_PIPE:
+			regs->eax = pipe((sint_32*) regs->ebx);
 			break;
 		default:
 			vga_printf("Invalid system call! Exited");
@@ -153,6 +157,12 @@ sint_32 run(const char* filename) {
 sint_32 fork() {
 	uint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_FORK));
+	return ret;
+}
+
+sint_32 pipe(sint_32 pipes[2]) {
+	sint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_PIPE), "b" (pipes));
 	return ret;
 }
 
