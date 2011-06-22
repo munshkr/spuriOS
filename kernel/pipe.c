@@ -64,10 +64,12 @@ sint_32 pipe_open(chardev* pipes[2]) {
 
 	init_endpoint(&endpoints[in]);
 	endpoints[in].buffer = buffer;
+	endpoints[in].read = pipe_read;
 	pipes[0] = (chardev*) &endpoints[in];
 
 	init_endpoint(&endpoints[out]);
 	endpoints[out].buffer = buffer;
+	endpoints[out].write = pipe_write;
 	pipes[1] = (chardev*) &endpoints[out];
 
 	return 0;
@@ -118,8 +120,8 @@ static inline void init_endpoint(pipe_device* p) {
 	p->klass = CLASS_DEV_PIPE;
 	p->refcount = 0;
 	p->flush = pipe_flush;
-	p->read = pipe_read;
-	p->write = pipe_write;
+	p->read = NULL;
+	p->write = NULL;
 	p->seek = NULL;
 
 	p->buffer = NULL;
