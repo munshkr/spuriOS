@@ -23,6 +23,8 @@ typedef struct str_pipe {
 	uint_32 write_pos;
 	pid read_queue;
 	pid write_queue;
+
+	void* pair;
 } __attribute__((packed)) pipe_device;
 
 pipe_device endpoints[MAX_ENDPOINTS];
@@ -63,15 +65,19 @@ sint_32 pipe_open(chardev* pipes[2]) {
 	sint_8* buffer = mm_mem_kalloc();
 	if (!buffer) return -ENOMEM;
 
-	init_endpoint(&endpoints[in]);
-	endpoints[in].buffer = buffer;
-	endpoints[in].read = pipe_read;
-	pipes[0] = (chardev*) &endpoints[in];
+	pipe_device* p = &endpoints[in];
+	init_endpoint(p);
+	p->buffer = buffer;
+	p->read = pipe_read;
+	p->pair = (void*) &endpoints[out];
+	pipes[0] = (chardev*) p;
 
-	init_endpoint(&endpoints[out]);
-	endpoints[out].buffer = buffer;
-	endpoints[out].write = pipe_write;
-	pipes[1] = (chardev*) &endpoints[out];
+	p = &endpoints[out];
+	init_endpoint(p);
+	p->buffer = buffer;
+	p->write = pipe_write;
+	p->pair = (void*) &endpoints[in];
+	pipes[1] = (chardev*) p;
 
 	return 0;
 }
@@ -130,6 +136,7 @@ static inline void init_endpoint(pipe_device* p) {
 	p->write_pos = 0;
 	p->read_queue = FREE_QUEUE;
 	p->write_queue = FREE_QUEUE;
+	p->pair = NULL;
 }
 
 static inline uint_32 bytes_available(pipe_device* p) {
