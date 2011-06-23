@@ -9,7 +9,7 @@
 #define MAX_ENDPOINTS (MAX_PIPES * 2)
 
 #define C(x) ((pipe_device*) x)
-#define PAIR(x) (C(&C(x)->pair))
+#define PAIR(x) (C(C(x)->pair))
 #define IS_READABLE(x) (C(x)->read != NULL)
 #define IS_WRITABLE(x) (C(x)->write != NULL)
 #define IS_EMPTY(x) (C(self)->bytes_available == 0)
