@@ -51,15 +51,16 @@ void pipe_init(void) {
 
 sint_32 pipe_open(chardev* pipes[2]) {
 	bool done = FALSE;
-	uint_32 i, in, out;
+	sint_32 i, in, out;
 
-	for (i = 0, in = -1, out = -1; done || (i < MAX_ENDPOINTS); i++) {
+	for (i = 0, in = -1, out = -1; i < MAX_ENDPOINTS; i++) {
 		if (endpoints[i].klass == CLASS_DEV_NONE) {
 			if (in < 0) {
 				in = i;
 			} else if (out < 0) {
 				out = i;
 				done = TRUE;
+				break;
 			}
 		}
 	}
