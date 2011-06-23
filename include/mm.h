@@ -23,6 +23,10 @@
 
 #define MM_ATTR_USR   0xE00 // bits for kernel
 
+#define MM_ATTR_USR_SHARED 0x200
+//#define MM_ATTR_USR_2 0x400
+//#define MM_ATTR_USR_3 0x800
+
 /* Control Register flags */
 #define CR0_PE		0x00000001	// Protection Enable
 #define CR0_MP		0x00000002	// Monitor coProcessor

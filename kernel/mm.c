@@ -377,3 +377,13 @@ void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 
 	mm_init_kernel_pagetable();	
 }
+
+sint_32 mm_share_page(void* vaddr) {
+	mm_page* entry = mm_pt_entry_for(vaddr, (mm_page*) processes[cur_pid].cr3);
+	if (entry == NULL || !(entry->attr && MM_ATTR_P)) {
+		return -1;
+	} else {
+		entry->attr |= MM_ATTR_USR_SHARED;
+		return 0;
+	}
+}
