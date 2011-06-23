@@ -183,7 +183,7 @@ $(IMG_FLOPPY): $(BIN_BOOT) $(BIN_KERN) $(IMG_BASE)
 	mcopy -obi $@ $(BIN_KERN) ::kernel.bin
 	#for T in $(TASKS); do mcopy -obi $@ $$T ::`basename $$T`; done;
 
-$(IMG_HDD): $(TASKS) $(TESTS)
+$(IMG_HDD): $(TASKS) $(TESTS) $(BIN_KERN)
 	rm -f $(IMG_HDD)
 	bximage -q -hd -mode=flat -size=10 $@ >/dev/null
 	mkfs.ext2 -F -L SpuriOS $@ > /dev/null
@@ -194,6 +194,7 @@ $(IMG_HDD): $(TASKS) $(TESTS)
 	sudo mkdir -p /tmp/spurios-hdd/doc
 	sudo cp README.md /tmp/spurios-hdd/
 	sudo cp doc/*.md /tmp/spurios-hdd/doc/
+	sudo cp $(BIN_KERN) /tmp/spurios-hdd/
 	for T in $(TASKS); do sudo cp -f $$T /tmp/spurios-hdd/bin; done;
 	for T in $(TESTS); do sudo cp -f $$T /tmp/spurios-hdd/tests; done;
 	sudo umount /tmp/spurios-hdd
