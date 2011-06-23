@@ -492,13 +492,18 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 					// We do not copy this page here
 					if (virtual == (void*) TASK_K_STACK_ADDRESS) continue;
 
-					void* frame = mm_mem_alloc();
-					mm_map_frame(frame, virtual, child_pdt,
-						(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+					if (table[pt_entry].attr & MM_ATTR_USR_SHARED) {
+						void* frame = (void*) table[pt_entry].base << 12;
+						mm_map_frame(frame, virtual, child_pdt, table[pt_entry].attr);
+					} else {
+						void* frame = mm_mem_alloc();
+						mm_map_frame(frame, virtual, child_pdt,
+							(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
 
-					mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
-					memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
-					mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+						mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
+						memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
+						mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+					}
 				}
 			}
 		}
