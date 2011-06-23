@@ -6,6 +6,7 @@
 #include <vga.h>
 #include <mmap.h>
 #include <loader.h>
+#include <idt.h>
 
 #define PAGE_SIZE 4096
 #define HIMEM_BEGIN 0x100000
@@ -366,6 +367,25 @@ inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) 
 	mm_mark_used(mmap_addr, last_valid_entry);
 }
 
+#define PF_PRESENT	1
+#define PF_WRITE	2
+#define PF_USER		4
+#define PF_RSVD		8
+#define PF_FETCH	16
+static void page_fault_handler(registers_t* regs) {
+	if (regs->u.err_code & PF_USER) {
+		vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
+			(regs->u.err_code & PF_WRITE ? "write" :
+			(regs->u.err_code & PF_FETCH ? "fetch" : "read")),
+			rcr2(),
+			(regs->u.err_code & PF_PRESENT ? "present" : "non present"),
+			cur_pid);
+		loader_exit();
+	} else {
+		debug_kernelpanic(regs);
+	}
+}
+
 void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	debug_log("initializing memory management");
 
@@ -376,4 +396,8 @@ void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	mm_setup_bitmap(mmap_addr, mmap_entries_local);
 
 	mm_init_kernel_pagetable();	
+
+	idt_register(ISR_PGFLT, page_fault_handler, PL_KERNEL);
+
 }
+
