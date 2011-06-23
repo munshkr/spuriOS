@@ -14,6 +14,9 @@ void device_copy_fds(pid source, pid dest) {
 	fd_t fd = 0;
 	for (fd = 0; fd < MAX_FD; fd++) {
 		devices[dest][fd] = devices[source][fd];
+		if (devices[dest][fd]) {
+			devices[dest][fd]->refcount++;
+		}
 	}
 }
 
