@@ -67,6 +67,9 @@ static void syscalls_handler(registers_t* regs) {
 		case SYS_PIPE:
 			regs->eax = pipe((sint_32*) regs->ebx);
 			break;
+		case SYS_SHARE_PAGE:
+			regs->eax = share_page((void*) regs->ebx);
+			break;
 		default:
 			vga_printf("Invalid system call! Exited");
 			exit();
@@ -163,6 +166,12 @@ sint_32 fork() {
 sint_32 pipe(sint_32 pipes[2]) {
 	sint_32 ret;
 	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_PIPE), "b" (pipes));
+	return ret;
+}
+
+sint_32 share_page(void* addr) {
+	sint_32 ret;
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_SHARE_PAGE), "b" (addr));
 	return ret;
 }
 

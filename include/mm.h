@@ -85,6 +85,7 @@ void mm_dir_free(mm_page* d);
 
 /* Syscalls */
 void* palloc();
+sint_32 share_page(void* vaddr);
  
 /* Auxiliares */
 void set_bit(int offset);

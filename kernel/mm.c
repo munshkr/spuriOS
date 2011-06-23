@@ -387,3 +387,7 @@ sint_32 mm_share_page(void* vaddr) {
 		return 0;
 	}
 }
+
+sint_32 share_page(void* vaddr) {
+	return mm_share_page(vaddr);
+}
