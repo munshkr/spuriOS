@@ -136,7 +136,7 @@ sint_32 pipe_write(chardev* self, const void* buf, uint_32 size) {
 			continue;
 		}
 
-		uint_32 eff_size = MIN(C(self)->bytes_available, size - sz);
+		uint_32 eff_size = MIN(BUFFER_SIZE - C(self)->bytes_available, size - sz);
 
 		if (C(self)->pos + eff_size > BUFFER_SIZE) {
 			uint_32 tmp = BUFFER_SIZE - C(self)->pos;
