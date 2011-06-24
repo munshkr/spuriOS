@@ -34,6 +34,30 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 	return sz_write;
 }
 
+// Semaphores
+sem_t sem_open() {
+	sem_t res;
+	pipe(res.pipes);
+	return res;
+}
+
+sint_32 sem_close(sem_t* sem) {
+	sint_32 res = 0;
+	res += close(sem->pipes[0]);
+	res += close(sem->pipes[1]);
+	return res;
+}
+
+void sem_signal(sem_t* sem, uint_32 count) {
+	char buffer[count];
+	write(sem->pipes[1], buffer, count);
+}
+
+void sem_wait(sem_t* sem, uint_32 count) {
+	char buffer[count];
+	read(sem->pipes[0], buffer, count);
+}
+
 #endif
 
 sint_32 sprintf(char* buffer, const char* format, ...) {

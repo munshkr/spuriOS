@@ -27,6 +27,15 @@ void memset(void* addr, int value, size_t size);
 
 sint_32 fprintf(fd_t file, const char* format, ...);
 
+typedef struct str_sem_t {
+	sint_32 pipes[2];
+} sem_t;
+
+sem_t sem_open();
+sint_32 sem_close(sem_t* sem);
+void sem_signal(sem_t* sem, uint_32 count);
+void sem_wait(sem_t* sem, uint_32 count);
+
 #endif
 
 #endif // __LIB_H__
