@@ -393,7 +393,7 @@ void free_run_resources(void* start_vaddr, uint_32 page_count, fd_t fd) {
 	void* cur_vaddr = start_vaddr;
 
 	for (i = 0; i < page_count; i++) {
-		void* frame = mm_frame_from_page(cur_vaddr, pdt);	
+		void* frame = mm_frame_from_page(cur_vaddr, pdt);
 		mm_unmap_page(cur_vaddr, pdt);
 		mm_mem_free(frame);
 		cur_vaddr += PAGE_SIZE;
@@ -422,7 +422,7 @@ pid run(const char* filename) {
 	uint_32 readed = 0;
 	while (readed < sizeof(pso_file)) {
 		uint_32 actually_readed = read(fd, copy_pointer, sizeof(pso_file) - readed);
- 
+
 		if (actually_readed > 0) {
 			copy_pointer += actually_readed;
 			readed += actually_readed;
@@ -461,7 +461,7 @@ pid run(const char* filename) {
 	// READ
 	while (readed < effective_bytes) {
 		uint_32 actually_readed = read(fd, copy_pointer, effective_bytes - readed);
- 
+
 		if (actually_readed > 0) {
 			copy_pointer += actually_readed;
 			readed += actually_readed;
@@ -493,7 +493,7 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 					if (virtual == (void*) TASK_K_STACK_ADDRESS) continue;
 
 					if (table[pt_entry].attr & MM_ATTR_USR_SHARED) {
-						void* frame = (void*) table[pt_entry].base << 12;
+						void* frame = (void*) (table[pt_entry].base << 12);
 						mm_map_frame(frame, virtual, child_pdt, table[pt_entry].attr);
 					} else {
 						void* frame = mm_mem_alloc();
