@@ -8,8 +8,12 @@ char buf[4096] = "";
 int main () {
 	int con = open("/console", FS_OPEN_RDWR);
 
-	sint_32 pipe_fds[2];
-	sint_32 res = pipe(pipe_fds);
+	sem_t sema;
+	sem_open(&sema);
+
+	int pipe_fds[2];
+	int res = pipe(pipe_fds);
+
 	if (res) {
 		fprintf(con, "Pipe failed! %d\n", res);
 	} else {
@@ -17,34 +21,50 @@ int main () {
 		int pid = fork();
 
 		if (pid != 0) {
+			int my_pid = getpid();
+
+			fprintf(con, "[%d] Close read fd\n", my_pid);
 			close(pipe_fds[0]);
 	
-			fprintf(con, "- Write 'Hola mundo!'\n");
-			write(pipe_fds[1], "Hola mundo!", 11);
+			fprintf(con, "[%d] Write 'Hola mundo!'\n", my_pid);
+			fprintf(pipe_fds[1], "Hola mundo!");
 
-			fprintf(con, "- Write ' more text...'\n");
+			fprintf(con, "[%d] Write ' more text...'\n", my_pid);
 			fprintf(pipe_fds[1], " more text...");
 
-			fprintf(con, "done\n");
+			fprintf(con, "[%d] Wait for child %d to finish reading\n", my_pid, pid);
+			sem_wait(&sema, 1);
 
+			fprintf(con, "[%d] Close write fd\n", my_pid, pid);
 			close(pipe_fds[1]);
+
+			fprintf(con, "[%d] Done\n", my_pid);
 		} else {
 			// Child
+			int my_pid = getpid();
+
+			fprintf(con, "[%d] Close write fd\n", my_pid);
 			close(pipe_fds[1]);
 
-			fprintf(con, "- Read 5 bytes: ");
+			fprintf(con, "[%d] Read 5 bytes: ", my_pid);
 			read(pipe_fds[0], buf, 5);
 			fprintf(con, "'%s'\n", buf);
 
-			fprintf(con, "- Read another 5 bytes: ");
+			fprintf(con, "[%d] Read another 5 bytes: ", my_pid);
 			read(pipe_fds[0], buf, 5);
 			fprintf(con, "'%s'\n", buf);
 
-			fprintf(con, "- Read remaining 14 bytes: ");
+			fprintf(con, "[%d] Read remaining 14 bytes: ", my_pid);
 			read(pipe_fds[0], buf, 14);
 			fprintf(con, "'%s'\n", buf);
 
+			fprintf(con, "[%d] Close read fd\n", my_pid);
 			close(pipe_fds[0]);
+
+			fprintf(con, "[%d] Signal parent\n", my_pid);
+			sem_signal(&sema, 1);
+
+			fprintf(con, "[%d] Done\n", my_pid);
 		}
 	}
 

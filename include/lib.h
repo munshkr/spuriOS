@@ -31,10 +31,10 @@ typedef struct str_sem_t {
 	sint_32 pipes[2];
 } sem_t;
 
-sem_t sem_open();
+sint_32 sem_open(sem_t* sem);
 sint_32 sem_close(sem_t* sem);
-void sem_signal(sem_t* sem, uint_32 count);
-void sem_wait(sem_t* sem, uint_32 count);
+sint_32 sem_signal(sem_t* sem, uint_32 count);
+sint_32 sem_wait(sem_t* sem, uint_32 count);
 
 #endif
 
