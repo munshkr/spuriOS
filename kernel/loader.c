@@ -362,7 +362,11 @@ void loader_tick() {
 void loader_exit(void) {
 	pid local_tmp_pid = sched_exit();
 
-	device_close_fds_for(cur_pid);
+	// FIXME Removed for now. We are storing global references to file
+	// descriptors, so we cannot release them, as they may have already been
+	// released by the task itself = silent double free! This messes up forked
+	// tasks references.
+	//device_close_fds_for(cur_pid);
 
 	// TODO Refactor this shit
 	pcb_t* task = &processes[cur_pid];
