@@ -36,6 +36,8 @@ sint_32 sem_close(sem_t* sem);
 sint_32 sem_signal(sem_t* sem, uint_32 count);
 sint_32 sem_wait(sem_t* sem, uint_32 count);
 
+char getch(fd_t fd);
+
 #endif
 
 #endif // __LIB_H__

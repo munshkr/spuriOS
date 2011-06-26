@@ -56,6 +56,12 @@ sint_32 sem_wait(sem_t* sem, uint_32 count) {
 	return read(sem->pipes[0], buffer, count);
 }
 
+char getch(fd_t fd) {
+	char sc = 0;
+	read(fd, &sc, 1);
+	return sc;
+}
+
 #endif
 
 sint_32 sprintf(char* buffer, const char* format, ...) {
