@@ -35,10 +35,14 @@ int main () {
 			fprintf(con, "[%d] Wait for child %d to finish reading\n", my_pid, pid);
 			sem_wait(&sema, 1);
 
+			fprintf(con, "[%d] Try to write and fail (broken pipe): ", my_pid);
+			int r = write(pipe_fds[1], "x", 1);
+			fprintf(con, "bytes written = %d\n", r);
+
 			fprintf(con, "[%d] Close write fd\n", my_pid, pid);
 			close(pipe_fds[1]);
 
-			fprintf(con, "[%d] Done\n", my_pid);
+			fprintf(con, "[%d] Return\n", my_pid);
 		} else {
 			// Child
 			int my_pid = getpid();
@@ -64,7 +68,8 @@ int main () {
 			fprintf(con, "[%d] Signal parent\n", my_pid);
 			sem_signal(&sema, 1);
 
-			fprintf(con, "[%d] Done\n", my_pid);
+			fprintf(con, "[%d] Return\n", my_pid);
+			return 0;
 		}
 	}
 
