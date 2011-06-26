@@ -15,7 +15,8 @@ int main () {
 		return -1;
 	}
 
-	sem_t sema = sem_open();
+	sem_t sema;
+	sem_open(&sema);
 
 	int pid = fork();
 
