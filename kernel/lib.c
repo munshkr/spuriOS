@@ -35,10 +35,8 @@ sint_32 fprintf(fd_t file, const char* format, ...) {
 }
 
 // Semaphores
-sem_t sem_open() {
-	sem_t res;
-	pipe(res.pipes);
-	return res;
+sint_32 sem_open(sem_t* sem) {
+	return pipe(sem->pipes);
 }
 
 sint_32 sem_close(sem_t* sem) {
@@ -48,14 +46,14 @@ sint_32 sem_close(sem_t* sem) {
 	return res;
 }
 
-void sem_signal(sem_t* sem, uint_32 count) {
+sint_32 sem_signal(sem_t* sem, uint_32 count) {
 	char buffer[count];
-	write(sem->pipes[1], buffer, count);
+	return write(sem->pipes[1], buffer, count);
 }
 
-void sem_wait(sem_t* sem, uint_32 count) {
+sint_32 sem_wait(sem_t* sem, uint_32 count) {
 	char buffer[count];
-	read(sem->pipes[0], buffer, count);
+	return read(sem->pipes[0], buffer, count);
 }
 
 #endif
