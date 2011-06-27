@@ -46,25 +46,6 @@ inline void initialize_sleeping_list() {
 	first_slept = FREE_PCB_PID;
 }
 
-#define PF_PRESENT	1
-#define PF_WRITE	2
-#define PF_USER		4
-#define PF_RSVD		8
-#define PF_FETCH	16
-static void page_fault_handler(registers_t* regs) {
-	if (regs->u.err_code & PF_USER) {
-		vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
-			(regs->u.err_code & PF_WRITE ? "write" :
-			(regs->u.err_code & PF_FETCH ? "fetch" : "read")),
-			rcr2(),
-			(regs->u.err_code & PF_PRESENT ? "present" : "non present"),
-			cur_pid);
-		loader_exit();
-	} else {
-		debug_kernelpanic(regs);
-	}
-}
-
 void loader_init(void) {
 	debug_log("initializing loader");
 
@@ -79,8 +60,6 @@ void loader_init(void) {
 	processes[IDLE_PID].id = IDLE_PID;
 	processes[IDLE_PID].privilege_level = PL_KERNEL;
 	processes[IDLE_PID].cr3 = rcr3();
-
-	idt_register(ISR_PGFLT, page_fault_handler, PL_KERNEL);
 }
 
 static inline void print_pso_file(pso_file* f) {
