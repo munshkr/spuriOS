@@ -4,6 +4,10 @@
 #include <lib.h>
 
 #define PAGE_SIZE 4096
+#define SECTOR_SIZE 512
+
+const char* CIPHER_KEY = "SpuriOS";
+const size_t CIPHER_KEY_SIZE = 7;
 
 static int con;
 static int pipe_read2enc[2];
@@ -24,35 +28,60 @@ static int krypt_read() {
 		return -2;
 	}
 
-	bool eof = FALSE;
 	int i, sz;
-	while (!eof) {
+	while (TRUE) {
 		memset(buffer, 0, PAGE_SIZE);
+		sz = 0;
+
+		fprintf(con, "[read] Read into buffer\n");
 
 		// Because of a limitation in our HDD driver, we can read by sectors at once.
 		// With this for loop, we fill the 4Kb buffer and then send it through the pipe.
-		for (i = 0; i < PAGE_SIZE / 512; i++) {
-			fprintf(con, "[read] Read into (buffer + %d): ", 512 * i);
-			sz = read(file, buffer + (512*i), 512);
-			fprintf(con, "%d\n", sz);
-			if (!sz) {
-				eof = TRUE;
-				break;
-			}
+		for (i = 0; i < PAGE_SIZE / SECTOR_SIZE; i++) {
+			sz += read(file, buffer + (SECTOR_SIZE * i), SECTOR_SIZE);
+			if (!sz) break;
 		}
 
+		if (!sz) break;
+
 		// Write to pipe shared with 'encrypt' process
-		fprintf(con, "[read] Write buffer through `pipe_read2enc`\n");
-		write(pipe_read2enc[1], buffer, PAGE_SIZE);
+		fprintf(con, "[read] Write %db to `pipe_read2enc`\n", sz);
+		write(pipe_read2enc[1], buffer, sz);
 	}
+
+	fprintf(con, "[read] Done\n");
 
 	close(file);
 	return 0;
 }
 
 static int krypt_encrypt() {
-	while (1) { sleep(10); };
-	//getch(con);
+	fprintf(con, "[encrypt] Allocating a page for buffering\n");
+	char* buffer = palloc();
+	if (!buffer) {
+		fprintf(con, "[encrypt] Failure to allocate page\n");
+		return -2;
+	}
+
+	int i, sz;
+	while (TRUE) {
+		memset(buffer, 0, PAGE_SIZE);
+
+		fprintf(con, "[encrypt] Read into buffer\n");
+		sz = read(pipe_read2enc[0], buffer, PAGE_SIZE);
+		if (!sz) break;
+
+		fprintf(con, "[encrypt] Encrypt buffer with cipher key\n");
+		for (i = 0; i < sz; i++) {
+			buffer[i] ^= CIPHER_KEY[i % CIPHER_KEY_SIZE];
+		}
+
+		// Write to pipe shared with 'write' process
+		fprintf(con, "[encrypt] Write %db to `pipe_enc2write`\n", sz);
+		write(pipe_enc2write[1], buffer, sz);
+	}
+
+	fprintf(con, "[encrypt] Done\n");
 
 	return 0;
 }
