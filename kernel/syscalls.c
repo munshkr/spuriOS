@@ -159,7 +159,7 @@ sint_32 run(const char* filename) {
 
 sint_32 fork() {
 	uint_32 ret;
-	__asm __volatile("pusha ; int $0x30 ; popa" : "=a"(ret) : "0"(SYS_FORK));
+	__asm __volatile("int $0x30" : "=a"(ret) : "0"(SYS_FORK) : "memory" );
 	return ret;
 }
 
