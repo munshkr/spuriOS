@@ -42,7 +42,8 @@ static void run_task(const char* file) {
 			break;
 		}
 
-		while (1) { sleep(10); };
+		fprintf(con, "Press any key to finish\n");
+		getch(con);
 		close(con);
 	}
 }
