@@ -14,7 +14,7 @@ static int pipe_read2enc[2];
 static int pipe_enc2write[2];
 
 static int krypt_read() {
-	fprintf(con, "[read] Open file /disk/kernel.bin as read-only\n");
+	fprintf(con, "[read] Open /disk/kernel.bin as read-only\n");
 	int file = open("/disk/kernel.bin", FS_OPEN_RD);
 	if (file < 0) {
 		fprintf(con, "[read] Failure to open file\n");
@@ -49,9 +49,10 @@ static int krypt_read() {
 		write(pipe_read2enc[1], buffer, sz);
 	}
 
-	fprintf(con, "[read] Done\n");
-
+	fprintf(con, "[read] Close file\n");
 	close(file);
+
+	fprintf(con, "[read] Done\n");
 	return 0;
 }
 
@@ -87,9 +88,38 @@ static int krypt_encrypt() {
 }
 
 static int krypt_write() {
-	while (1) { sleep(10); };
-	//getch(con);
+	fprintf(con, "[write] Open /serial0 as write-only\n");
+	int file = open("/serial0", FS_OPEN_WR);
+	if (file < 0) {
+		fprintf(con, "[write] Failure to open file\n");
+		return -1;
+	}
 
+	fprintf(con, "[write] Allocating a page for buffering\n");
+	char* buffer = palloc();
+	if (!buffer) {
+		fprintf(con, "[write] Failure to allocate page\n");
+		return -2;
+	}
+
+	int sz;
+	while (TRUE) {
+		memset(buffer, 0, PAGE_SIZE);
+
+		fprintf(con, "[write] Read into buffer\n");
+		sz = read(pipe_enc2write[0], buffer, PAGE_SIZE);
+		if (!sz) break;
+
+		fprintf(con, "[write] Write %db to serial port\n", sz);
+		int wsz = write(file, buffer, sz);
+
+		fprintf(con, "[write] Wrote %db\n", wsz);
+	}
+
+	fprintf(con, "[write] Close file\n");
+	close(file);
+
+	fprintf(con, "[write] Done\n");
 	return 0;
 }
 
