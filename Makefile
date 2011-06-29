@@ -9,12 +9,12 @@ MKFS=/sbin/mkfs.vfat
 # Parámetros de programas
 NASMFLAGS=-I include/ -g -ggdb -D__KERNEL__
 
-#CFLAGS=-m32 -g -ggdb -Wall -Werror -Wdisabled-optimization -I include/ \
-#  -fno-zero-initialized-in-bss -fno-stack-protector -fno-strict-aliasing -ffreestanding -D__KERNEL__
-
-CFLAGS=-m32 -g -ggdb -Wall -Werror -O2 -I include/ \
+CFLAGS=-m32 -g -ggdb -Wall -Werror -Wdisabled-optimization -I include/ \
   -fno-zero-initialized-in-bss -fno-stack-protector -fno-strict-aliasing -ffreestanding -D__KERNEL__
-CXXFLAGS=-O2
+
+#CFLAGS=-m32 -g -ggdb -Wall -Werror -O2 -I include/ \
+  -fno-zero-initialized-in-bss -fno-stack-protector -fno-strict-aliasing -ffreestanding -D__KERNEL__
+#CXXFLAGS=-O2
 #CXXFLAGS=-Wdisabled-optimization
 
 LDFLAGS=-static -m elf_i386 -nostdlib
