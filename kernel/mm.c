@@ -420,13 +420,7 @@ static void page_fault_handler(registers_t* regs) {
 	if (processes[cur_pid].privilege_level == PL_USER) {
 		void* fail_page = (void*)(rcr2() & ~0xFFF);
 		if (is_requested(fail_page, cur_pdt())) {
-			void* frame = mm_mem_alloc();
-			if (!frame) {
-				vga_printf("Not enough memory! Killing process %d.\n", cur_pid);
-				loader_exit();
-			} else {
-				mm_map_frame(frame, fail_page, cur_pdt(), PL_USER);
-			}
+			mm_user_allocate(fail_page);
 		} else {
 			vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
 				(regs->u.err_code & PF_WRITE ? "write" :
@@ -458,11 +452,29 @@ void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 
 sint_32 mm_share_page(void* vaddr) {
 	mm_page* entry = mm_pt_entry_for(vaddr, (mm_page*) processes[cur_pid].cr3);
-	if (entry == NULL || !(entry->attr && MM_ATTR_P)) {
-		return -1;
+	if (entry != NULL) {
+		if (entry->attr & MM_ATTR_P) {
+			entry->attr |= MM_ATTR_USR_SHARED;
+			return 0;
+		}
+
+		if (entry->attr & PAGE_REQUESTED) {
+			mm_user_allocate(vaddr);
+			entry->attr |= MM_ATTR_USR_SHARED;
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+void mm_user_allocate(void* vaddr) {
+	void* frame = mm_mem_alloc();
+	if (!frame) {
+		vga_printf("Not enough memory! Killing process %d.\n", cur_pid);
+		loader_exit();
 	} else {
-		entry->attr |= MM_ATTR_USR_SHARED;
-		return 0;
+		mm_map_frame(frame, vaddr, cur_pdt(), PL_USER);
 	}
 }
 
