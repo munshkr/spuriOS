@@ -38,7 +38,7 @@ pipe_device endpoints[MAX_ENDPOINTS];
 
 
 static inline void init_endpoint(pipe_device* p);
-static inline void wake_all(pid queue);
+static inline void wake_all(pid* queue);
 
 
 void pipe_init(void) {
@@ -118,7 +118,7 @@ sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 		C(self)->bytes_available -= eff_size;
 		PAIR(self)->bytes_available -= eff_size;
 
-		wake_all(PAIR(self)->queue);
+		wake_all(&(PAIR(self)->queue));
 
 		sz += eff_size;
 	}
@@ -154,7 +154,7 @@ sint_32 pipe_write(chardev* self, const void* buf, uint_32 size) {
 		C(self)->bytes_available += eff_size;
 		PAIR(self)->bytes_available += eff_size;
 
-		wake_all(PAIR(self)->queue);
+		wake_all(&(PAIR(self)->queue));
 
 		sz += eff_size;
 	}
@@ -166,7 +166,7 @@ uint_32 pipe_flush(chardev* self) {
 	C(self)->klass = CLASS_DEV_NONE;
 
 	// Unblock all processes waiting on the other endpoint
-	wake_all(PAIR(self)->queue);
+	wake_all(&(PAIR(self)->queue));
 
 	// Free buffer if both endpoints are gone now
 	if (PAIR(self)->klass == CLASS_DEV_NONE) {
@@ -207,8 +207,8 @@ static inline void init_endpoint(pipe_device* p) {
 	p->pair = NULL;
 }
 
-static inline void wake_all(pid queue) {
-	while (queue != FREE_QUEUE) {
-		loader_unqueue(&queue);
+static inline void wake_all(pid* queue) {
+	while (*queue != FREE_QUEUE) {
+		loader_unqueue(queue);
 	}
 }
