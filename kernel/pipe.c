@@ -94,8 +94,8 @@ sint_32 pipe_read(chardev* self, void* buf, uint_32 size) {
 	uint_32 sz = 0;
 
 	while (sz < size) {
-		if (PAIR(self)->klass == CLASS_DEV_NONE) {
-			return 0;  // Broken pipe!
+		if (PAIR(self)->klass == CLASS_DEV_NONE && IS_EMPTY(self)) {
+			break;  // Broken pipe!
 		}
 
 		if (IS_EMPTY(self)) {
