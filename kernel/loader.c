@@ -465,24 +465,21 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 
 			mm_page* table = (mm_page*)(father_pdt[pd_entry].base << 12);
 			for (pt_entry = 0; pt_entry < 1024; pt_entry++) {
+				void* virtual = (void*)((pd_entry << 22) + (pt_entry << 12));
 				if (table[pt_entry].attr & MM_ATTR_P) {
-					void* virtual = (void*)((pd_entry << 22) + (pt_entry << 12));
 
 					// We do not copy this page here
 					if (virtual == (void*) TASK_K_STACK_ADDRESS) continue;
 
-					if (table[pt_entry].attr & MM_ATTR_USR_SHARED) {
-						void* frame = (void*) (table[pt_entry].base << 12);
-						mm_map_frame(frame, virtual, child_pdt, table[pt_entry].attr);
-					} else {
-						void* frame = mm_mem_alloc();
-						mm_map_frame(frame, virtual, child_pdt,
-							(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+					void* frame = mm_mem_alloc();
+					mm_map_frame(frame, virtual, child_pdt,
+						(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
 
-						mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
-						memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
-						mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
-					}
+					mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
+					memcpy(virtual, LOADER_TMP_PAGE, PAGE_SIZE);
+					mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+				} else {
+					mm_set_pt_entry(virtual, ((uint_32*) table)[pt_entry], child_pdt);
 				}
 			}
 		}
