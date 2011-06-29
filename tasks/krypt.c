@@ -28,21 +28,14 @@ static int krypt_read() {
 		return -2;
 	}
 
-	int i, sz;
 	while (TRUE) {
 		memset(buffer, 0, PAGE_SIZE);
-		sz = 0;
 
 		fprintf(con, "[read] Read into buffer\n");
-
-		// Because of a limitation in our HDD driver, we can read by sectors at once.
-		// With this for loop, we fill the 4Kb buffer and then send it through the pipe.
-		for (i = 0; i < PAGE_SIZE / SECTOR_SIZE; i++) {
-			sz += read(file, buffer + (SECTOR_SIZE * i), SECTOR_SIZE);
-			if (!sz) break;
-		}
-
+		int sz = read(file, buffer, PAGE_SIZE);
 		if (!sz) break;
+
+		}
 
 		// Write to pipe shared with 'encrypt' process
 		fprintf(con, "[read] Write %db to `pipe_read2enc`\n", sz);
