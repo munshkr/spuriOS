@@ -226,6 +226,9 @@ pid loader_load(pso_file* f, uint_32 pl) {
 }
 
 void loader_enqueue(pid* cola) {
+	kassert(processes[cur_pid].prev == FREE_QUEUE);
+	kassert(processes[cur_pid].next == FREE_QUEUE);
+
 	pid local_tmp_pid;
 	if (*cola == FREE_QUEUE) {
 		*cola = cur_pid;
