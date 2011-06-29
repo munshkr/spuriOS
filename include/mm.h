@@ -60,6 +60,8 @@ typedef struct str_mm_page {
 #define MM_REQUEST_KERNEL 0
 #define MM_REQUEST_USER 1
 
+bool mm_set_pt_entry(void* vaddr, uint_32 entry_value, mm_page* pd);
+
 void mm_free_page_table_for(void* vaddr, mm_page* pdt);
 void* mm_vaddr_for_free_pdt_entry(mm_page* pdt);
 

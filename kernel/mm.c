@@ -17,6 +17,8 @@
 #define PD_ENTRY_FOR(x) ((uint_32)x >> 22)
 #define PT_ENTRY_FOR(x) (((uint_32)x & 0x3FF000) >> 12)
 
+#define PAGE_REQUESTED	2
+
 mmap_entry_t* mmap;
 size_t mmap_entries;
 
@@ -46,21 +48,6 @@ void* mm_vaddr_for_free_pdt_entry(mm_page* pdt) {
 		}
 	}
 	return 0;
-}
-
-void* palloc() {
-	void* frame = mm_mem_alloc();
-
-	if (!frame) { return NULL; }
-
-	void* page = (void*) processes[cur_pid].next_empty_page_addr;
-
-	mm_map_frame(frame, page, (mm_page*) processes[cur_pid].cr3,
-		processes[cur_pid].privilege_level);
-
-	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
-
-	return page;
 }
 
 uint_32 mm_free_page_count(char request_type) {
@@ -112,7 +99,8 @@ uint_32 mm_pl_of_vaddr(void* vaddr, mm_page* pdt) {
 	if (!entry) {
 		return PL_KERNEL;
 	} else {
-		if (entry->attr & MM_ATTR_US_U) {
+		if ((entry->attr & MM_ATTR_US_U) ||
+			(!(entry->attr & MM_ATTR_P) && (*((uint_32*) entry) & PAGE_REQUESTED))) {
 			return PL_USER;
 		} else {
 			return PL_KERNEL;
@@ -211,7 +199,7 @@ void mm_mem_free(void* frame) {
 	clear_bit(posicion);
 }
 
-// FIXME Ask about the prototype return type (should not be a pointer?)
+// XXX Return type (should not be a pointer?)
 mm_page* mm_dir_new(void) {
 	mm_page* cr3 = (mm_page*) mm_mem_kalloc();
 	memset((void*) cr3, 0, PAGE_SIZE);
@@ -367,20 +355,87 @@ inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) 
 	mm_mark_used(mmap_addr, last_valid_entry);
 }
 
+bool mm_set_pt_entry(void* vaddr, uint_32 entry_value, mm_page* pdt) {
+	kassert((((uint_32) vaddr) & 0xFFF) == 0);
+	kassert(!(entry_value & MM_ATTR_P));
+
+	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(vaddr)];
+
+	if (!(pd_entry->attr & MM_ATTR_P)) {
+		void* frame = mm_mem_kalloc();
+		if (!frame) {
+			return FALSE;
+		}
+
+		*((uint_32*) pd_entry) = (uint_32) frame;
+		pd_entry->attr = MM_ATTR_P | MM_ATTR_RW | MM_ATTR_US_U;
+		memset((void*) (pd_entry->base << 12), 0, PAGE_SIZE);
+	}
+
+	mm_page* page_table = (mm_page*)(pd_entry->base << 12);
+	((uint_32*) page_table)[PT_ENTRY_FOR(vaddr)] = entry_value;
+
+	return TRUE;
+}
+
+bool set_as_requested(void* page, mm_page* pdt) {
+	kassert((((uint_32) page) & 0xFFF) == 0);
+	mm_page* pt_entry = mm_pt_entry_for(page, pdt);
+	bool success;
+	if (!pt_entry) {
+		success = mm_set_pt_entry(page, PAGE_REQUESTED, pdt);
+	} else {
+		success = mm_set_pt_entry(page, *((uint_32*) pt_entry) | PAGE_REQUESTED, pdt);
+	}
+
+	return success;
+}
+
+bool is_requested(void* page, mm_page* pdt) {
+	mm_page* pt_entry = mm_pt_entry_for(page, pdt);
+	if (!pt_entry || (*((uint_32*) pt_entry) & MM_ATTR_P)) {
+		return FALSE;
+	} else {
+		return *((uint_32*) pt_entry) & PAGE_REQUESTED;
+	}
+}
+
+void* palloc() {
+	void* page = (void*) processes[cur_pid].next_empty_page_addr;
+	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
+
+	if (!set_as_requested(page, cur_pdt())) {
+		return (void*) 0;
+	} else {
+		return page;
+	}
+}
+
 #define PF_PRESENT	1
 #define PF_WRITE	2
 #define PF_USER		4
 #define PF_RSVD		8
 #define PF_FETCH	16
 static void page_fault_handler(registers_t* regs) {
-	if (regs->u.err_code & PF_USER) {
-		vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
-			(regs->u.err_code & PF_WRITE ? "write" :
-			(regs->u.err_code & PF_FETCH ? "fetch" : "read")),
-			rcr2(),
-			(regs->u.err_code & PF_PRESENT ? "present" : "non present"),
-			cur_pid);
-		loader_exit();
+	if (processes[cur_pid].privilege_level == PL_USER) {
+		void* fail_page = (void*)(rcr2() & ~0xFFF);
+		if (is_requested(fail_page, cur_pdt())) {
+			void* frame = mm_mem_alloc();
+			if (!frame) {
+				vga_printf("Not enough memory! Killing process %d.\n", cur_pid);
+				loader_exit();
+			} else {
+				mm_map_frame(frame, fail_page, cur_pdt(), PL_USER);
+			}
+		} else {
+			vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
+				(regs->u.err_code & PF_WRITE ? "write" :
+				(regs->u.err_code & PF_FETCH ? "fetch" : "read")),
+				rcr2(),
+				(regs->u.err_code & PF_PRESENT ? "present" : "non present"),
+				cur_pid);
+			loader_exit();
+		}
 	} else {
 		debug_kernelpanic(regs);
 	}
