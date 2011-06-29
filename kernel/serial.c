@@ -166,6 +166,7 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 				outb(port, *(char*)buf);
 				buf++;
 			}
+			loader_sleep(5);
 		}
 
 		return writed;
