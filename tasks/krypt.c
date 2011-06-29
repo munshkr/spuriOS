@@ -174,6 +174,9 @@ int main () {
 	res = krypt_read();
 
 	close(pipe_read2enc[1]);
+
+	getch(con);
 	close(con);
+
 	return res;
 }
