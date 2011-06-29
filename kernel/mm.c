@@ -29,6 +29,8 @@ uint_8* mm_bitmap;
 int mm_bitmap_byte_len;
 // --
 
+static bool shared_with_other_processes(void* vaddr);
+
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
 void mm_free_page_table_for(void* vaddr, mm_page* pdt) {
@@ -218,7 +220,8 @@ void mm_dir_free(mm_page* directory) {
 		if (directory[pde].attr & MM_ATTR_P) {
 			mm_page* table = (mm_page*)(directory[pde].base << 12);
 			for (pte = 0; pte < 1024; pte++) {
-				if (table[pte].attr & MM_ATTR_P) {
+				void* vaddr = (void*) ((pde << 22) + (pte << 12));
+				if ((table[pte].attr & MM_ATTR_P) && !shared_with_other_processes(vaddr)) {
 					mm_mem_free((void*)(table[pte].base << 12));
 				}
 			}
@@ -476,6 +479,22 @@ void mm_user_allocate(void* vaddr) {
 	} else {
 		mm_map_frame(frame, vaddr, cur_pdt(), PL_USER);
 	}
+}
+
+static bool shared_with_other_processes(void* vaddr) {
+	int i;
+	for (i = 0; i < MAX_PID; i++) {
+		if (processes[i].id == FREE_PCB_PID || i == cur_pid) {
+			continue;
+		}
+
+		mm_page* entry = mm_pt_entry_for(vaddr, (mm_page*) processes[i].cr3);
+
+		if (entry != NULL && entry->attr & MM_ATTR_USR_SHARED) {
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 sint_32 share_page(void* vaddr) {
