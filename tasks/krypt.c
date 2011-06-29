@@ -35,8 +35,6 @@ static int krypt_read() {
 		int sz = read(file, buffer, PAGE_SIZE);
 		if (!sz) break;
 
-		}
-
 		// Write to pipe shared with 'encrypt' process
 		fprintf(con, "[read] Write %db to `pipe_read2enc`\n", sz);
 		write(pipe_read2enc[1], buffer, sz);
