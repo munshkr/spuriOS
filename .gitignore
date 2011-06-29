@@ -2,6 +2,7 @@ bochsout.txt
 deps
 **/*.o
 parport.out
+serial.out
 tasks/*.elf
 tasks/*.pso
 bin/*
