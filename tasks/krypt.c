@@ -9,8 +9,8 @@ const char* CIPHER_KEY = "SpuriOS";
 const size_t CIPHER_KEY_SIZE = 7;
 
 static int con;
-static int pipe_read2enc[2];
-static int pipe_enc2write[2];
+static int pipe_read2enc[2] = {};
+static int pipe_enc2write[2] = {};
 
 static int krypt_read() {
 	fprintf(con, "[read] Open /disk/kernel.bin as read-only\n");
