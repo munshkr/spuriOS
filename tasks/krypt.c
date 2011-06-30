@@ -4,7 +4,6 @@
 #include <lib.h>
 
 #define PAGE_SIZE 4096
-#define SECTOR_SIZE 512
 
 const char* CIPHER_KEY = "SpuriOS";
 const size_t CIPHER_KEY_SIZE = 7;
