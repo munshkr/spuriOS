@@ -504,13 +504,13 @@ void mm_user_allocate(void* vaddr) {
 	}
 }
 
-#define MM_TMP_PAGE ((void*) 0xFF801000)
 void mm_copy_on_write(void* vaddr) {
 	// If I am the only process with this copy-on-write bit, just take it off.
 	if (!is_to_be_copied_on_write_by_other_processes(vaddr)) {
 		mm_page* pt_entry = mm_pt_entry_for(vaddr, cur_pdt());
 		pt_entry->attr |= MM_ATTR_RW;
 		pt_entry->attr &= ~MM_ATTR_USR_COR;
+		return ;
 	}
 
 	// Otherwise, copy and stuff.

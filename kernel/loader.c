@@ -460,7 +460,6 @@ pid run(const char* filename) {
 }
 
 // TODO MM Function (?)
-#define LOADER_TMP_PAGE ((void*) 0xFF800000)
 static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 	uint_32 pd_entry, pt_entry;
 	for (pd_entry = 1; pd_entry < 1024; pd_entry++) { // Starts at 4MB
@@ -493,7 +492,7 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 						tmp_entry_ptr->attr &= ~MM_ATTR_RW;
 
 						// Table entry for parent
-						tmp_entry_ptr = mm_pt_entry_for(virtual, father_pdt);
+						tmp_entry_ptr = &table[pt_entry];
 						tmp_entry_ptr->attr |= MM_ATTR_USR_COR;
 						tmp_entry_ptr->attr &= ~MM_ATTR_RW;
 					}
@@ -517,9 +516,9 @@ static void create_child_kernel_stack(mm_page* father_pdt, mm_page* child_pdt) {
 	eflags = stack[STACK_TOP - 2];
 	user_esp = stack[STACK_TOP - 1];
 
-	mm_map_frame(frame, LOADER_TMP_PAGE, father_pdt, PL_KERNEL);
-	create_user_stack((uint_32*) LOADER_TMP_PAGE, eflags, eip, user_esp);
-	mm_unmap_page(LOADER_TMP_PAGE, father_pdt);
+	mm_map_frame(frame, MM_TMP_PAGE, father_pdt, PL_KERNEL);
+	create_user_stack((uint_32*) MM_TMP_PAGE, eflags, eip, user_esp);
+	mm_unmap_page(MM_TMP_PAGE, father_pdt);
 }
 
 pid fork() {
