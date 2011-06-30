@@ -517,6 +517,7 @@ static void create_child_kernel_stack(mm_page* father_pdt, mm_page* child_pdt) {
 	user_esp = stack[STACK_TOP - 1];
 
 	mm_map_frame(frame, MM_TMP_PAGE, father_pdt, PL_KERNEL);
+	memset(MM_TMP_PAGE, 0, PAGE_SIZE);
 	create_user_stack((uint_32*) MM_TMP_PAGE, eflags, eip, user_esp);
 	mm_unmap_page(MM_TMP_PAGE, father_pdt);
 }
