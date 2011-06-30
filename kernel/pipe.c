@@ -208,6 +208,8 @@ static inline void init_endpoint(pipe_device* p) {
 }
 
 static inline void wake_all(pid* queue) {
+	kassert(queue != NULL);
+
 	while (*queue != FREE_QUEUE) {
 		loader_unqueue(queue);
 	}
