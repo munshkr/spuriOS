@@ -6,3 +6,4 @@ serial.out
 tasks/*.elf
 tasks/*.pso
 bin/*
+Session.vim

@@ -156,19 +156,15 @@ sint_32 serial_write(chardev* self, const void* buf, uint_32 size) {
 	uint_32 buf_pl = mm_pl_of_vaddr((void*) buf, cur_pdt());
 	if (buf_pl == PL_USER) {
 		uint_32 port = C(self)->io_port;
-		uint_32 writed;
-		for (writed = 0; writed < size; writed++) {
+		uint_32 writed = 0;
+		while (writed < size) {
 			if (inb(port + PORT_LSTAT) & LS_THRE) {
 				outb(port, *(char*)buf);
 				buf++;
-			} else {
-				loader_enqueue(&(C(self)->write_queue));
-				outb(port, *(char*)buf);
-				buf++;
+				writed++;
 			}
-			loader_sleep(5);
+			loader_sleep(1);
 		}
-
 		return writed;
 	} else {
 		return -1;
