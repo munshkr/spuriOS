@@ -351,31 +351,29 @@ chardev* ext2_open(ext2* this, const char* filename, uint_32 flags) {
 			if (block_count > 12) {
 				ext2_files[dev].block_list = mm_mem_kalloc();
 				hdd_enhanced_read(this->dev, ext2_files[dev].inode.i_block[EXT2_INDIRECT_BLOCK] * block_size, ext2_files[dev].block_list, block_size);
-				//vga_printf("\\c0Bdir: %x\n", (uint_32)ext2_files[dev].block_list);
-				//breakpoint();
 			}
 
 			// Si voy a necesitar segunda indirección, traigo ya todo el bloque de segunda indirección y me guardo las 3 indirecciones
 			// que voy a soportar.
 			uint_32 doubly_indirect_block[3];
 			if (block_count > 268) {
-				hdd_enhanced_read(this->dev, ext2_files[dev].inode.i_block[EXT2_DOBLY_INDIRECT_BLOCK] * block_size, ext2_files[dev].block_list + block_size, block_size);
-				doubly_indirect_block[0] = ext2_files[dev].block_list[1024];
-				doubly_indirect_block[1] = ext2_files[dev].block_list[1025];
-				doubly_indirect_block[2] = ext2_files[dev].block_list[1026];
+				hdd_enhanced_read(this->dev, ext2_files[dev].inode.i_block[EXT2_DOBLY_INDIRECT_BLOCK] * block_size, ext2_files[dev].block_list + 256, block_size);
+				doubly_indirect_block[0] = ext2_files[dev].block_list[256];
+				doubly_indirect_block[1] = ext2_files[dev].block_list[257];
+				doubly_indirect_block[2] = ext2_files[dev].block_list[258];
 
 				// Para archivos de más de 268 bloques, agrego desde el 268 hasta el 524.
-				hdd_enhanced_read(this->dev, doubly_indirect_block[0] * block_size, ext2_files[dev].block_list + block_size, block_size);
+				hdd_enhanced_read(this->dev, doubly_indirect_block[0] * block_size, ext2_files[dev].block_list + 256, block_size);
 			}
 
 			if (block_count > 524) {
 				// Para archivos de más de 524 bloques, agrego desde el 524 hasta el 780.
-				hdd_enhanced_read(this->dev, doubly_indirect_block[1] * block_size, ext2_files[dev].block_list + block_size * 2, block_size);
+				hdd_enhanced_read(this->dev, doubly_indirect_block[1] * block_size, ext2_files[dev].block_list + 512, block_size);
 			}
 
 			if (block_count > 780) {
-				// Para archivos de más de 524 bloques, agrego desde el 524 hasta el 780.
-				hdd_enhanced_read(this->dev, doubly_indirect_block[2] * block_size, ext2_files[dev].block_list + block_size * 3, block_size);
+				// Para archivos de más de 780 bloques, agrego desde el 780 hasta el 1036.
+				hdd_enhanced_read(this->dev, doubly_indirect_block[2] * block_size, ext2_files[dev].block_list + 768, block_size);
 			}
 
 			// Listo, no me pidas más... te mató el kassert.
