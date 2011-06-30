@@ -333,6 +333,53 @@ chardev* ext2_open(ext2* this, const char* filename, uint_32 flags) {
 			obtain_inode(this, tmp_inode, &ext2_files[dev].inode);
 
 			ext2_files[dev].file_size = ext2_files[dev].inode.i_size;
+
+			// Bien, la cuestión es que si superamos los primeros 12 bloques que vienen directo en el inodo hay que traer
+			// más info de bloques del disco. Para eso hicimos una lista de bloques que va a tener una cantidad de ids de bloque
+			// igual a 1024, es decir, la cantidad que entra en una sola página de memoria. Esto nos permite traer todos los bloques
+			// de primera indirección y hasta 3 bloques de segunda indirección totalizando 1024 + 12 (directos) = 1036 bloques que
+			// equivalen a 1MB + 12KB.
+			uint_32 block_size = 1024 << this->sb->s_log_block_size;
+			uint_32 block_count = ext2_files[dev].file_size / block_size;
+			if (ext2_files[dev].file_size % block_size != 0) {
+				block_count++;
+			}
+			// FIXME: Solo soportamos la cantidad de indirecciones que pueden entrar en un listado de una página.
+			kassert(block_count <= 1036)
+			ext2_files[dev].block_list = NULL;
+			// Primero traigo todo el bloque de primera indirección.
+			if (block_count > 12) {
+				ext2_files[dev].block_list = mm_mem_kalloc();
+				hdd_enhanced_read(this->dev, ext2_files[dev].inode.i_block[EXT2_INDIRECT_BLOCK] * block_size, ext2_files[dev].block_list, block_size);
+				//vga_printf("\\c0Bdir: %x\n", (uint_32)ext2_files[dev].block_list);
+				//breakpoint();
+			}
+
+			// Si voy a necesitar segunda indirección, traigo ya todo el bloque de segunda indirección y me guardo las 3 indirecciones
+			// que voy a soportar.
+			uint_32 doubly_indirect_block[3];
+			if (block_count > 268) {
+				hdd_enhanced_read(this->dev, ext2_files[dev].inode.i_block[EXT2_DOBLY_INDIRECT_BLOCK] * block_size, ext2_files[dev].block_list + block_size, block_size);
+				doubly_indirect_block[0] = ext2_files[dev].block_list[1024];
+				doubly_indirect_block[1] = ext2_files[dev].block_list[1025];
+				doubly_indirect_block[2] = ext2_files[dev].block_list[1026];
+
+				// Para archivos de más de 268 bloques, agrego desde el 268 hasta el 524.
+				hdd_enhanced_read(this->dev, doubly_indirect_block[0] * block_size, ext2_files[dev].block_list + block_size, block_size);
+			}
+
+			if (block_count > 524) {
+				// Para archivos de más de 524 bloques, agrego desde el 524 hasta el 780.
+				hdd_enhanced_read(this->dev, doubly_indirect_block[1] * block_size, ext2_files[dev].block_list + block_size * 2, block_size);
+			}
+
+			if (block_count > 780) {
+				// Para archivos de más de 524 bloques, agrego desde el 524 hasta el 780.
+				hdd_enhanced_read(this->dev, doubly_indirect_block[2] * block_size, ext2_files[dev].block_list + block_size * 3, block_size);
+			}
+
+			// Listo, no me pidas más... te mató el kassert.
+
 			ext2_files[dev].stream_pos = 0;
 			ext2_files[dev].buffer = mm_mem_kalloc();
 			ext2_files[dev].buf_pos = 0;
@@ -360,9 +407,15 @@ void e2f_load_buffer(ext2_file* file) {
 	uint_32 bytes_leidos;
 
 	uint_32 inode_block = file_offset / block_size;
+	uint_32 starting_byte;
 	while (tmp_size > 0) {
+		if (inode_block < 12) {
+			starting_byte = file->inode.i_block[inode_block] * block_size;
+		} else {
+			starting_byte = file->block_list[inode_block - 12] * block_size;
+		}
 		bytes_leidos = (tmp_size < block_size ? tmp_size : block_size);
-		hdd_enhanced_read(file->fs->dev, file->inode.i_block[inode_block] * block_size, local_buffer_ptr, bytes_leidos);
+		hdd_enhanced_read(file->fs->dev, starting_byte, local_buffer_ptr, bytes_leidos);
 		inode_block++;
 		tmp_size -= bytes_leidos;
 		local_buffer_ptr += bytes_leidos;

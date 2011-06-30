@@ -63,6 +63,8 @@ typedef struct str_ext2_bgd {
 
 
 #define EXT2_S_IFDIR 0x4000
+#define EXT2_INDIRECT_BLOCK 12
+#define EXT2_DOBLY_INDIRECT_BLOCK 13
 
 typedef struct str_ext2_inode {
 	uint_16 i_mode;				// Type and Permissions (see below)
@@ -129,6 +131,7 @@ struct str_ext2_file {
 	ext2* fs;
 	ext2_inode inode;
 	uint_32 file_size;
+	uint_32* block_list;
 	uint_32 stream_pos;
 	void* buffer;
 	uint_32 buf_pos;
