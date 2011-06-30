@@ -4,8 +4,21 @@
 Documentación
 =============
 
-Sección
--------
+Inter-process Communication
+---------------------------
 
-### Subsección
+### `pipe` - Pipes
 
+### `loader` - Extensión a la carga de procesos
+
+Manejador de memoria
+--------------------
+
+### Memoria on-demand
+
+### Memoria compartida
+
+### Copy-on-write
+
+Tareas
+------
