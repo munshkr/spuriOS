@@ -115,18 +115,16 @@ static void cmd_cat(char* file, uint_32 size) {
 		return;
 	}
 
-	char buf[513];
+	char buf[512];
 
 	while (1) {
+		memset(buf, 0, 512);
 		int readed = read(fd, &buf, 512);
-		if (readed < 1) {
-			close(fd);
-			return;
-		} else {
-			buf[readed] = 0;
-			fprintf(con_fd, "%s", &buf);
-		}
+		if (readed < 1) break;
+		write(con_fd, buf, readed);
 	}
+
+	close(fd);
 }
 
 static int parse(char* line_buffer, uint_32 size) {
