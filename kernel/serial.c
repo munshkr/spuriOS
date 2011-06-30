@@ -85,11 +85,6 @@
 
 void read_from_serial(uint_32 index) {
 	dev_serial* device = &serial_devs[index];
-
-	if (device->klass == CLASS_DEV_NONE) {
-		return ;
-	}
-
 	uint_32 port = device->io_port;
 	uint_8 intid = inb(port + PORT_IIR);
 	if (intid & II_ID_RDA) {
