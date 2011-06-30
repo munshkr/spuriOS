@@ -30,6 +30,7 @@ int mm_bitmap_byte_len;
 // --
 
 static bool shared_with_other_processes(void* vaddr);
+static bool is_to_be_copied_on_write_by_other_processes(void* vaddr);
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
@@ -137,7 +138,7 @@ void mm_map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl) {
 
 void mm_unmap_page(void* virt_addr, mm_page* pdt) {
 	kassert((((uint_32) virt_addr) & 0xFFF) == 0);
-	
+
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(virt_addr)];
 	kassert(pd_entry->attr & MM_ATTR_P);
 
@@ -208,7 +209,7 @@ mm_page* mm_dir_new(void) {
 //	cr3.attr = 0;
 
 	cr3[0].base = (uint_32) kernel_pagetable >> 12;
-	cr3[0].attr = MM_ATTR_US_S | MM_ATTR_RW | MM_ATTR_P; 
+	cr3[0].attr = MM_ATTR_US_S | MM_ATTR_RW | MM_ATTR_P;
 
 	return cr3;
 }
@@ -221,14 +222,24 @@ void mm_dir_free(mm_page* directory) {
 			mm_page* table = (mm_page*)(directory[pde].base << 12);
 			for (pte = 0; pte < 1024; pte++) {
 				void* vaddr = (void*) ((pde << 22) + (pte << 12));
-				if ((table[pte].attr & MM_ATTR_P) && !shared_with_other_processes(vaddr)) {
-					mm_mem_free((void*)(table[pte].base << 12));
+				if ((table[pte].attr & MM_ATTR_P)) {
+					if (is_to_be_copied_on_write_by_other_processes(vaddr)) {
+						// TODO: Check if it is necessary.
+						// Later in this same function we call mm_mem_free to the table and the directory...
+						// but mm_mem_free only marks the frame as free, nothing more...
+						table[pte].attr &= ~MM_ATTR_USR_COR;
+						table[pte].attr |= MM_ATTR_RW;
+					} else if (shared_with_other_processes(vaddr)) {
+						continue;
+					} else {
+						mm_mem_free((void*)(table[pte].base << 12));
+					}
 				}
 			}
 			mm_mem_free((void*) table);
 		}
 	}
-	mm_mem_free((void*) directory);	
+	mm_mem_free((void*) directory);
 }
 
 bool get_bit(int position) {
@@ -274,7 +285,7 @@ inline void mm_init_kernel_pagetable() {
 	kernel_pagetable = (mm_page*) mm_mem_kalloc();
 
 	uint_32 pte;
-	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing 
+	((uint_32*) kernel_pagetable)[0] = 0; // To allow NULL dereferencing
 	for (pte = 1; pte < 1024; pte++) {
 		kernel_pagetable[pte].base = pte;
 		kernel_pagetable[pte].attr = MM_ATTR_P | MM_ATTR_RW | MM_ATTR_US_S;
@@ -360,6 +371,8 @@ inline void mm_setup_bitmap(mmap_entry_t* mmap_addr, size_t mmap_entries_local) 
 
 bool mm_set_pt_entry(void* vaddr, uint_32 entry_value, mm_page* pdt) {
 	kassert((((uint_32) vaddr) & 0xFFF) == 0);
+
+	// XXX What is this assertion?
 	kassert(!(entry_value & MM_ATTR_P));
 
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(vaddr)];
@@ -403,6 +416,14 @@ bool is_requested(void* page, mm_page* pdt) {
 	}
 }
 
+bool is_to_be_copied_on_write(void* page, mm_page* pdt) {
+	mm_page* pt_entry = mm_pt_entry_for(page, pdt);
+	if (!pt_entry) {
+		return FALSE;
+	}
+	return !(pt_entry->attr & MM_ATTR_RW) && (pt_entry->attr & (MM_ATTR_P | MM_ATTR_USR_COR));
+}
+
 void* palloc() {
 	void* page = (void*) processes[cur_pid].next_empty_page_addr;
 	processes[cur_pid].next_empty_page_addr += PAGE_SIZE;
@@ -424,6 +445,8 @@ static void page_fault_handler(registers_t* regs) {
 		void* fail_page = (void*)(rcr2() & ~0xFFF);
 		if (is_requested(fail_page, cur_pdt())) {
 			mm_user_allocate(fail_page);
+		} else if (is_to_be_copied_on_write(fail_page, cur_pdt())) {
+			mm_copy_on_write(fail_page);
 		} else {
 			vga_printf("Invalid %s at vaddr %x on a %s page, process %d. Killed.\n",
 				(regs->u.err_code & PF_WRITE ? "write" :
@@ -447,7 +470,7 @@ void mm_init(mmap_entry_t* mmap_addr, size_t mmap_entries_local) {
 	mm_bitmap = (uint_8*)HIMEM_BEGIN;
 	mm_setup_bitmap(mmap_addr, mmap_entries_local);
 
-	mm_init_kernel_pagetable();	
+	mm_init_kernel_pagetable();
 
 	idt_register(ISR_PGFLT, page_fault_handler, PL_KERNEL);
 
@@ -481,6 +504,29 @@ void mm_user_allocate(void* vaddr) {
 	}
 }
 
+#define MM_TMP_PAGE ((void*) 0xFF801000)
+void mm_copy_on_write(void* vaddr) {
+	// If I am the only process with this copy-on-write bit, just take it off.
+	if (!is_to_be_copied_on_write_by_other_processes(vaddr)) {
+		mm_page* pt_entry = mm_pt_entry_for(vaddr, cur_pdt());
+		pt_entry->attr |= MM_ATTR_RW;
+		pt_entry->attr &= ~MM_ATTR_USR_COR;
+	}
+
+	// Otherwise, copy and stuff.
+	void* frame = mm_mem_alloc();
+	if (!frame) {
+		vga_printf("Not enough memory! Killing process %d.\n", cur_pid);
+		loader_exit();
+	} else {
+		mm_map_frame(frame, MM_TMP_PAGE, cur_pdt(), PL_KERNEL);
+		memcpy(vaddr, MM_TMP_PAGE, PAGE_SIZE);
+		mm_unmap_page(MM_TMP_PAGE, cur_pdt());
+		mm_map_frame(frame, vaddr, cur_pdt(),
+				(mm_pt_entry_for(vaddr, cur_pdt())->attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+	}
+}
+
 static bool shared_with_other_processes(void* vaddr) {
 	int i;
 	for (i = 0; i < MAX_PID; i++) {
@@ -491,6 +537,22 @@ static bool shared_with_other_processes(void* vaddr) {
 		mm_page* entry = mm_pt_entry_for(vaddr, (mm_page*) processes[i].cr3);
 
 		if (entry != NULL && entry->attr & MM_ATTR_USR_SHARED) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static bool is_to_be_copied_on_write_by_other_processes(void* vaddr) {
+	int i;
+	for (i = 0; i < MAX_PID; i++) {
+		if (processes[i].id == FREE_PCB_PID || i == cur_pid) {
+			continue;
+		}
+
+		mm_page* entry = mm_pt_entry_for(vaddr, (mm_page*) processes[i].cr3);
+
+		if (entry != NULL && entry->attr & (MM_ATTR_P | MM_ATTR_USR_COR) && entry->attr & ~MM_ATTR_RW) {
 			return TRUE;
 		}
 	}

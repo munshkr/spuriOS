@@ -24,7 +24,7 @@
 #define MM_ATTR_USR   0xE00 // bits for kernel
 
 #define MM_ATTR_USR_SHARED 0x200
-//#define MM_ATTR_USR_2 0x400
+#define MM_ATTR_USR_COR 0x400
 //#define MM_ATTR_USR_3 0x800
 
 /* Control Register flags */
@@ -65,10 +65,10 @@ bool mm_set_pt_entry(void* vaddr, uint_32 entry_value, mm_page* pd);
 void mm_free_page_table_for(void* vaddr, mm_page* pdt);
 void* mm_vaddr_for_free_pdt_entry(mm_page* pdt);
 
-mm_page* mm_pt_entry_for(void* vaddr, mm_page* pdt); 
+mm_page* mm_pt_entry_for(void* vaddr, mm_page* pdt);
 uint_32 mm_pl_of_vaddr(void* vaddr, mm_page* pdt);
- 
-uint_32 mm_free_page_count(char request_type); 
+
+uint_32 mm_free_page_count(char request_type);
 
 void mm_map_frame(void* phys_addr, void* virt_addr, mm_page* pdt, uint_32 pl);
 void mm_unmap_page(void* virt_addr, mm_page* pdt);
@@ -82,6 +82,7 @@ void* mm_mem_kalloc();
 void mm_mem_free(void* page);
 
 void mm_user_allocate(void* vaddr);
+void mm_copy_on_write(void* vaddr);
 
 /* Manejador de directorios de página */
 mm_page* mm_dir_new(void);
@@ -90,7 +91,7 @@ void mm_dir_free(mm_page* d);
 /* Syscalls */
 void* palloc();
 sint_32 share_page(void* vaddr);
- 
+
 /* Auxiliares */
 void set_bit(int offset);
 void clear_bit(int position);
