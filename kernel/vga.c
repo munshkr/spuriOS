@@ -438,27 +438,27 @@ static unsigned int scan_uhex(const char value) {
 // Syscalls
 void print(registers_t* regs) {
 	// EBP (+0), EIP (+4), format (+8), ... args (+12)
-	char* format = *(char**)(regs->user_esp + 8);
-	uint_32 ret = vga_printf_fixed_args(format, (uint_32*)(regs->user_esp + 12));
+	char* format = *(char**)(regs->ebp + 8);
+	uint_32 ret = vga_printf_fixed_args(format, (uint_32*)(regs->ebp + 12));
 	regs->eax = ret;
 }
 
 void loc_print(registers_t* regs) {
 	//breakpoint();
 	// EBP (+0), EIP (+4), row (+8), col (+12), format (+16), ... args (+20)
-	uint_32 row = *(uint_32*)(regs->user_esp + 8);
-	uint_32 col = *(uint_32*)(regs->user_esp + 12);
-	char* format = *(char**)(regs->user_esp + 16);
-	uint_32 ret = vga_loc_printf_fixed_args(row, col, format, (uint_32*)(regs->user_esp + 12));
+	uint_32 row = *(uint_32*)(regs->ebp + 8);
+	uint_32 col = *(uint_32*)(regs->ebp + 12);
+	char* format = *(char**)(regs->ebp + 16);
+	uint_32 ret = vga_loc_printf_fixed_args(row, col, format, (uint_32*)(regs->ebp + 20));
 	regs->eax = ret;
 }
 
 void loc_print_alpha(registers_t* regs) {
 	//breakpoint();
 	// EBP (+0), EIP (+4), row (+8), col (+12), format (+16), ... args (+20)
-	uint_32 row = *(uint_32*)(regs->user_esp + 8);
-	uint_32 col = *(uint_32*)(regs->user_esp + 12);
-	char* format = *(char**)(regs->user_esp + 16);
-	uint_32 ret = vga_loc_alpha_printf_fixed_args(row, col, format, (uint_32*)(regs->user_esp + 12));
+	uint_32 row = *(uint_32*)(regs->ebp + 8);
+	uint_32 col = *(uint_32*)(regs->ebp + 12);
+	char* format = *(char**)(regs->ebp + 16);
+	uint_32 ret = vga_loc_alpha_printf_fixed_args(row, col, format, (uint_32*)(regs->ebp + 20));
 	regs->eax = ret;
 }
