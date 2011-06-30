@@ -476,7 +476,10 @@ static void copy_nonkernel_pages(mm_page* father_pdt, mm_page* child_pdt) {
 
 					if (table[pt_entry].attr & MM_ATTR_USR_SHARED) {
 						void* frame = (void*) (table[pt_entry].base << 12);
-						mm_map_frame(frame, virtual, child_pdt, table[pt_entry].attr);
+						// FIXME mm_map_frame should accept attributes as a parameter
+						mm_map_frame(frame, virtual, child_pdt,
+							(table[pt_entry].attr & MM_ATTR_US_U ? PL_USER : PL_KERNEL));
+						mm_pt_entry_for(virtual, child_pdt)->attr |= MM_ATTR_USR_SHARED;
 					} else {
 						void* frame = mm_mem_alloc();
 						mm_map_frame(frame, virtual, child_pdt,
