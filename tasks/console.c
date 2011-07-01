@@ -6,6 +6,7 @@
 
 #define EXEC_CHAR ':'
 #define CAT_CHAR '@'
+#define SERIAL_CHAR '='
 #define EXIT_CMD "exit"
 #define HELP_CMD "help"
 
@@ -105,7 +106,7 @@ static void cmd_execute(char* file, uint_32 size) {
 
 static void cmd_cat(char* file, uint_32 size) {
 	if (!size) {
-		fprintf(con_fd, "Spursh: Expected filename after '@'\n");
+		fprintf(con_fd, "Spursh: Expected filename after '%c'\n", CAT_CHAR);
 		return;
 	}
 
@@ -129,11 +130,45 @@ static void cmd_cat(char* file, uint_32 size) {
 	}
 }
 
+static void cmd_serialcat(char* file, uint_32 size) {
+	if (!size) {
+		fprintf(con_fd, "Spursh: Expected filename after '%c'\n", SERIAL_CHAR);
+		return;
+	}
+
+	int fd = open(file, FS_OPEN_RD);
+	if (fd < 0) {
+		fprintf(con_fd, "Spursh: Error opening %s\n", file);
+		return;
+	}
+
+	int serial_fd = open("/serial0", FS_OPEN_RDWR);
+	if (serial_fd < 0) {
+		fprintf(con_fd, "Spursh: Error opening \"/serial0\"\n");
+		return;
+	}
+
+	char buf[512];
+
+	while (1) {
+		int readed = read(fd, &buf, 512);
+		if (readed < 1) {
+			close(fd);
+			close(serial_fd);
+			return;
+		} else {
+			write(serial_fd, &buf, readed);
+		}
+	}
+}
+
 static int parse(char* line_buffer, uint_32 size) {
 	if (*line_buffer == EXEC_CHAR) {
 		cmd_execute(&line_buffer[1], size - 1);
 	} else if (*line_buffer == CAT_CHAR) {
 		cmd_cat(&line_buffer[1], size - 1);
+	} else if (*line_buffer == SERIAL_CHAR) {
+		cmd_serialcat(&line_buffer[1], size - 1);
 	} else if (!strcmp(line_buffer, EXIT_CMD)) {
 		fprintf(con_fd, "Bye.\n");
 		close(con_fd);
