@@ -55,6 +55,7 @@ static int krypt_encrypt() {
 	}
 
 	int i, sz;
+	int bytes = 0;
 	while (TRUE) {
 		memset(buffer, 0, PAGE_SIZE);
 
@@ -63,8 +64,8 @@ static int krypt_encrypt() {
 		if (!sz) break;
 
 		fprintf(con, "[encrypt] Encrypt buffer with cipher key\n");
-		for (i = 0; i < sz; i++) {
-			buffer[i] ^= CIPHER_KEY[i % CIPHER_KEY_SIZE];
+		for (i = 0; i < sz; i++, bytes++) {
+			buffer[i] ^= CIPHER_KEY[bytes % CIPHER_KEY_SIZE];
 		}
 
 		// Write to pipe shared with 'write' process
