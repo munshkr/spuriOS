@@ -67,6 +67,7 @@ static int memkrypt_encrypt() {
 	fprintf(con, "[encrypt] Hi!\n");
 
 	int i = 0;
+	int bytes = 0;
 	while (TRUE) {
 		sem_wait(&sem_encrypt, 1);
 
@@ -74,8 +75,8 @@ static int memkrypt_encrypt() {
 
 		fprintf(con, "[encrypt] Encrypt buffer with cipher key\n");
 		int j;
-		for (j = 0; j < sz; j++) {
-			buffer[i][j] ^= CIPHER_KEY[j % CIPHER_KEY_SIZE];
+		for (j = 0; j < sz; j++, bytes++) {
+			buffer[i][j] ^= CIPHER_KEY[bytes % CIPHER_KEY_SIZE];
 		}
 
 		sem_signal(&sem_write, 1);
