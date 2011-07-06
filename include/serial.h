@@ -21,7 +21,6 @@ struct str_dev_serial {
 
 	bool buffer_free;
 	char buffer[SERIAL_BUFFER_LENGTH];
-	uint_8 ptr_from;
 	uint_8 ptr_to;
 
 	pid write_queue;

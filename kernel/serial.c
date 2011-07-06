@@ -90,13 +90,11 @@ void read_from_serial(uint_32 index) {
 	if (intid & II_ID_RDA) {
 		char data = inb(port);
 
-		// Versión buffer circular
-		device->buffer[device->ptr_to] = data;
-		if (device->ptr_to == device->ptr_from && !device->buffer_free) {
-			device->ptr_from = (device->ptr_from + 1) % SERIAL_BUFFER_LENGTH;
+		if (device->ptr_to < SERIAL_BUFFER_LENGTH) {
+			device->buffer[device->ptr_to] = data;
+			device->ptr_to++;
+			device->buffer_free = FALSE;
 		}
-		device->ptr_to = (device->ptr_to + 1) % SERIAL_BUFFER_LENGTH;
-		device->buffer_free = FALSE;
 
 		if (device->read_queue != FREE_QUEUE) {
 			loader_unqueue(&(device->read_queue));
@@ -120,28 +118,17 @@ sint_32 serial_read(chardev* self, void* buf, uint_32 size) {
 			loader_enqueue(&(C(self)->read_queue));
 		}
 
-		// Versión buffer circular
-		uint_32 total_bytes;
-		uint_32 tmp_val;
-		if (C(self)->ptr_to > C(self)->ptr_from) {
-			total_bytes = (size < C(self)->ptr_to - C(self)->ptr_from ? size : C(self)->ptr_to - C(self)->ptr_from);
-			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, total_bytes);
-			C(self)->ptr_from += total_bytes;
-		} else {
-			tmp_val = SERIAL_BUFFER_LENGTH - C(self)->ptr_from;
-			total_bytes = (size < tmp_val + C(self)->ptr_to + 1 ? size : tmp_val + C(self)->ptr_to + 1);
-			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf, tmp_val);
-			C(self)->ptr_from = 0;
-			copy2user(&(C(self)->buffer[C(self)->ptr_from]), buf + tmp_val, C(self)->ptr_to);
-			C(self)->ptr_from += C(self)->ptr_to;
-		}
+		uint_32 bytes_copied;
+		uint_32 total_copy = 0;
 
-		if (C(self)->ptr_from == C(self)->ptr_to) {
-			C(self)->buffer_free = TRUE;
-		}
+		bytes_copied = (size < C(self)->ptr_to ? size : C(self)->ptr_to);
 
-		return total_bytes;
+		copy2user(&(C(self)->buffer), buf, bytes_copied);
+		C(self)->ptr_to = 0;
+		C(self)->buffer_free = TRUE;
 
+		total_copy = bytes_copied;
+		return total_copy;
 	} else {
 		return size;
 	}
