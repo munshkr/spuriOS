@@ -236,10 +236,16 @@ void show_eflags(uint_32 eflags) {
 		eflags);
 }
 
-void debug_log(const char* message) {
+void debug_log(const char* message, ...) {
 	/* Perhaps this function should log to a file in the future */
 	uint_64 tsc = read_tsc();
-	vga_printf("[%d.%d] %s\n", (uint_32)(tsc >> 32), (uint_32)(tsc & 0xFFFFFFFF), message);
+	vga_printf("[%d.%d] ", (uint_32)(tsc >> 32), (uint_32)(tsc & 0xFFFFFFFF));
+ 	
+	va_list ap;
+	va_start(ap, message);
+	vga_printf_fixed_args(message, (void*) ap);
+	va_end(ap);
+	vga_printf("\n");
 }
 
 unsigned int symbol_name(uint_32 address, char** string_p) {

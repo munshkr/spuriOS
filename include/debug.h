@@ -12,7 +12,7 @@ void debug_init(void);
 
 void debug_kernelpanic(registers_t* regs);
 
-void debug_log(const char* message);
+void debug_log(const char* message, ...) __attribute__ ((format (printf, 1, 2)));
 
 void show_eflags(uint_32 eflags);
 void show_cs_eip(uint_32 cs, uint_32 eip);
