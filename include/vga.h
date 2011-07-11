@@ -2,6 +2,8 @@
 #define __VGA_H__
 
 #include <tipos.h>
+#include <isr.h>
+#include <common.h> 
 
 typedef union str_vga_attr_t {
 	struct str_vga_attr_fld {
