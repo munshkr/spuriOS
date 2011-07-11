@@ -11,6 +11,7 @@
 #include <i386.h>
 #include <common.h>
 #include <device.h>
+#include <processor.h>
 
 #define __UNIT_TESTING__
 
@@ -51,6 +52,7 @@ inline void go_idle() {
 }
 
 void print_logo(void) {
+	vga_printf("\n");
 	int i;
 	for (i = 0; i < 5; i++) {
 		vga_state.attr.fld.forecolor = i + 2;
@@ -61,13 +63,13 @@ void print_logo(void) {
 	vga_reset_colors();
 }
 
-/* Entry-point del modo protegido luego de cargar los registros de
- * segmento y armar un stack */
 void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	vga_init();
 	gdt_init();
 	idt_init();
 	debug_init();
+
+	processor_gather_mp_info();
 
 	mm_init(mmap_addr, mmap_entries);
 	enable_paging();
@@ -77,7 +79,9 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	syscalls_init();
 	device_init();
 
-	print_logo();
+	processor_smp_boot();
+
+//	print_logo();
 
 	loader_load(&task_init_pso, PL_USER);
 

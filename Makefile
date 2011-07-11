@@ -63,6 +63,9 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/vga.o \
 	kernel/ext2.o \
 	kernel/pipe.o \
+	kernel/apic.o \
+	kernel/processor.o \
+	kernel/ap_trampoline.o \
 
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg
