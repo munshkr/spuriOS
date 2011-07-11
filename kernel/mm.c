@@ -34,6 +34,13 @@ static bool is_to_be_copied_on_write_by_other_processes(void* vaddr);
 
 extern void* _end; // Puntero al fin del c'odigo del kernel.bin (definido por LD).
 
+void mm_set_uncacheable(void* vaddr, mm_page* pd) {
+	mm_page* pt_entry = mm_pt_entry_for(vaddr, pd);
+	kassert(pt_entry != 0);
+	pt_entry->attr |= MM_ATTR_WT;
+	pt_entry->attr |= MM_ATTR_CD;
+}
+
 void mm_free_page_table_for(void* vaddr, mm_page* pdt) {
 	kassert((((uint_32) vaddr) & 0xFFF) == 0);
 	mm_page* pd_entry = &pdt[PD_ENTRY_FOR(vaddr)];

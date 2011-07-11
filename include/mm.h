@@ -62,6 +62,8 @@ typedef struct str_mm_page {
 
 #define MM_TMP_PAGE ((void*) 0xFF800000)
 
+void mm_set_uncacheable(void* vaddr, mm_page* pd);
+
 bool mm_set_pt_entry(void* vaddr, uint_32 entry_value, mm_page* pd);
 
 void mm_free_page_table_for(void* vaddr, mm_page* pdt);
