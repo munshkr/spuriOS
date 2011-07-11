@@ -5,6 +5,20 @@
 
 #define LS_INLINE static __inline __attribute__((always_inline))
 
+/* MSR (Model specific registers) */
+
+LS_INLINE uint_64 read_msr(int msr_addr);
+
+/* cpuid */
+#define CPUID_01_FEATURE_APIC 512
+
+struct cpuid_info_t {
+	int eax, ebx, ecx, edx;
+};
+typedef struct cpuid_info_t cpuid_info_t;
+
+LS_INLINE void cpuid(int eax, int ecx, cpuid_info_t* cpuid_info);
+
 /* out functions */
 LS_INLINE void outb(int port, uint_8 data);
 LS_INLINE void outsb(int port, const uint_8 *addr, int cnt);
@@ -59,6 +73,20 @@ LS_INLINE void lss(uint_16 sel);
 LS_INLINE void invlpg(void* page);
 
 /*** Implementaciones Inline ***/
+
+LS_INLINE uint_64 read_msr(int msr_addr) {
+	uint_32 edx, eax;
+	__asm __volatile("rdmsr" : "=a" (eax), "=d" (edx) : "c" (msr_addr));
+	return (((uint_64) edx) << 32) + ((uint_64) eax);
+}
+
+
+LS_INLINE void cpuid(int eax, int ecx, cpuid_info_t* cpuid_info) {
+	__asm __volatile("cpuid"
+		: "=a" (cpuid_info->eax), "=b" (cpuid_info->ebx),
+		  "=c" (cpuid_info->ecx), "=d" (cpuid_info->edx)
+		: "a" (eax), "c" (ecx) );
+}
 
 LS_INLINE uint_32 esp(void) {
 	uint_32 val;
