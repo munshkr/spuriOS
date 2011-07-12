@@ -6,11 +6,14 @@
 #include <tipos.h>
 #include <apic.h>
 
+/* Remember change some values in kernel/ap_trampoline.asm
+ * when modifying this struct */
 struct processor_t {
 	bool present;
 	bool is_the_bsp;
+	void* stack_page;
 	lapic_t lapic;
-};
+} __attribute__((__packed__));
 
 typedef struct processor_t processor_t;
 

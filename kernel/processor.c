@@ -7,6 +7,7 @@
 #include <debug.h>
 #include <apic.h>
 #include <mm.h>
+#include <spinlock.h>
 
 // Like Linux. See linux/arch/x86/kernel/mpparse.c
 static struct mpf_intel mpf_found;
@@ -18,6 +19,7 @@ processor_t processors[MAX_PROCESSORS] = {
 		[0 ... MAX_PROCESSORS - 1] = {
 			.present = FALSE,
 			.is_the_bsp = FALSE,
+			.stack_page = (void*) 0,
 			.lapic = {
 				.present = FALSE
 			}
@@ -216,39 +218,31 @@ void processor_smp_boot() {
 	// APIC enabled and ready
 	setup_warm_reset();
 
-	// Encapsulate this
-	void* apic_base = processors[processor_bsp_id].lapic.base_addr;
+	lapic_t* lapic = &processors[processor_bsp_id].lapic;
 
 	uint_32 proc_id;
 	for (proc_id = 0; proc_id < MAX_PROCESSORS; proc_id++) {
 		if (processors[proc_id].present && !processors[proc_id].is_the_bsp) {
+			processors[proc_id].stack_page = mm_mem_kalloc();
+
 			uint_8 dest_apic_id = processors[proc_id].lapic.id;
 
-			breakpoint();
+			// xAPIC Startup Sequence (what about 486DX2 APIC?)
 
-			// INIT Assert
-			apic_write32(apic_base, LAPIC_ICR_HIGH_OFFSET,
-				((uint_32) dest_apic_id) << 24);
-			apic_write32(apic_base, LAPIC_ICR_LOW_OFFSET,
-				LAPIC_ICR_INIT + LAPIC_ICR_ASSERT + LAPIC_ICR_LVL_TRIG);
+			// ... INIT Assert/Deassert
+			apic_send_init(lapic, dest_apic_id, TRUE);
+			apic_send_init(lapic, dest_apic_id, FALSE);
 
-			// INIT Deassert
-			apic_write32(apic_base, LAPIC_ICR_HIGH_OFFSET,
-				((uint_32) dest_apic_id) << 24);
-			apic_write32(apic_base, LAPIC_ICR_LOW_OFFSET,
-				LAPIC_ICR_INIT + LAPIC_ICR_LVL_TRIG);
-
-			// SIPIs
-			apic_write32(apic_base, LAPIC_ESR_OFFSET, 0); // Clear errors
-
-			apic_write32(apic_base, LAPIC_ICR_HIGH_OFFSET,
-				((uint_32) dest_apic_id) << 24);
-			apic_write32(apic_base, LAPIC_ICR_LOW_OFFSET,
-				LAPIC_ICR_SIPI + ((((uint_32) ap_trampoline) >> 12) & 0xFF));
-
-			breakpoint();
+			// ... SIPIs
+			apic_clear_error_register(lapic);
+			apic_send_startup_ipi(lapic, dest_apic_id, (uint_32) ap_trampoline);
 		}
 	}
 
 	mm_unmap_page((void*) 0, (mm_page*) rcr3());
+}
+
+void processor_ap_kinit(uint_32 lapic_id) {
+	debug_log("SMP: processor [lapic #%d] bootup finished", lapic_id);
+	while(1);
 }

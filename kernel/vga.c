@@ -3,6 +3,7 @@
 #include <common.h>
 #include <lib.h>
 #include <debug.h>
+#include <spinlock.h>
 #include "vga.h"
 
 /* How many spaces a TAB char represents */
@@ -11,6 +12,7 @@
 /* Space char for cursor display */
 #define WHITE_SPACE 0x0720
 
+static spinlock_t print_spinlock = 0;
 
 uint_16 vga_port = 0x3D0;
 
@@ -93,6 +95,8 @@ int vga_writebuf(const void* buff_ptr, vga_screen_state_t* state,
 }
 
 int vga_printf_fixed_args(const char* format, uint_32* args) {
+	wait(&print_spinlock);
+
 	int size = 0;
 	const char* ptr = format;
 	char* str;
@@ -160,6 +164,7 @@ int vga_printf_fixed_args(const char* format, uint_32* args) {
 	vga_state.attr = old_attr;
 	vga_update_cursor();
 
+	signal(&print_spinlock);
 	return size;
 }
 

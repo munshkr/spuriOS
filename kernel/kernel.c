@@ -25,8 +25,10 @@ const char* fancy_logo[5] = {
 
 extern pso_file task_init_pso;
 
-inline void enable_paging() {
-	mm_page* kernel_page_dir = mm_dir_new();
+mm_page* kernel_page_dir = 0;
+
+// Used either by BSP or APs
+void enable_paging() {
 	lcr3((uint_32) kernel_page_dir);
 
 	uint_32 cr0 = rcr0();
@@ -72,6 +74,8 @@ void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	processor_gather_mp_info();
 
 	mm_init(mmap_addr, mmap_entries);
+
+	kernel_page_dir = mm_dir_new();
 	enable_paging();
 
 	loader_init();

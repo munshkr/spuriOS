@@ -8,6 +8,20 @@
 #include <debug.h>
 #include <tipos.h>
 
+void apic_send_startup_ipi(lapic_t* lapic, uint_8 dest_apic_id,
+	uint_32 startup_offset) {
+	kassert((startup_offset & 0xFFF) == 0);
+	void* apic_base = lapic->base_addr;
+	apic_write32(apic_base, LAPIC_ICR_HIGH_OFFSET,
+		((uint_32) dest_apic_id) << 24);
+	apic_write32(apic_base, LAPIC_ICR_LOW_OFFSET,
+		LAPIC_ICR_SIPI + (((startup_offset) >> 12) & 0xFF));
+} 
+
+void apic_clear_error_register(lapic_t* lapic) {
+	apic_write32(lapic->base_addr, LAPIC_ESR_OFFSET, 0);
+}
+
 uint_32 apic_read32(void* lapic_base, uint_32 reg_offset) {
 	kassert((reg_offset & 0xF) == 0);
 	uint_32* reg = (uint_32*)(lapic_base + reg_offset);
@@ -18,6 +32,16 @@ void apic_write32(void* lapic_base, uint_32 reg_offset, uint_32 value) {
 	kassert((reg_offset & 0xF) == 0);
 	uint_32* reg = (uint_32*)(lapic_base + reg_offset);
 	*reg = value;
+}
+
+void apic_send_init(lapic_t* lapic, uint_8 dest_apic_id, bool assert) {
+	void* apic_base = lapic->base_addr;
+	apic_write32(apic_base, LAPIC_ICR_HIGH_OFFSET,
+		((uint_32) dest_apic_id) << 24);
+
+	uint_32 command = LAPIC_ICR_INIT + LAPIC_ICR_LVL_TRIG;
+	if (assert)	command += LAPIC_ICR_ASSERT;
+	apic_write32(apic_base, LAPIC_ICR_LOW_OFFSET, command);
 }
 
 void apic_soft_enable(lapic_t* lapic) {

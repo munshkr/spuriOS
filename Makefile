@@ -66,6 +66,7 @@ OBJS_KERN=kernel/kinit.o \
 	kernel/apic.o \
 	kernel/processor.o \
 	kernel/ap_trampoline.o \
+	kernel/spinlock.o \
 
 BIN_KERN=$(DIROUT)kernel.bin
 DUMP_KERN=$(DIROUT)kernel.bin.asm $(DIROUT)kernel.bin.elf $(DIROUT)kernel.bin.orig.elf $(DIROUT)kernel.bin.dbg

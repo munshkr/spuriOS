@@ -24,16 +24,21 @@
 
 #include <tipos.h>
 
+/* Remember change some values in kernel/ap_trampoline.asm
+ * when modifying this struct */
 struct lapic_t {
 	bool present;
 	uint_32 id;
 	void* base_addr;
 
 	void (*enable)(struct lapic_t* self);
-};
+} __attribute__((__packed__));
 
 typedef struct lapic_t lapic_t;
 
+void apic_send_startup_ipi(lapic_t* lapic, uint_8 dest_apic_id, uint_32 startup_offset);
+void apic_clear_error_register(lapic_t* lapic);
+void apic_send_init(lapic_t* lapic, uint_8 dest_apic_id, bool assert);
 uint_32 apic_read32(void* lapic_base, uint_32 reg_offset);
 void apic_write32(void* lapic_base, uint_32 reg_offset, uint_32 value);
 

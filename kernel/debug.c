@@ -6,6 +6,7 @@
 #include <i386.h>
 #include <idt.h>
 #include <lib.h>
+#include <spinlock.h>
 
 #define HAS_CF(x) (x & 1)
 #define HAS_PF(x) (x & 4)
@@ -236,7 +237,9 @@ void show_eflags(uint_32 eflags) {
 		eflags);
 }
 
+spinlock_t debug_log_spinlock = 0;
 void debug_log(const char* message, ...) {
+	wait(&debug_log_spinlock);
 	/* Perhaps this function should log to a file in the future */
 	uint_64 tsc = read_tsc();
 	vga_printf("[%d.%d] ", (uint_32)(tsc >> 32), (uint_32)(tsc & 0xFFFFFFFF));
@@ -246,6 +249,7 @@ void debug_log(const char* message, ...) {
 	vga_printf_fixed_args(message, (void*) ap);
 	va_end(ap);
 	vga_printf("\n");
+	signal(&debug_log_spinlock);
 }
 
 unsigned int symbol_name(uint_32 address, char** string_p) {
