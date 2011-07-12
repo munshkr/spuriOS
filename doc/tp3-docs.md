@@ -9,6 +9,44 @@ Inter-process Communication
 
 ### `pipe` - Pipes
 
+Un pipe está compuesto por dos char devices denominados _endpoints_ o extremos.
+Cada extremo tiene un puntero a un buffer común de tamaño fijo (4Kb), es decir,
+el buffer del pipe, un puntero a su extremo opuesto, y una cola. Uno de los
+extremos sólo puede leer del buffer, mientras que el otro sólo puede escribir.
+Los char devices se almacenan en un arreglo de tamaño fijo.
+
+El buffer está implementado como un arreglo de 4Kb circular. Para mayor
+eficiencia en la utilización del espacio, el buffer se utiliza _circularmente_:
+Cada char device extremo tiene un puntero de posición y un entero que indica la
+cantidad de bytes utilizados o disponibles para leer. Los punteros son
+individuales a cada extremo, pero el entero de "bytes disponibles" es
+compartido. Cuando el extremo de escritura almacena *n* bytes, se incrementa la
+variable de "bytes disponibles" y se avanza el puntero. Cuando un puntero se
+excede del límite del buffer, comienza de nuevo al principio del arreglo (_wrap
+around_). Por otro lado, el extremo de lectura sólo puede leer hasta que su
+puntero de posición no sobrepase el de escritura (puesto que ya no hay más
+bytes para leer, el resto es basura).
+
+Cuando se intenta leer del buffer y éste está vacío, el proceso se bloquea
+hasta que el buffer contenga nueva información, y esto únicamente sucede cuando
+otro proceso escribe en el pipe. Al terminar de escribir, el proceso despierta
+a todos los que están esperando en la cola del otro extremo, el de lectura. El
+proceso es análogo cuando un proceso intenta escribir en un buffer lleno. De
+esta manera, el mecanismo de pipes se utiliza de manera transparente para los
+procesos, éstos no necesitan conocer el tamaño del buffer interno. Más
+importante aún, permite una manera de sincronizar la comunicación entre dos o
+más procesos de manera óptima, puesto que los procesos se van a dormir cuando
+tienen que esperar para procesar la información proveniente de otros procesos,
+y se despiertan exactamente cuando la información está disponible.
+
+La función de escritura devuelve 0 inmediatamente cuando el otro extremo par se
+cierra. Este comportamiento es conocido como _broken pipe_. La razón es simple:
+no tiene sentido escribir en un buffer que ya no se puede leer. Por otro lado,
+en la función de lectura se suma la condición de que el buffer esté vacío. Es
+decir, si un proceso escribe en el pipe y cierra el extremo de escritura, el
+proceso que lee del pipe puede leer lo que queda del buffer antes de que la
+comuncación se corte.
+
 ### `loader` - Extensión a la carga de procesos
 
 Implementar la llamada al sistema `fork()` resultó más sencillo que la
