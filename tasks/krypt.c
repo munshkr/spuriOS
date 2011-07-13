@@ -5,6 +5,8 @@
 
 #define PAGE_SIZE 4096
 
+const char* FILENAME = "/disk/kernel.bin";
+
 const char* CIPHER_KEY = "SpuriOS";
 const size_t CIPHER_KEY_SIZE = 7;
 
@@ -13,8 +15,8 @@ static int pipe_read2enc[2] = {};
 static int pipe_enc2write[2] = {};
 
 static int krypt_read() {
-	fprintf(con, "[read] Open /disk/kernel.bin as read-only\n");
-	int file = open("/disk/kernel.bin", FS_OPEN_RD);
+	fprintf(con, "[read] Open %s as read-only\n", FILENAME);
+	int file = open(FILENAME, FS_OPEN_RD);
 	if (file < 0) {
 		fprintf(con, "[read] Failure to open file\n");
 		return -1;
