@@ -7,13 +7,13 @@ Documentación
 Inter-process Communication
 ---------------------------
 
-### `pipe` - Pipes
+### `pipe` - Pipes ###
 
 Un pipe está compuesto por dos char devices denominados _endpoints_ o extremos.
-Cada extremo tiene un puntero a un buffer común de tamaño fijo (4Kb), es decir,
-el buffer del pipe, un puntero a su extremo opuesto, y una cola. Uno de los
-extremos sólo puede leer del buffer, mientras que el otro sólo puede escribir.
-Los char devices se almacenan en un arreglo de tamaño fijo.
+Cada extremo tiene un puntero a un buffer común de tamaño fijo (4Kb), un puntero
+a su extremo opuesto, y una cola. Uno de los extremos sólo puede leer del
+buffer, mientras que el otro sólo puede escribir. Los char devices se almacenan
+en un arreglo de tamaño fijo.
 
 El buffer está implementado como un arreglo de 4Kb circular. Para mayor
 eficiencia en la utilización del espacio, el buffer se utiliza _circularmente_:
@@ -24,20 +24,20 @@ compartido. Cuando el extremo de escritura almacena *n* bytes, se incrementa la
 variable de "bytes disponibles" y se avanza el puntero. Cuando un puntero se
 excede del límite del buffer, comienza de nuevo al principio del arreglo (_wrap
 around_). Por otro lado, el extremo de lectura sólo puede leer hasta que su
-puntero de posición no sobrepase el de escritura (puesto que ya no hay más
-bytes para leer, el resto es basura).
+puntero de posición no sobrepase el de escritura (puesto que ya no hay más bytes
+para leer, el resto es basura).
 
-Cuando se intenta leer del buffer y éste está vacío, el proceso se bloquea
-hasta que el buffer contenga nueva información, y esto únicamente sucede cuando
-otro proceso escribe en el pipe. Al terminar de escribir, el proceso despierta
-a todos los que están esperando en la cola del otro extremo, el de lectura. El
+Cuando se intenta leer del buffer y éste está vacío, el proceso se bloquea hasta
+que el buffer contenga nueva información, y esto únicamente sucede cuando otro
+proceso escribe en el pipe. Al terminar de escribir, el proceso despierta a
+todos los que están esperando en la cola del otro extremo, el de lectura. El
 proceso es análogo cuando un proceso intenta escribir en un buffer lleno. De
 esta manera, el mecanismo de pipes se utiliza de manera transparente para los
 procesos, éstos no necesitan conocer el tamaño del buffer interno. Más
 importante aún, permite una manera de sincronizar la comunicación entre dos o
 más procesos de manera óptima, puesto que los procesos se van a dormir cuando
-tienen que esperar para procesar la información proveniente de otros procesos,
-y se despiertan exactamente cuando la información está disponible.
+tienen que esperar para procesar la información proveniente de otros procesos, y
+se despiertan exactamente cuando la información está disponible.
 
 La función de escritura devuelve 0 inmediatamente cuando el otro extremo par se
 cierra. Este comportamiento es conocido como _broken pipe_. La razón es simple:
@@ -47,7 +47,7 @@ decir, si un proceso escribe en el pipe y cierra el extremo de escritura, el
 proceso que lee del pipe puede leer lo que queda del buffer antes de que la
 comuncación se corte.
 
-### `loader` - Extensión a la carga de procesos
+### `loader` - Extensión a la carga de procesos ###
 
 Implementar la llamada al sistema `fork()` resultó más sencillo que la
 implementación de `loader_load` o `run` en parte por la capacidad de reutilizar
@@ -78,7 +78,7 @@ verse alterada.
 Manejador de memoria
 --------------------
 
-### Memoria on-demand
+### Memoria on-demand ###
 
 Brindar dicha funcionalidad fue relativamente sencillo: a medida que se
 solicitaban páginas con `palloc()` el rango de direcciones virtuales crecía pero
@@ -92,9 +92,11 @@ demandada. Esta lógica se incluyó en el handler del _Page Fault_ y si el caso
 fuera el último mencionado se procede a solicitar un frame y mapearlo en dicha
 dirección virtual, retornando luego a la instrucción que causó la excepción.
 
-### Memoria compartida
+### Memoria compartida ###
 
-### Copy-on-write
+...
+
+### Copy-on-write ###
 
 Para implementar el mecanismo de _copy-on-write_ se modificó, como se ha
 mencionado, aquella sección de la llamada al sistema `fork()` en que se copiaban
@@ -113,3 +115,74 @@ ya no necesita copia en el esquema de paginación de dicho proceso.
 
 Tareas
 ------
+
+Como lo describe el enunciado, las tareas `krypt` y `memkrypt` leen un archivo
+(por defecto, el binario del kernel) del disco rígido, lo encriptan con cifrado
+XOR usando una llave definida en el código, y lo escriben en el puerto serie.
+Dado que hay partes del proceso que son intensivas en CPU y otras en E/S, la
+idea es paralelizar estas etapas separándolas en distintos procesos, permitiendo
+que se comuniquen entre sí con algún mecanismo de IPC. En este trabajo práctico
+se implementaron dos mecanismos: pipes y memoria compartida.
+
+### `krypt` ###
+
+Esta tarea utiliza pipes para comunicar cada parte del proceso. Se crean un pipe
+antes de cada fork, de modo que uno de ellos lo comparten el proceso que lee del
+disco (`read_proc`) y el que encripta (`encrypt_proc`), y otro lo comparten
+`read_proc` y el proceso que escribe al puerto serie (`write_proc`).
+
+Se pidió la condición de que los procesos transfieran los datos de a bloques de
+4Kb, y es por esto que cada proceso tiene un buffer de un bloque que es
+utilizado para leer y escribir en el pipe correspondiente.
+
+El ciclo de `krypt` es el siguiente: `read_proc` lee de a 4Kb del disco en el
+buffer y escribe la cantidad de bytes leídos en el pipe. Inmediatamente
+`encrypt_proc` se despierta porque hay datos nuevos para leer del pipe. Luego de
+encriptar, escribe el resultado en el segundo pipe. `write_proc` se despierta,
+lee el contenido del pipe en un buffer y lo transfiere al puerto serie.
+
+Este ciclo continua hasta que la lectura al disco que realiza `read_proc`
+devuelve 0 por que ya no hay más datos que leer del archivo (End-Of-File). El
+proceso cierra el extremo de escritura, y esto inmediatamente causa un "broken
+pipe" desde el lado de `encrypt_proc`, desencadenando en la terminación de este
+proceso, y a su vez del tercero, `write_proc`, finalizando correctamente la
+tarea como era esperado.
+
+El hecho que los pipes permitan ser leídos a pesar de que el extremo de
+escritura ya fue cerrado es clave para que la tarea termine como coresponde. Si
+esto no fuese posible, `encrypt_proc` probablemente no llegaría a leer del
+buffer antes de que `read_proc` termine, desencadenando en una finalización
+prematura.
+
+### `memkrypt` ###
+
+A diferencia de `krypt`, `memkrypt` utiliza un buffer de 4 páginas compartidas
+de 4Kb de manera circular. `read_proc` lee del disco y escribe en la página 1,
+luego hace lo mismo con la página 2, 3 y 4, y vuelve a comenzar por la página 1.
+La primera dificultad que encontramos es que necesitábamos una forma de
+sincronizar los procesos, para que uno no sobreescribiera una página que todavía
+no había sido escrita, o que otro proceso no leyera de una página con
+información inútil.
+
+Tomando la sugerencia de la consigna del trabajo práctico, escribimos un
+conjunto de funciones que implementan *semáforos* a nivel de usuario utilizando
+pipes. De esta manera, pudimos simular un `signal(n)` o un `wait(n)` escribiendo
+o leyendo `n` bytes en un pipe.
+
+`read_proc` comienza haciendo `signal(4)` para "marcar" las 4 páginas del buffer
+como disponibles, dado que la tarea acaba de comenzar y el buffer está vacío. El
+ciclo comienza con un `wait(1)`. Así, cuando el proceso termine de escribir en
+todas las 4 páginas, no llegue a pisar la página 1 si no fue leída por
+`encrypt_proc` aún. Luego de trabajar sobre una página, `read_proc` hace
+`signal(1)` sobre el semáforo de `encrypt_proc` para "avisarle" que tiene una (y
+sólo una) página para encriptar. La situación es similar en `encrypt_proc` y
+`write_proc`.
+
+El segundo problema que nos surgió fue el de comunicar la cantidad de bytes
+leídos por `read_proc` a los otros dos procesos. Para resolverlo, pedimos una
+página extra y la marcamos como compartida. En esta página almacenamos el entero
+que corresponde a la cantidad de bytes leídos del disco por `read_proc`. Luego
+`encrypt_proc` y `write_proc` leen esa variable para saber cuantos bytes deben
+encriptar y escribir al puerto serial, y cuando deben terminar. Para evitar
+condiciones de carrera al leer o escribir sobre esa variable, utilizamos un
+_mutex_.
