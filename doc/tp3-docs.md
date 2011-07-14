@@ -94,7 +94,35 @@ dirección virtual, retornando luego a la instrucción que causó la excepción.
 
 ### Memoria compartida ###
 
-...
+Para implementar la funcionalidad que permite compartir una página entre dos o
+más procesos, primero elegimos uno de los tres bits disponibles para el usuario
+en la page-table entry, que nos va a servir para marcar la página como
+compartida. Una vez hecho eso, cuando el proceso mediante syscall solicita
+compartir una página, se chequea el estado actual de la mísma. En caso que ésta
+esté presente, se enciende el bit de compartida mencionado antes. Si no está
+presente se chequea el valor de _requested_ (Ver Memoria on-demand). Si la
+página está _requested_ entonces antes de marcarla como compartida, se pide a
+memoria el page-frame y se mapea a la dirección virtual solicitada (es decir,
+se completa el proceso que se inició cuando el usuario solicitó esa página y
+el mecanismo de Memoria on-demand la marcó como solicitada)
+
+Para que la marca de compartida tenga efecto, la rutina que copia las
+páginas del proceso padre al hijo al llamar al syscall `fork()` reconoce el bit
+de página compartida y para cada página presente con dicho bit encendido, en
+vez de marcarla para copiar en la próxima escritura (Ver copy-on-write),
+sólamente copia la entrada de la page-table del proceso padre al directorio del
+hijo. De esta manera, en el directorio del proceso hijo habrá una entrada que
+apunta a la misma dirección de memoria física que el padre, que tiene el bit de
+presente y el bit de compartida encendidos. Asimismo, si el proceso hijo llama
+a `fork()`, la rutina encontrará el mismo bit de compartida y la página será
+accesible también por el nuevo hijo.
+
+A la hora de liberar memoria, cuando un proceso que tiene mapeada una página
+compartida ejecuta el syscall `exit()` no queremos que la página se libere a
+menos que éste sea el último proceso que la está usando. Para eso la rutina que
+libera memoria chequea para todos los directorios, la page-table entry
+correspondiente a esa dirección virtual. Si encuentra otro proceso con esa
+página compartida, entonces no la libera.
 
 ### Copy-on-write ###
 
