@@ -110,7 +110,7 @@ IMG_FLOPPY=$(DIROUT)floppy.img
 IMG_HDD=$(DIROUT)hdd.img
 
 # Documents
-DOC_FILES=$(DIRDOC)tp3-docs.pdf
+DOC_FILES=$(DIRDOC)smp.pdf
 
 
 .PHONY: all clean
