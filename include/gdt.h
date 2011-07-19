@@ -35,9 +35,9 @@ extern tss the_tss;
 
 /** Tabla GDT **/
 extern gdt_entry gdt[];
-#define GDT_COUNT 6
+#define GDT_COUNT 20
 
-void gdt_init(void);
+uint_16 gdt_add_tss(tss* the_tss);
 
 /** Constantes de los atributos **/
 
@@ -68,5 +68,21 @@ void gdt_init(void);
 /* TYPE Field */
 #define GDT_ATTR_TYPE_TSS 0x009
 
+/* Macro para crear una entrada de la GDT dando base(32), limit(20) y attr(12). */
+#define make_gdt_entry(base, limit, attr) \
+  (gdt_entry){{(uint_32)(limit) & 0xFFFF, (uint_32)(base) & 0xFFFF, \
+  ((uint_32)(base) >> 16) & 0xFF, (uint_16)(attr) & 0xF, \
+  ((uint_16)(attr) >> 4) & 0x1, ((uint_16)(attr) >> 5) & 0x3, ((uint_16)(attr) >> 7) & 0x1, \
+  ((uint_32)(limit) >> 16) & 0xF, ((uint_16)(attr) >> 8) & 0x1, \
+  ((uint_16)(attr) >> 9) & 0x1, ((uint_16)(attr) >> 10) & 0x1, ((uint_16)(attr) >> 11) & 0x1, \
+  ((uint_32)(base) >> 24) & 0xFF }}
+
+#define GDT_ATTR_SEG GDT_ATTR_G | GDT_ATTR_S_OFF | GDT_ATTR_DB | GDT_ATTR_P
+
+// Segmento de código es E=1, no conforming (C=0) y leíble (R=1), (no accedido A=0)
+#define GDT_ATTR_SEG_CODE GDT_ATTR_E | GDT_ATTR_R
+
+// Segmento de datos es E=0, expansion direction = 0, Writable (W=1), (no accedido A=0)
+#define GDT_ATTR_SEG_DATA GDT_ATTR_W
 
 #endif

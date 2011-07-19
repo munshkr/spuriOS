@@ -5,7 +5,7 @@ extern enable_paging
 extern processors
 extern processor_ap_kinit
 
-%define PROCESSOR_T_SZ			28
+%define PROCESSOR_T_SZ			134
 %define PROCESSOR_LAPIC_ID_OFF	16
 %define PROCESSOR_PRESENT_OFF	0
 %define PROCESSOR_STACK_OFF		8
@@ -55,14 +55,14 @@ _found_processor:
 	mov		ebp, esp
 
 	cld		; Needed by GCC (?)
-	push	ebx
+	push	esi
 	call	processor_ap_kinit
 
 _hlt:
 	hlt
 	jmp _hlt
 
-%define GDT_COUNT 6 ; WARNING, must match value defined in gdt.h
+%define GDT_COUNT 20 ; WARNING, must match value defined in gdt.h
 
 gdt_desc:
 	dw (GDT_COUNT * 8) - 1

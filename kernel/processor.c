@@ -8,6 +8,7 @@
 #include <apic.h>
 #include <mm.h>
 #include <spinlock.h>
+#include <gdt.h>
 
 // Like Linux. See linux/arch/x86/kernel/mpparse.c
 static struct mpf_intel mpf_found;
@@ -77,11 +78,18 @@ static void add_processor(uint_32 id, mpc_cpu* info) {
 	processors[id] = (processor_t) {
 		.present = TRUE,
 		.is_the_bsp = (info->cpuflag & CPU_BOOTPROCESSOR ? TRUE : FALSE),
+
 		.lapic = (lapic_t) {
 			.present = TRUE,
 			.id = info->apicid,
 			.base_addr = (void*) mpc_found.lapic,
 			.enable = apic_soft_enable
+		},
+
+		.the_tss = (tss) {
+			// Never changes
+			.ss0 = SS_K_DATA,
+			.esp0 = K_STACK_TOP 
 		}
 	};
 }
@@ -212,6 +220,11 @@ void processor_smp_boot() {
 	if (!apic_init(processor_bsp_id))
 		return ;
 
+	// Add BSP TSS's descriptor to the GDT
+	processors[processor_bsp_id].tss_selector =
+		gdt_add_tss(&processors[processor_bsp_id].the_tss);
+	ltr(processors[processor_bsp_id].tss_selector);
+
 	// Temporally map the page 0
 	mm_map_frame((void*) 0, (void*) 0, (mm_page*) rcr3(), PL_KERNEL);
 
@@ -223,6 +236,8 @@ void processor_smp_boot() {
 	uint_32 proc_id;
 	for (proc_id = 0; proc_id < MAX_PROCESSORS; proc_id++) {
 		if (processors[proc_id].present && !processors[proc_id].is_the_bsp) {
+			processors[proc_id].tss_selector = gdt_add_tss(&processors[proc_id].the_tss);
+
 			processors[proc_id].stack_page = mm_mem_kalloc();
 
 			uint_8 dest_apic_id = processors[proc_id].lapic.id;
@@ -242,7 +257,9 @@ void processor_smp_boot() {
 	mm_unmap_page((void*) 0, (mm_page*) rcr3());
 }
 
-void processor_ap_kinit(uint_32 lapic_id) {
-	debug_log("SMP: processor [lapic #%d] bootup finished", lapic_id);
-	while(1);
+void processor_ap_kinit(processor_t* self) {
+	ltr(self->tss_selector);
+	debug_log("SMP: processor [lapic #%d] bootup finished", self->lapic.id);
+
+	while(1); 
 }

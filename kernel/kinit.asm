@@ -60,7 +60,7 @@ modo_protegido:
 	jmp $
 
 
-%define GDT_COUNT 6 ; WARNING, must match value defined in gdt.h
+%define GDT_COUNT 20 ; WARNING, must match value defined in gdt.h
 
 gdt_desc:
 	dw (GDT_COUNT * 8) - 1

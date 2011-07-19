@@ -9,10 +9,7 @@ extern sched_tick
 extern cur_pid
 extern tmp_pid
 extern processes
-extern the_tss
 extern loader_tick
-
-%define TSS_ESP0_OFF 4
 
 %define PCB_SZ 28
 %define PCB_PL_OFF 4
@@ -23,8 +20,6 @@ extern loader_tick
 %define PL_USER 3
 %define SS_U_DATA 0x23
 %define SS_K_DATA 0x10
-
-%define K_STACK_TOP 0xff800000
 
 ; == Debug ==
 extern timer_draw_clock
@@ -95,16 +90,12 @@ task_switch:
 	mov ds, ax
 	mov es, ax
 
-	mov dword [the_tss + TSS_ESP0_OFF], K_STACK_TOP
-
 	jmp restore_cr3
 set_kernel_segments:
 	; Kernel data segments
 	mov ax, SS_K_DATA
 	mov ds, ax
 	mov es, ax
-
-	mov dword [the_tss + TSS_ESP0_OFF], 0 ; Never used
 
 restore_cr3:
 	; Restore CR3

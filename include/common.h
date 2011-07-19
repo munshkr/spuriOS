@@ -13,13 +13,14 @@
 #define SS_K_DATA 0x10
 #define SS_U_CODE 0x18
 #define SS_U_DATA 0x20
-#define SS_TSS 0x28
 
 #define IDLE_PID 0
 
 #define TASK_DEFAULT_EFLAGS 0x202	// IF flag set
 #define TASK_U_STACK_ADDRESS 0xff7fe000
 #define TASK_K_STACK_ADDRESS 0xff7ff000
+
+#define K_STACK_TOP 0xff800000
 
 #include <tipos.h>
 

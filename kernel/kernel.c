@@ -36,18 +36,10 @@ void enable_paging() {
 	lcr0(cr0);
 }
 
-inline void be_task() {
-	ltr(SS_TSS);
-}
-
 inline void go_idle() {
 	debug_log("the kernel is going idle");
 
-	// Never changes
-	the_tss.ss0 = SS_K_DATA;
-
 	processes[IDLE_PID].esp = esp();
-	be_task();
 
 	sti();
 	while (1) ;//hlt();
@@ -67,7 +59,6 @@ void print_logo(void) {
 
 void kernel_init(mmap_entry_t* mmap_addr, size_t mmap_entries) {
 	vga_init();
-	gdt_init();
 	idt_init();
 	debug_init();
 

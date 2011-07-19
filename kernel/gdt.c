@@ -4,25 +4,6 @@
 #include <debug.h>
 #include <tss.h>
 
-/* Macro para crear una entrada de la GDT dando base(32), limit(20) y attr(12). */
-#define make_gdt_entry(base, limit, attr) \
-  (gdt_entry){{(uint_32)(limit) & 0xFFFF, (uint_32)(base) & 0xFFFF, \
-  ((uint_32)(base) >> 16) & 0xFF, (uint_16)(attr) & 0xF, \
-  ((uint_16)(attr) >> 4) & 0x1, ((uint_16)(attr) >> 5) & 0x3, ((uint_16)(attr) >> 7) & 0x1, \
-  ((uint_32)(limit) >> 16) & 0xF, ((uint_16)(attr) >> 8) & 0x1, \
-  ((uint_16)(attr) >> 9) & 0x1, ((uint_16)(attr) >> 10) & 0x1, ((uint_16)(attr) >> 11) & 0x1, \
-  ((uint_32)(base) >> 24) & 0xFF }}
-
-#define GDT_ATTR_SEG GDT_ATTR_G | GDT_ATTR_S_OFF | GDT_ATTR_DB | GDT_ATTR_P
-
-// Segmento de código es E=1, no conforming (C=0) y leíble (R=1), (no accedido A=0)
-#define GDT_ATTR_SEG_CODE GDT_ATTR_E | GDT_ATTR_R
-
-// Segmento de datos es E=0, expansion direction = 0, Writable (W=1), (no accedido A=0)
-#define GDT_ATTR_SEG_DATA GDT_ATTR_W
-
-tss the_tss;
-
 gdt_entry gdt[GDT_COUNT] = {
 	make_gdt_entry(0, 0, 0),
 	make_gdt_entry(0, 0xFFFFF, GDT_ATTR_SEG | GDT_ATTR_SEG_CODE | GDT_ATTR_DPL0), // SEG_CODE_0
@@ -34,8 +15,14 @@ gdt_entry gdt[GDT_COUNT] = {
 // NOTE Replaced by the GDT_DESC defined in kernel/kinit.asm
 //gdt_descriptor GDT_DESC = {sizeof(gdt)-1, (uint_32)&gdt};
 
-void gdt_init(void) {
-	// FIXME DPL = 3 or 0 ?
-	gdt[5] = make_gdt_entry(&the_tss, sizeof(the_tss) - 1,
-		GDT_ATTR_P | GDT_ATTR_DPL3 | GDT_ATTR_TYPE_TSS); // TSS
+uint_16 gdt_next_free_entry = 5;
+
+uint_16 gdt_add_tss(tss* the_tss) {
+	gdt[gdt_next_free_entry] = make_gdt_entry(the_tss, sizeof(*the_tss) - 1,
+		GDT_ATTR_P | GDT_ATTR_DPL3 | GDT_ATTR_TYPE_TSS);
+
+	uint_16 selector = gdt_next_free_entry << 3;
+	gdt_next_free_entry++;
+	return selector;
 }
+
