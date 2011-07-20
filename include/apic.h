@@ -36,6 +36,15 @@ struct lapic_t {
 
 typedef struct lapic_t lapic_t;
 
+struct io_apic_t {
+	bool present;
+	uint_8 id;
+	uint_8 version;
+	void* addr;
+} __attribute__((__packed__));
+
+typedef struct io_apic_t io_apic_t;
+
 void apic_send_startup_ipi(lapic_t* lapic, uint_8 dest_apic_id, uint_32 startup_offset);
 void apic_clear_error_register(lapic_t* lapic);
 void apic_send_init(lapic_t* lapic, uint_8 dest_apic_id, bool assert);

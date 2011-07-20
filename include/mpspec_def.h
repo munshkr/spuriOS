@@ -111,6 +111,8 @@ struct mpc_ioapic {
 	unsigned int apicaddr;
 };
 
+typedef struct mpc_ioapic mpc_ioapic;
+
 struct mpc_intsrc {
 	unsigned char type;
 	unsigned char irqtype;

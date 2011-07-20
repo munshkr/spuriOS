@@ -14,6 +14,10 @@
 static struct mpf_intel mpf_found;
 static struct mpc_table mpc_found;
 
+static io_apic_t io_apic = {
+		.present = FALSE
+	};
+
 uint_32 processor_bsp_id = 0;
 
 processor_t processors[MAX_PROCESSORS] = {
@@ -94,7 +98,25 @@ static void add_processor(uint_32 id, mpc_cpu* info) {
 	};
 }
 
-static int smp_read_mpc(struct mpc_table *mpc) {
+static bool save_ioapic(mpc_ioapic* info) {
+	if (!(info->flags & MPC_APIC_USABLE))
+		return FALSE;
+
+	io_apic = (io_apic_t) {
+		.present = TRUE,
+		.id = info->apicid,
+		.version = info->apicver,
+		.addr = (void*) info->apicaddr
+	};
+
+	debug_log("IO APIC #%d found (version %d, address %p)",
+		io_apic.id, io_apic.version, io_apic.addr);	
+
+	return TRUE;
+}
+
+static int smp_read_mpc(struct mpc_table* mpc) {
+	bool found_ioapic = FALSE;
 	int processor_id = 0;
 	int count = sizeof(*mpc);
 
@@ -118,7 +140,12 @@ static int smp_read_mpc(struct mpc_table *mpc) {
 			skip_entry(&mpt, &count, sizeof(struct mpc_bus));
 			break;
 		case MP_IOAPIC:
-//			MP_ioapic_info((struct mpc_ioapic *)mpt);
+			if (found_ioapic) {
+				debug_log("ERROR: more than one IO APIC found!");
+				return 0;
+			}
+
+			found_ioapic = save_ioapic((struct mpc_ioapic *)mpt);
 			skip_entry(&mpt, &count, sizeof(struct mpc_ioapic));
 			break;
 		case MP_INTSRC:
