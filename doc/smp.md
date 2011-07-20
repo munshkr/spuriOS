@@ -29,7 +29,7 @@ Sequencia de arranque, INIT IPI, SIPI segun modelo 486DX2 o P4, APIC o xAPIC. _W
 APIC
 ----
 
-Identificación, esquema de uso y facilidades implementadas.
+Identificación, esquema de uso y facilidades implementadas. I/O APIC.
 
 Spinlocks
 ---------
@@ -45,6 +45,11 @@ Balanceo de carga
 -----------------
 
 Balanceo de carga en `fork()`, `run()` (?)
+
+Referencias
+===========
+
+Código del Linux Kernel, datasheets, web pages, etc.
 
 Conclusiones
 ============
